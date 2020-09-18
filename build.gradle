@@ -179,19 +179,12 @@ publishing {
     }
 }
 
-//configurations {
-//    compile.extendsFrom shaders
-//}
+configurations {
+    compile.extendsFrom prebuilds
+}
 
-//task shaders {
-////    exec {
-////        workingDir './src/main/resources/assets/phosphophyllite/shaders/'
-////        commandLine "python3", "process_shaders.py"
-//    }
-////    proc.waitForProcessOutput()
-////    if(proc.exitValue() != 0){
-////        println(proc.getErrorStream().toString());
-////        throw new StopExecutionException("Shader preprocessing failed")
-////    }
-////    println(proc.getOut().toString());
-//}
+task prebuilds {
+    exec {
+        commandLine "python3", "./scripts/prebuilds.py"
+    }
+}

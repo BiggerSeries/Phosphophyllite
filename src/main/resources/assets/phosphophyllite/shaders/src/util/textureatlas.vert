@@ -2,7 +2,7 @@
 #if defined(VERSION_330) || defined(VERSION_450)
 #define USING_TBO
 
-layout(location = 128) uniform usamplerBuffer textureIndexRotationBuffer;
+layout(location = ~) uniform usamplerBuffer textureIndexRotationBuffer;
 
 layout(location = 129) uniform samplerBuffer atlasIndexing;
 layout(location = 130) uniform vec2[10] textureScales;

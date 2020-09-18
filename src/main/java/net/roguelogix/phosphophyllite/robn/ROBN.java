@@ -213,6 +213,10 @@ public class ROBN {
             mapToROBN((Map<?, ?>) t, buf);
             return;
         }
+        if(t instanceof ROBNObject){
+            toROBN(((ROBNObject) t).toROBNMap(), buf);
+            return;
+        }
         throw new IllegalArgumentException("Unknown object type");
     }
     

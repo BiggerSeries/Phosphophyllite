@@ -1,9 +1,9 @@
 #pragma once
 
-#ifdef VERSION_450
+#ifdef VERSION_460
 
-#define VERSION_450_DEFINE #version 450
-VERSION_450_DEFINE
+#define VERSION_460_DEFINE #version 460
+VERSION_460_DEFINE
 
 #define GL_ARB_separate_shader_objects_DEFINE #extension GL_ARB_separate_shader_objects : enable
 GL_ARB_separate_shader_objects_DEFINE
