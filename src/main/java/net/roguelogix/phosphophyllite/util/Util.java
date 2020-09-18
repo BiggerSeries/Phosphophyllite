@@ -9,16 +9,17 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import org.joml.Vector2i;
+import org.joml.Vector3i;
+import org.lwjgl.BufferUtils;
+import sun.nio.ch.DirectBuffer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.function.BiConsumer;
 
 public class Util {
-    public static String readResourceLocation(ResourceLocation location) {
+    public static String readTextResourceLocation(ResourceLocation location) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(Minecraft.getInstance().getResourceManager().getResource(location).getInputStream()))) {
             StringBuilder stringBuilder = new StringBuilder();
             String line;
@@ -32,11 +33,36 @@ public class Util {
         return null;
     }
     
+    private static byte[] toByteArray(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[2048];
+        int len;
+        
+        while ((len = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, len);
+        }
+        return outputStream.toByteArray();
+    }
+    
+    public static DirectBuffer readBinaryResourceLocation(ResourceLocation location) {
+        ByteBuffer byteBuffer;
+        try (InputStream inputStream = Minecraft.getInstance().getResourceManager().getResource(location).getInputStream()) {
+            byte[] array = toByteArray(inputStream);
+            byteBuffer = BufferUtils.createByteBuffer(array.length).put(array);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        
+        // it is, dont worry about it
+        return (DirectBuffer) byteBuffer;
+    }
+    
     public static JsonObject readJSONFile(ResourceLocation location) {
         if (location.getPath().lastIndexOf(".json") != location.getPath().length() - 5) {
             location = new ResourceLocation(location.getNamespace(), location.getPath() + ".json");
         }
-        String jsonString = readResourceLocation(location);
+        String jsonString = readTextResourceLocation(location);
         if (jsonString == null) {
             return null;
         }
