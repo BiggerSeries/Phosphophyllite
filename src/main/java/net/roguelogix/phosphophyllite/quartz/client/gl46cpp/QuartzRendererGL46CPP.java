@@ -2,10 +2,10 @@ package net.roguelogix.phosphophyllite.quartz.client.gl46cpp;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.util.math.Vec3d;
-import net.roguelogix.phosphophyllite.quartz.client.renderer.IRenderChunkSection;
+import net.minecraft.util.math.vector.Vector3d;
 import net.roguelogix.phosphophyllite.quartz.client.renderer.QuartzRenderer;
 import net.roguelogix.phosphophyllite.quartz.common.QuartzBlockRenderInfo;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.robn.ROBN;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
@@ -58,7 +58,7 @@ public class QuartzRendererGL46CPP extends QuartzRenderer {
             throw new RuntimeException("Secondary thread died");
         }
         ActiveRenderInfo renderInfo = Minecraft.getInstance().gameRenderer.getActiveRenderInfo();
-        Vec3d playerPosition = renderInfo.getProjectedView();
+        Vector3d playerPosition = renderInfo.getProjectedView();
         JNI.drawGL(playerPosition.x, playerPosition.y, playerPosition.z, renderInfo.getYaw(), renderInfo.getPitch());
     }
     

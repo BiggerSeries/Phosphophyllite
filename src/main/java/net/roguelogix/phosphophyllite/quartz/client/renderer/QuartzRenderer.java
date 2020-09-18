@@ -1,7 +1,6 @@
 package net.roguelogix.phosphophyllite.quartz.client.renderer;
 
 import net.roguelogix.phosphophyllite.quartz.client.QuartzClientConfig;
-import net.roguelogix.phosphophyllite.quartz.client.gl21java.QuartzRendererGL21Java;
 import net.roguelogix.phosphophyllite.quartz.client.gl46cpp.QuartzRendererGL46CPP;
 import net.roguelogix.phosphophyllite.quartz.common.QuartzBlockRenderInfo;
 

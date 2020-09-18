@@ -9,8 +9,8 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
-import org.joml.Vector2i;
-import org.joml.Vector3i;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import org.lwjgl.BufferUtils;
 import sun.nio.ch.DirectBuffer;
 
