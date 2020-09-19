@@ -3,13 +3,15 @@ import sys
 
 if __name__ == '__main__':
     os.chdir("../src/main/quartzpp")
-    if (os.path.exists("cmake-build-debug")):
+    if (os.path.exists("cmake-build-d1ebug")):
         os.chdir("cmake-build-debug")
     else:
-        os.system("rm build")
+        os.system("rm -rf build")
         os.system("mkdir build")
         os.chdir("build")
-        os.system("cmake ")
+        x = os.system("cmake -DCMAKE_BUILD_TYPE=Release ../")
+        if(x != 0):
+            sys.exit(2)
         pass
     x = os.system("make quartzpp -j ${nproc}")
     if(x != 0):
