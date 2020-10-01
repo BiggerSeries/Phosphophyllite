@@ -29,7 +29,6 @@ struct PerBlockData{
 
 layout(location = 6) uniform int blockPositionsPerChunkStride;
 
-
 layout(std430, binding = 2) buffer SSBOC{
     PerBlockData BlockData[];
 };
@@ -52,7 +51,7 @@ vec2 rotateUV(vec2 uv, uint rotation) {
     uv -= 0.5;
     {
         float newX = uv.x * (~rotation & 1u) + uv.y * (rotation & 1u);
-        newX *= .5 * (~rotation & 2u) + -.5 * (rotation & 2u);
+        newX *= .5 * float(~rotation & 2u) + -.5 * float(rotation & 2u);
         float newY = uv.y * (~rotation & 1u) + uv.x * (rotation & 1u);
         uint negateY = (rotation >> 1u) ^ (rotation & 1u);
         newY *= -1 * float(negateY) + 1 * (~negateY & 1u);
@@ -62,10 +61,15 @@ vec2 rotateUV(vec2 uv, uint rotation) {
     return uv;
 }
 
+layout(location = 128) uniform int DrawID;
+
 void main(){
+    //    gl_Position = vec4(vertexPosition - playerPosition, 1);
+    //    gl_Position.y += gl_DrawID;
+    //    gl_Position = projectionMatrix * modelViewMatrix * gl_Position;
 
 
-    uint chunkID = chunkIDs[gl_DrawID];
+    uint chunkID = chunkIDs[DrawID];
     uint globalBlockID = gl_InstanceID + (chunkID * blockPositionsPerChunkStride);
 
     PerBlockData blockData = BlockData[globalBlockID];
@@ -75,11 +79,11 @@ void main(){
     ivec3 blockPosition = ivec3((blockPositionPacked >> 16u) & 0xFFu, (blockPositionPacked >> 8u) & 0xFFu, (blockPositionPacked >> 0u) & 0xFFu);
     blockPosition &= 0xF;
 
-    ivec3 chunkViewPosition = chunkPosition - playerChunkPosition;
-    ivec3 blockChunkPosition = chunkViewPosition + blockPosition;
-    ivec3 vertexChunkposition = blockChunkPosition + vertexPosition;
+    ivec3 vertexBlockPosition = vertexPosition + blockPosition;
+    ivec3 vertexChunkPosition = vertexBlockPosition + chunkPosition;
+    ivec3 vertexChunkViewPosition = vertexChunkPosition - playerChunkPosition;
 
-    vec3 vertexTranslatedLocation = vertexChunkposition - playerPosition;
+    vec3 vertexTranslatedLocation = vertexChunkViewPosition - playerPosition;
 
     vec4 worldPos = vec4(vertexTranslatedLocation, 1);
     vec4 viewPos = modelViewMatrix * worldPos;
@@ -92,20 +96,20 @@ void main(){
 
     uint faceBit = 1u << faceID;
 
-    uint hiddenFaces = uint(blockPositionPacked >> 24) & 0xFFu;
-    uint hideFace = int((hiddenFaces & faceBit) == 0);
-    gl_Position.z = (hideFace * 2) + ((1 - hideFace) * gl_Position.z);
-    gl_Position.w = (hideFace * 1) + ((1 - hideFace) * gl_Position.w);
+    //    uint hiddenFaces = uint(blockPositionPacked >> 24) & 0xFFu;
+    //    uint hideFace = int((hiddenFaces & faceBit) == 0);
+    //    gl_Position.z = (hideFace * 2) + ((1 - hideFace) * gl_Position.z);
+    //    gl_Position.w = (hideFace * 1) + ((1 - hideFace) * gl_Position.w);
 
     // diffuse
     float diffuse = 0;
     // west
-    diffuse += ((faceBit >> 0u) & 1u) * 0.6;
-    diffuse += ((faceBit >> 1u) & 1u) * 0.6;
-    diffuse += ((faceBit >> 2u) & 1u) * 0.4;
-    diffuse += ((faceBit >> 3u) & 1u) * 1.0;
-    diffuse += ((faceBit >> 4u) & 1u) * 0.8;
-    diffuse += ((faceBit >> 5u) & 1u) * 0.8;
+    diffuse += float((faceBit >> 0u) & 1u) * 0.6;
+    diffuse += float((faceBit >> 1u) & 1u) * 0.6;
+    diffuse += float((faceBit >> 2u) & 1u) * 0.5;
+    diffuse += float((faceBit >> 3u) & 1u) * 1.0;
+    diffuse += float((faceBit >> 4u) & 1u) * 0.8;
+    diffuse += float((faceBit >> 5u) & 1u) * 0.8;
     diffuseMultiplier = diffuse;
 
     lightmapCoordinate = vertexTextureCoordinate;
@@ -118,6 +122,7 @@ void main(){
     uint textureIndexRotationPacked = BlockData[globalBlockID].textureIDRotation[faceID];
     uint rotation = textureIndexRotationPacked & 0x3u;
     vec2 rotatedCoordinate = rotateUV(vertexTextureCoordinate, rotation);
+    textureCoordinate = rotatedCoordinate;
 
     uint textureID = textureIndexRotationPacked >> 2;
     textureID *= uint(textureID < idLimit);

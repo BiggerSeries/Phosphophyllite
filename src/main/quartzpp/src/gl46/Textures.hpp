@@ -8,7 +8,7 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
 
     void shutdown();
 
-    std::uint32_t loadTexture(std::string location);
+    std::uint32_t loadTexture(const std::string& location);
 
     void activateTexture(std::uint32_t id);
 

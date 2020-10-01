@@ -1,0 +1,11 @@
+{
+    "textures": {
+        "all" : "biggerreactors:textures/reactor_casing_disassembled.png",
+    },
+    "branches": [
+        {
+            "state": "AssemblyState",
+            "value": "assembled",
+        }
+    ],
+}

@@ -154,14 +154,17 @@ public class ConfigLoader {
         }
     }
     
-    static Field modifiersField;
+    public static final Field modifiersField;
     
     static {
+        Field modifiersField1;
         try {
-            modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField1 = Field.class.getDeclaredField("modifiers");
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
+            modifiersField1 = null;
         }
+        modifiersField = modifiersField1;
         modifiersField.setAccessible(true);
     }
     

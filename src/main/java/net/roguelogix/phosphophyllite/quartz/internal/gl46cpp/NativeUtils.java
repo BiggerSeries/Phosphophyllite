@@ -28,7 +28,7 @@
  *
  *
  */
-package net.roguelogix.phosphophyllite.quartz.client.gl46cpp;
+package net.roguelogix.phosphophyllite.quartz.internal.gl46cpp;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;

@@ -14,7 +14,7 @@ namespace Phosphophyllite::Quartz::GL46 {
 //    extern glm::mat4 inverseModelViewProjectionMatrix;
 
 
-    void GLSetup(void* MCWindow);
+    void GLSetup(void* glfwGetProcAddress);
 
     void GLShutdown();
 
@@ -25,4 +25,6 @@ namespace Phosphophyllite::Quartz::GL46 {
     void captureSecondaryThread();
 
     std::uint32_t loadTexture(std::string textureLocation);
+
+    void reloadShaders();
 }

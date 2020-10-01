@@ -7,7 +7,6 @@ import net.minecraft.world.World;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.util.Util;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import java.util.HashSet;
 import java.util.Set;

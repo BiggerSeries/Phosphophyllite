@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "phosphophyllite:block/phosphophyllite_ore"
+      "model": "phosphophyllite:quartz/invisible"
     }
   }
 }

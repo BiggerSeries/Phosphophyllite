@@ -1,14 +1,16 @@
-package net.roguelogix.phosphophyllite.quartz.client.gl46cpp;
+package net.roguelogix.phosphophyllite.quartz.internal.gl46cpp;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.util.math.vector.Vector3d;
-import net.roguelogix.phosphophyllite.quartz.client.renderer.QuartzRenderer;
-import net.roguelogix.phosphophyllite.quartz.common.QuartzBlockRenderInfo;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.quartz.internal.Renderer;
+import net.roguelogix.phosphophyllite.quartz.internal.BlockRenderInfo;
 import net.roguelogix.phosphophyllite.robn.ROBN;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL21;
 import sun.nio.ch.DirectBuffer;
 
 import java.io.IOException;
@@ -20,9 +22,10 @@ import java.util.ArrayList;
  * oh wait, it is
  * go to src/main/quartzpp/src/gl45 for the rest here
  */
-public class QuartzRendererGL46CPP extends QuartzRenderer {
-    public QuartzRendererGL46CPP() {
+public class RendererGL46CPP extends Renderer {
+    public RendererGL46CPP() {
         try {
+            Phosphophyllite.LOGGER.warn("Loading Quartz++, if there is a JVM crash immediately following this, it was probably Quartz++ (module of the Phosphophyllite library)");
             NativeUtils.loadLibraryFromJar("phosphophyllite:libs/libroguelib_threading.so");
             NativeUtils.loadLibraryFromJar("phosphophyllite:libs/libroguelib_exceptions.so");
             NativeUtils.loadLibraryFromJar("phosphophyllite:libs/libroguelib_logging.so");
@@ -41,7 +44,7 @@ public class QuartzRendererGL46CPP extends QuartzRenderer {
         JNI.setupGL(GLFW.Functions.GetProcAddress);
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
+        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 6);
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         secondaryWindow = GLFW.glfwCreateWindow(1, 1, "quartzpp gl45 secondary thread", 0, Minecraft.getInstance().getMainWindow().getHandle());
         secondaryThread = new Thread(() -> {
@@ -69,7 +72,7 @@ public class QuartzRendererGL46CPP extends QuartzRenderer {
     }
     
     @Override
-    public void setBlockRenderInfo(ArrayList<QuartzBlockRenderInfo> info) {
+    public void setBlockRenderInfo(ArrayList<BlockRenderInfo> info) {
         ArrayList<Byte> robnBuf = ROBN.toROBN(info);
         ByteBuffer buffer = BufferUtils.createByteBuffer(robnBuf.size());
         for (Byte aByte : robnBuf) {
@@ -80,6 +83,6 @@ public class QuartzRendererGL46CPP extends QuartzRenderer {
     
     @Override
     public int loadTexture(String textureLocation) {
-        return 0;
+        return JNI.loadTexture(textureLocation);
     }
 }

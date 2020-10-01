@@ -63,7 +63,7 @@ namespace Phosphophyllite::Quartz::GL46::World {
 
     struct Chunk {
 
-        std::int32_t slot = 0;
+        std::int32_t slot = -1;
         DrawElementsIndirectCommand drawCommand = {};
         std::vector<QuartzBlockRenderInfo> blocks;
         std::map<glm::ivec3, std::uint32_t> blockPosMap;
@@ -164,7 +164,8 @@ namespace Phosphophyllite::Quartz::GL46::World {
         glNamedBufferStorage(chunkIDBuffer = buffers[0], sizeof(std::uint32_t), nullptr, GL_DYNAMIC_STORAGE_BIT);
         glNamedBufferStorage(chunkPositionsBuffer = buffers[1], 4 * sizeof(std::uint32_t), nullptr,
                              GL_DYNAMIC_STORAGE_BIT);
-        glNamedBufferStorage(blockPositionsBuffer = buffers[2], 32 * sizeof(std::uint32_t), nullptr,
+        glNamedBufferStorage(blockPositionsBuffer = buffers[2],
+                             RENDERCHUNK_LINEAR_SIZE * sizeof(QuartzBlockRenderInfo::Packed), nullptr,
                              GL_DYNAMIC_STORAGE_BIT);
         availableBufferSlots.push_back(0);
     }
@@ -189,24 +190,33 @@ namespace Phosphophyllite::Quartz::GL46::World {
 
         glNamedBufferStorage(buffers[0], (buffersSize) * sizeof(std::uint32_t), nullptr, GL_DYNAMIC_STORAGE_BIT);
         glNamedBufferStorage(buffers[1], (buffersSize) * 4 * sizeof(std::uint32_t), nullptr, GL_DYNAMIC_STORAGE_BIT);
-        glNamedBufferStorage(buffers[2], (buffersSize + 1) * sizeof(std::uint32_t), nullptr, GL_DYNAMIC_STORAGE_BIT);
+        glNamedBufferStorage
+                (buffers[2], (buffersSize) * RENDERCHUNK_LINEAR_SIZE * sizeof(QuartzBlockRenderInfo::Packed),
+                 nullptr, GL_DYNAMIC_STORAGE_BIT);
 
         glCopyNamedBufferSubData(chunkIDBuffer, buffers[0], 0, 0, (oldBuffersSize) * sizeof(std::uint32_t));
         glCopyNamedBufferSubData(chunkPositionsBuffer, buffers[1], 0, 0, (oldBuffersSize) * 4 * sizeof(std::uint32_t));
-        glCopyNamedBufferSubData(blockPositionsBuffer, buffers[2], 0, 0, (oldBuffersSize) * sizeof(std::uint32_t));
+        glCopyNamedBufferSubData(blockPositionsBuffer, buffers[2], 0, 0,
+                                 (oldBuffersSize) * RENDERCHUNK_LINEAR_SIZE * sizeof(QuartzBlockRenderInfo::Packed));
 
-        bufferChangFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-        primaryQueue->enqueue([]() {
-            glDeleteBuffers(1, &chunkIDBuffer);
-            chunkIDBuffer = buffers[0];
-            glDeleteBuffers(1, &chunkPositionsBuffer);
-            chunkPositionsBuffer = buffers[1];
-            glDeleteBuffers(1, &blockPositionsBuffer);
-            blockPositionsBuffer = buffers[2];
+//        GLsync sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+//        glFlush();
+//        bufferChangFence = sync;
+
+        GLuint oldChunkIDBuffer = chunkIDBuffer;
+        GLuint oldChunkPositionsBuffer = chunkPositionsBuffer;
+        GLuint oldClockPositionsBuffer = blockPositionsBuffer;
+        chunkIDBuffer = buffers[0];
+        chunkPositionsBuffer = buffers[1];
+        blockPositionsBuffer = buffers[2];
+        primaryQueue->enqueue([=]() {
+            glDeleteBuffers(1, &oldChunkIDBuffer);
+            glDeleteBuffers(1, &oldChunkPositionsBuffer);
+            glDeleteBuffers(1, &oldClockPositionsBuffer);
         });
 
         // reverse order so it should group more towards the front of the GL buffer
-        for (int i = buffersSize - 1; i > oldBuffersSize; --i) {
+        for (int i = buffersSize - 1; i >= oldBuffersSize; --i) {
             availableBufferSlots.push_back(i);
         }
     }
@@ -221,48 +231,78 @@ namespace Phosphophyllite::Quartz::GL46::World {
         for (const auto& item : changes) {
             // these are powers of two, so this should be super fast, if the compiler optimizes it right
             glm::ivec3 blockChunk =
-                    {item.x / RENDERCHUNK_SIZE, item.y / RENDERCHUNK_SIZE, item.z / RENDERCHUNK_SIZE};
-            glm::ivec3 blockSubChunk =
-                    {item.x % RENDERCHUNK_SIZE, item.y % RENDERCHUNK_SIZE, item.z % RENDERCHUNK_SIZE};
+                    {((item.x + (item.x < 0)) / RENDERCHUNK_SIZE) - (item.x < 0),
+                     ((item.y + (item.y < 0)) / RENDERCHUNK_SIZE) - (item.y < 0),
+                     ((item.z + (item.z < 0)) / RENDERCHUNK_SIZE) - (item.z < 0)};
+            glm::ivec3 blockSubChunk = {item.x, item.y, item.z};
+            blockSubChunk -= blockChunk * 8;
 
             if ((item.textureIDWest & item.textureIDEast &
                  item.textureIDBottom & item.textureIDTop &
-                 item.textureIDSouth & item.textureIDNorth) < 0) {
+                 item.textureIDSouth & item.textureIDNorth) >= (2 << 30)) {
                 // remove the block, if it exists
 
                 auto iter = chunks.find(blockChunk);
                 if (iter != chunks.end()) {
                     auto chunk = iter->second;
                     auto blockIter = chunk->blockPosMap.find(blockSubChunk);
-                    if (blockIter != chunk->blockPosMap.end()) {
+                    if (blockIter == chunk->blockPosMap.end()) {
+                        // so, it doesnt have the block? idfk
+                        continue;
+                    } else {
+
+                        // deactivate the old textures, dont need them around anymore
+                        auto itemSlot = blockIter->second;
+                        auto itemOldRenderInfo = chunk->blocks[itemSlot];
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDWest);
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDEast);
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDBottom);
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDTop);
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDSouth);
+                        Textures::inactivateTexture(itemOldRenderInfo.textureIDNorth);
+
                         auto blockLocalPos = blockIter->second;
                         if (blockLocalPos != (chunk->blocks.size() - 1)) {
                             // it wasn't the last block, so i need to swap blocks around
-                            auto chunkPos = chunk->slot * RENDERCHUNK_LINEAR_SIZE;
-                            auto blockGlobalPos = chunkPos + blockLocalPos;
-                            auto lastBlockGlobalPos = chunk->blocks.size() - 1 + chunkPos;
 
-                            blockGlobalPos *= sizeof(QuartzBlockRenderInfo::Packed);
-                            lastBlockGlobalPos *= sizeof(QuartzBlockRenderInfo::Packed);
+                            auto chunkBaseBlockSlot = chunk->slot * RENDERCHUNK_LINEAR_SIZE;
+                            auto newBlockSlot = chunkBaseBlockSlot + blockLocalPos;
+                            auto oldBlockSlot = chunkBaseBlockSlot + chunk->blocks.size() - 1;
+
+                            auto newBlockSlotBytePos = newBlockSlot * sizeof(QuartzBlockRenderInfo::Packed);
+                            auto oldBlockSlotBytePos = oldBlockSlot * sizeof(QuartzBlockRenderInfo::Packed);
 
                             // first, update CPU side info
                             auto newBlockInfo = chunk->blocks.back();
-                            chunk->blocks[blockLocalPos] = newBlockInfo;
                             chunk->blocks.pop_back();
-                            chunk->blockPosMap[{newBlockInfo.x % RENDERCHUNK_SIZE,
-                                                newBlockInfo.y % RENDERCHUNK_SIZE,
-                                                newBlockInfo.z % RENDERCHUNK_SIZE}];
+                            chunk->blocks[blockLocalPos] = newBlockInfo;
+                            glm::ivec3 newBlockInfoSubChunkPos = {
+                                    std::uint32_t(newBlockInfo.x) % RENDERCHUNK_SIZE,
+                                    std::uint32_t(newBlockInfo.y) % RENDERCHUNK_SIZE,
+                                    std::uint32_t(newBlockInfo.z) % RENDERCHUNK_SIZE
+                            };
+                            chunk->blockPosMap[newBlockInfoSubChunkPos] = blockLocalPos;
+                            chunk->blockPosMap.erase(blockSubChunk);
+
+                            chunk->drawCommand.instanceCount--;
 
                             // ok, now to update GL's buffer
-                            glCopyNamedBufferSubData(blockPositionsBuffer, blockPositionsBuffer, lastBlockGlobalPos,
-                                                     blockGlobalPos, sizeof(QuartzBlockRenderInfo::Packed));
+                            glCopyNamedBufferSubData(blockPositionsBuffer, blockPositionsBuffer,
+                                                     oldBlockSlotBytePos,
+                                                     newBlockSlotBytePos, sizeof(QuartzBlockRenderInfo::Packed));
 
                             return;
+                        } else {
+                            // last block, just yeet it
+                            chunk->drawCommand.instanceCount--;
+                            chunk->blockPosMap.erase(blockSubChunk);
+                            chunk->blocks.pop_back();
                         }
+                    }
 
-                        chunk->drawCommand.instanceCount--;
-                        chunk->blockPosMap.erase(blockIter);
-                        chunk->blocks.pop_back();
+                    if (chunk->blocks.empty()) {
+                        chunks.erase(blockChunk);
+                        availableBufferSlots.emplace_back(chunk->slot);
                     }
                 }
                 return;
@@ -286,7 +326,12 @@ namespace Phosphophyllite::Quartz::GL46::World {
                 }
                 chunk = std::make_shared<Chunk>();
                 chunk->slot = availableBufferSlots.back();
+                glm::ivec3 chunkPos = blockChunk;
+                chunkPos *= RENDERCHUNK_SIZE;
+                glNamedBufferSubData(chunkPositionsBuffer, chunk->slot * 4 * sizeof(std::uint32_t),
+                                     3 * sizeof(std::uint32_t), glm::value_ptr(chunkPos));
                 availableBufferSlots.pop_back();
+                chunks[blockChunk] = chunk;
             } else {
                 chunk = chunkPosIter->second;
             }
@@ -313,17 +358,26 @@ namespace Phosphophyllite::Quartz::GL46::World {
 
             chunk->blocks[blockPos] = item;
 
-            auto packedData = item.pack();
+            QuartzBlockRenderInfo itemToPack = item;
+            itemToPack.x = blockSubChunk.x;
+            itemToPack.y = blockSubChunk.y;
+            itemToPack.z = blockSubChunk.z;
+
+            QuartzBlockRenderInfo::Packed packedData = itemToPack.pack();
             glNamedBufferSubData(blockPositionsBuffer,
-                                 (chunk->slot * RENDERCHUNK_LINEAR_SIZE + blockPos) * sizeof(packedData),
-                                 sizeof(packedData), &packedData);
+                                 ((chunk->slot * RENDERCHUNK_LINEAR_SIZE) + blockPos) *
+                                 sizeof(QuartzBlockRenderInfo::Packed),
+                                 sizeof(QuartzBlockRenderInfo::Packed), &packedData);
         }
     }
+
+    bool getLightmapHandle = true;
+    GLuint64 lightmapHandle = -1;
 
     void draw() {
         ROGUELIB_STACKTRACE
 
-        secondaryQueue->enqueue([]() {
+        primaryQueue->enqueue([]() {
             std::unique_lock lk(toUpdateMutex);
             if (!toUpdate.empty()) {
                 lk.unlock();
@@ -334,20 +388,39 @@ namespace Phosphophyllite::Quartz::GL46::World {
         static GLsync lastFence = nullptr;
         GLsync fence = bufferChangFence;
         if (fence != lastFence) {
-            glWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
+//            glFlush();
+//            glWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
             lastFence = fence;
         }
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
 
+        GLint activeTexture;
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+        glActiveTexture(GL_TEXTURE2);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glActiveTexture(activeTexture);
+        
         blockProgram.bind();
 
         Textures::bind(blockProgram.handle());
 
-        glUniform3fv(0, 1, glm::value_ptr(glm::vec3(playerOffset)));
+        glm::ivec3 playerChunkPosition = playerPosition;
+        playerChunkPosition &= ~(RENDERCHUNK_SIZE - 1);
+        glm::vec3 playerSubChunkPos = playerPosition - glm::dvec3(playerChunkPosition);
+
+        glUniform3fv(0, 1, glm::value_ptr(playerSubChunkPos));
+        glUniform3iv(1, 1, glm::value_ptr(playerChunkPosition));
         glUniform1i(6, RENDERCHUNK_LINEAR_SIZE);
         glUniformMatrix4fv(4, 1, false, glm::value_ptr(modelViewMatrix));
         glUniformMatrix4fv(5, 1, false, glm::value_ptr(projectionMatrix));
+
+        // cant use bindless for the lightmap, thx mojang
+        glUniform1i(12, 2);
 
         // todo: compute shader?
         std::vector<DrawElementsIndirectCommand> drawCommands;
@@ -382,6 +455,9 @@ namespace Phosphophyllite::Quartz::GL46::World {
                 chunkClipVectorMin.z <= 1 && chunkClipVectorMax.z >= -1) {
                 drawCommands.emplace_back(chunk->drawCommand);
                 chunkIDs.emplace_back(chunk->slot);
+            } else {
+                drawCommands.emplace_back(chunk->drawCommand);
+                chunkIDs.emplace_back(chunk->slot);
             }
         }
 
@@ -393,8 +469,17 @@ namespace Phosphophyllite::Quartz::GL46::World {
         // just a sanity check
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
+        for (int i = 0; i < drawCommands.size(); ++i) {
+            DrawElementsIndirectCommand drawCommand = drawCommands[i];
+            glUniform1i(128, i);
+            glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, drawCommand.count, GL_UNSIGNED_BYTE,
+                                                          reinterpret_cast<const void*>(drawCommand.firstIndex),
+                                                          drawCommand.instanceCount, drawCommand.baseVertex,
+                                                          drawCommand.baseInstance);
+        }
 
-        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_BYTE, drawCommands.data(), drawCommands.size(), 0);
+//        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_BYTE, drawCommands.data(), drawCommands.size(), sizeof(DrawElementsIndirectCommand));
+//        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 
         glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 3, nullptr);
         glBindVertexArray(0);

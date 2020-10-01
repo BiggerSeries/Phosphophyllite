@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.client.jni;
+package net.roguelogix.phosphophyllite.quartz.internal.jni;
 
 import net.minecraft.util.ResourceLocation;
 import sun.nio.ch.DirectBuffer;

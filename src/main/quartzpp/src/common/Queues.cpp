@@ -30,10 +30,9 @@ namespace Phosphophyllite::Quartz {
         WorkQueue* queue;
         queue = primaryQueue;
         primaryQueue = nullptr;
-        queue->enqueue([]() {}).wait();
         delete queue;
         queue = secondaryQueue;
-        queue->enqueue([]() {}).wait();
+//        queue->enqueue([]() {}).wait();
         delete queue;
         delete tertiaryQueue;
     }

@@ -3,7 +3,7 @@ project(quartzpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-execute_process(WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" COMMAND javac "-h" "./src/common/JNI" "../java/net/roguelogix/phosphophyllite/quartz/client/gl46cpp/JNI.java")
+execute_process(WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" COMMAND javac "-h" "./src/common/JNI" "../java/net/roguelogix/phosphophyllite/quartz/internal/gl46cpp/JNI.java")
 
 file(GLOB_RECURSE LIB_SRC ${CMAKE_CURRENT_LIST_DIR}/src/*.c* ${CMAKE_CURRENT_LIST_DIR}/src/*.h*)
 
@@ -18,4 +18,4 @@ add_subdirectory(RogueLib)
 target_link_libraries(quartzpp PUBLIC RogueLib_ROBN RogueLib_Logging RogueLib_Threading)
 
 add_executable(test test.cpp)
-target_link_libraries(test PUBLIC quartzpp dl)
+target_link_libraries(test PUBLIC quartzpp dl glfw)

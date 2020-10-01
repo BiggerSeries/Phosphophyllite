@@ -117,6 +117,8 @@ public class WorkQueue {
         public void run() {
             try {
                 work.run();
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 waitEvent.trigger();
             }

@@ -30,8 +30,8 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
     std::uint32_t GLSLidLimit = 0;
 
     struct Texture {
-        GLuint glID = 0;
-        GLuint64 handle = 0;
+        GLuint glID = -1;
+        GLuint64 handle = -1;
         std::string location;
         std::uint64_t uses = 0;
     };
@@ -47,48 +47,51 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
     }
 
 
-    std::uint32_t loadTexture(std::string location) {
+    std::uint32_t loadTexture(const std::string& location) {
         ROGUELIB_STACKTRACE
         textures.emplace_back();
         std::uint32_t id = textures.size() - 1;
 
-        // 30 bit limit as i shove rotation in the same 32bit VBO value,
-        // still a 1 billion texture limit, i dont see how this will be hit
-        if (id >= (1u << 30u)) {
-            // how, just fucking how?
-            throw Exceptions::FatalInvalidState(ROGUELIB_EXCEPTION_INFO, "Texture id limit exceeded");
-        }
+        primaryQueue->enqueue([=]() {
+            ROGUELIB_LAMBDATRACE
 
-        Texture& tex = textures[id];
-        tex.location = std::move(location);
-        glCreateTextures(GL_TEXTURE_2D, 1, &tex.glID);
+            // 30 bit limit as i shove rotation in the same 32bit VBO value,
+            // still a 1 billion texture limit, i dont see how this will be hit
+            if (id >= (1u << 30u)) {
+                // how, just fucking how?
+                throw Exceptions::FatalInvalidState(ROGUELIB_EXCEPTION_INFO, "Texture id limit exceeded");
+            }
 
-        glTextureParameteri(tex.glID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-        glTextureParameteri(tex.glID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            Texture& tex = textures[id];
+            tex.location = location;
+            glCreateTextures(GL_TEXTURE_2D, 1, &tex.glID);
 
-        std::vector<std::uint8_t> data = JNI::loadBinaryFile(tex.location);
-        int x;
-        int y;
-        std::uint8_t* imageData =
-                stbi_load_from_memory(data.data(), data.size(), &x, &y, nullptr, 4);
+            glTextureParameteri(tex.glID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+            glTextureParameteri(tex.glID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        int maxSize = std::max(x, y);
-        int levels = (int) std::floor(std::log2(maxSize)) + 1;
+            std::vector<std::uint8_t> data = JNI::loadBinaryFile(tex.location);
+            int x;
+            int y;
+            std::uint8_t* imageData =
+                    stbi_load_from_memory(data.data(), data.size(), &x, &y, nullptr, STBI_rgb_alpha);
 
-        glTextureStorage2D(tex.handle, levels, GL_RGBA8, x, y);
-        glTextureSubImage2D(tex.glID, 0, 0, 0, x, y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, imageData);
-        glGenerateTextureMipmap(tex.glID);
+            int maxSize = std::max(x, y);
+            int levels = (int) std::floor(std::log2(maxSize)) + 1;
 
-        stbi_image_free(imageData);
+            glTextureStorage2D(tex.glID, levels, GL_RGBA8, x, y);
+            glTextureSubImage2D(tex.glID, 0, 0, 0, x, y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, imageData);
+            glGenerateTextureMipmap(tex.glID);
 
-        tex.handle = glGetTextureHandleARB(tex.glID);
+            stbi_image_free(imageData);
 
-        // yes i know im on the secondary thread right now,
-        // this makes it so that it takes care of all the textures currently enqueued to load before updating the buffer
-        secondaryQueue->enqueue([]() {
-            updateBuffer();
+            textures[id].handle = glGetTextureHandleARB(textures[id].glID);
+
+            // yes i know im on the primary thread right now,
+            // this makes it so that it takes care of all the textures currently enqueued to load before updating the buffer
+            primaryQueue->enqueue([]() {
+                updateBuffer();
+            });
         });
-
         return id;
     }
 
@@ -129,21 +132,28 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
 
     void activateTexture(std::uint32_t id) {
         ROGUELIB_STACKTRACE
-        if(id == -1){
+        if (id >= (2 << 30)) {
             return;
         }
         if (textures[id].uses++ == 0) {
-            glMakeTextureHandleResidentARB(textures[id].handle);
+            primaryQueue->enqueue([=]() {
+                glMakeTextureHandleResidentARB(textures[id].handle);
+            });
         }
     }
 
     void inactivateTexture(std::uint32_t id) {
         ROGUELIB_STACKTRACE
-        if(id == -1){
+        if (id >= (2 << 30)) {
             return;
         }
         if (--textures[id].uses == 0) {
-            glMakeTextureHandleNonResidentARB(textures[id].handle);
+            primaryQueue->enqueue([=]() {
+                glMakeTextureHandleNonResidentARB(textures[id].handle);
+            });
+        }
+        if (textures[id].uses < 0) {
+            textures[id].uses = 0;
         }
     }
 
@@ -151,7 +161,7 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
     // this is actually just setting a uniform
     // well, two actually, as it updates the id limit too
     void bind(std::uint32_t program) {
-        if(program == 0){
+        if (program == 0) {
             glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint*>(&program));
         }
         // oh you bet im using a bindless TBO for the array of texture handles,
@@ -175,21 +185,25 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
 
             glNamedBufferStorage(newTBO, newTBOsize * sizeof(GLuint64), nullptr, GL_DYNAMIC_STORAGE_BIT);
 
-            glCopyNamedBufferSubData(oldTBO, newTBO, 0, 0, TBOsize * sizeof(GLuint64));
+            if (oldTBO != 0) {
+                glCopyNamedBufferSubData(oldTBO, newTBO, 0, 0, TBOsize * sizeof(GLuint64));
+            }
 
 
             GLuint oldTBOTexture = TBOTexture;
             GLuint newTBOTexture;
             glCreateTextures(GL_TEXTURE_BUFFER, 1, &newTBOTexture);
             glTextureBuffer(newTBOTexture, GL_RG32UI, newTBO);
-            GLuint64 newTBOTextureHandle = glGetTextureHandleARB(newTBOTexture);
-            glMakeTextureHandleResidentARB(newTBOTextureHandle);
+            primaryQueue->enqueue([=]() {
+                GLuint64 newTBOTextureHandle = glGetTextureHandleARB(newTBOTexture);
+                glMakeTextureHandleResidentARB(newTBOTextureHandle);
+                TBOTextureHandle = newTBOTextureHandle;
+            });
 
             // swap them out now, they are at this point equivalent, but one is bigger
             TBO = newTBO;
             TBOsize = newTBOsize;
             TBOTexture = newTBOTexture;
-            TBOTextureHandle = newTBOTextureHandle;
 
             primaryQueue->enqueue([=]() {
                 // oh yea, do need to update the texture buffer, but i need it to not be in flight client side when i do this
@@ -208,7 +222,7 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
             glNamedBufferSubData(TBO, oldcount * sizeof(GLuint64), (textures.size() - oldcount) * sizeof(GLuint64),
                                  textureHandles.data() + oldcount);
             std::uint32_t newGLSLidLimit = textureHandles.size();
-            primaryQueue->enqueue([=](){
+            primaryQueue->enqueue([=]() {
                 GLSLidLimit = newGLSLidLimit;
             });
         }

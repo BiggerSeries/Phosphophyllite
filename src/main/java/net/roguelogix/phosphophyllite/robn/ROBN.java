@@ -99,7 +99,7 @@ public class ROBN {
                 return Vector;
             }
             
-            if (java.util.Map.class.isAssignableFrom(tClass)) {
+            if (java.util.Map.class.isAssignableFrom(tClass) || ROBNObject.class.isAssignableFrom(tClass)) {
                 return Map;
             }
             

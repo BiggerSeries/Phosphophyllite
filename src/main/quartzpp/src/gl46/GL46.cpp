@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <common/OperationMode.hpp>
 #include <common/Queues.hpp>
+#include <common/Shader.hpp>
 
 #include "common/QuartzBlockRenderInfo.hpp"
 #include "WorldManager.hpp"
@@ -71,10 +72,30 @@ namespace Phosphophyllite::Quartz::GL46 {
     void draw(glm::dvec3 position, glm::dvec2 looking) {
         ROGUELIB_STACKTRACE
 
+        for (int i = 0; i < 2; ++i) {
+            bool done = false;
+            primaryQueue->enqueue([&]() { done = true; });
+            auto deque = primaryQueue->dequeue();
+            while (deque && !done) {
+                deque.dequeue().process();
+            }
+        }
+//        {
+//            bool done = false;
+//            secondaryQueue->enqueue([&]() { done = true; });
+//            auto deque = secondaryQueue->dequeue();
+//            while (deque && !done){
+//                deque.dequeue().process();
+//            }
+//        }
+
         playerPosition = position;
         playerOffset = -position;
 
         glGetFloatv(GL_PROJECTION_MATRIX, glm::value_ptr(projectionMatrix));
+        if (projectionMatrix == glm::identity<glm::mat4>()) {
+            projectionMatrix = glm::perspective(glm::radians(70.0f), 16.0f / 9.0f, 0.01f, 1000.0f);
+        }
         modelViewMatrix = glm::identity<glm::mat4>();
         modelViewMatrix *= glm::rotate(glm::identity<glm::mat4>(), (float) glm::radians(looking[1]),
                                        glm::vec3{1, 0, 0});
@@ -90,6 +111,7 @@ namespace Phosphophyllite::Quartz::GL46 {
     void setDrawInfo(std::vector<std::byte> buffer) {
         ROGUELIB_STACKTRACE
         auto infos = RogueLib::ROBN::fromROBN<std::vector<QuartzBlockRenderInfo>>(std::move(buffer));
+        World::setDrawInfo(infos);
     }
 
     void captureSecondaryThread() {
@@ -103,8 +125,13 @@ namespace Phosphophyllite::Quartz::GL46 {
         Logging::info("Secondary thread shutdown");
     }
 
+    // i really need a batched way to do this
     std::uint32_t loadTexture(std::string textureLocation) {
         return Textures::loadTexture(textureLocation);
+    }
+
+    void reloadShaders() {
+        Quartz::reloadAll();
     }
 }
 

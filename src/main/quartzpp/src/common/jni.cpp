@@ -1,38 +1,44 @@
 #include "jni.hpp"
 #include "jni.h"
-#include "JNI/net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI.h"
+#include "JNI/net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI.h"
 #include <gl46/GL46.hpp>
 
+#include <csignal>
 #include <cstring>
 #include <iostream>
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_setupGL
+JNIEXPORT void JNICALL Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_setupGL
         (JNIEnv* env, jclass, jlong getProcAddress) {
     Phosphophyllite::Quartz::GL46::GLSetup((void*) getProcAddress);
 }
 
-JNIEXPORT void JNICALL Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_shutdownGL(JNIEnv*, jclass) {
+JNIEXPORT void JNICALL Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_shutdownGL(JNIEnv*, jclass) {
     Phosphophyllite::Quartz::GL46::GLShutdown();
 }
 
 JNIEXPORT void JNICALL
-Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_drawGL(JNIEnv*, jclass, jdouble x, jdouble y, jdouble z,
-                                                                     jdouble yaw, jdouble pitch) {
+Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_drawGL(JNIEnv*, jclass, jdouble x, jdouble y, jdouble z,
+                                                                       jdouble yaw, jdouble pitch) {
     Phosphophyllite::Quartz::GL46::draw({x, y, z}, {yaw, pitch});
 }
 
 JNIEXPORT void JNICALL
-Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_updateBlockRenderInfo(JNIEnv* env, jclass,
-                                                                                    jobject directBuffer) {
+Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_updateBlockRenderInfo(JNIEnv* env, jclass,
+                                                                                      jobject directBuffer) {
     std::vector<std::byte> buffer{};
     buffer.resize(env->GetDirectBufferCapacity(directBuffer));
     std::memcpy(buffer.data(), env->GetDirectBufferAddress(directBuffer), buffer.size());
     Phosphophyllite::Quartz::GL46::setDrawInfo(buffer);
 }
-JNIEXPORT jint JNICALL Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_loadTexture
+JNIEXPORT jint JNICALL Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_loadTexture
         (JNIEnv* env, jclass, jstring string) {
+
+    if (string == nullptr) {
+        return -1;
+    }
+
     auto* characters = env->GetStringUTFChars(string, nullptr);
 
     auto id = Phosphophyllite::Quartz::GL46::loadTexture({characters});
@@ -42,25 +48,45 @@ JNIEXPORT jint JNICALL Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp
     return id;
 }
 
+void Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_reloadShaders(JNIEnv*, jclass) {
+    Phosphophyllite::Quartz::GL46::reloadShaders();
+}
+
 }
 
 namespace Phosphophyllite::Quartz::JNI {
-    JavaVM* vm;
-    thread_local JNIEnv* env;
+    JavaVM* vm = nullptr;
+    thread_local JNIEnv* env = nullptr;
     jclass JNIclass;
 
     jmethodID loadTextFileID;
     jmethodID loadBinaryFileID;
 
     void attachThread() {
-        vm->AttachCurrentThreadAsDaemon((void**) &env, nullptr);
+        if (vm) {
+            vm->AttachCurrentThreadAsDaemon((void**) &env, nullptr);
+        }
     }
 
     void detachThread() {
-        vm->DetachCurrentThread();
+        if (vm) {
+            vm->DetachCurrentThread();
+        }
     }
 
     std::string loadTextFile(std::string resourceLocation) {
+        if (!env) {
+            resourceLocation.replace(resourceLocation.find(':'), 1, "/");
+            resourceLocation = "./resources/assets/" + resourceLocation;
+            std::ifstream instream;
+            instream.open(resourceLocation);
+            if (!instream.is_open()) {
+                throw std::runtime_error("Unable to read file: " + resourceLocation);
+            }
+            std::stringstream stringstream;
+            stringstream << instream.rdbuf();
+            return stringstream.str();
+        }
         jstring jResourceLocation = env->NewStringUTF(resourceLocation.data());
         auto retObject = reinterpret_cast<jstring>(env->CallStaticObjectMethod(JNIclass, loadTextFileID,
                                                                                jResourceLocation));
@@ -78,7 +104,20 @@ namespace Phosphophyllite::Quartz::JNI {
     }
 
     std::vector<std::uint8_t> loadBinaryFile(std::string resourceLocation) {
-
+        if (!env) {
+            resourceLocation.replace(resourceLocation.find(':'), 1, "/");
+            resourceLocation = "./resources/assets/" + resourceLocation;
+            std::ifstream instream;
+            instream.open(resourceLocation, std::ios::binary | std::ios::in | std::ios::ate);
+            if (!instream.is_open()) {
+                throw std::runtime_error("Unable to read file: " + resourceLocation);
+            }
+            std::vector<std::uint8_t> vec;
+            vec.resize(instream.tellg());
+            instream.seekg(0);
+            instream.read(reinterpret_cast<char*>(vec.data()), vec.size());
+            return vec;
+        }
         jstring jResourceLocation = env->NewStringUTF(resourceLocation.data());
         auto retObject = reinterpret_cast<jstring>(env->CallStaticObjectMethod(JNIclass, loadBinaryFileID,
                                                                                jResourceLocation));
@@ -99,9 +138,9 @@ namespace Phosphophyllite::Quartz::JNI {
 }
 
 using namespace Phosphophyllite::Quartz;
-
+extern "C"
 JNIEXPORT void JNICALL
-Java_net_roguelogix_phosphophyllite_quartz_client_gl46cpp_JNI_captureSecondaryThread(JNIEnv* env, jclass) {
+Java_net_roguelogix_phosphophyllite_quartz_internal_gl46cpp_JNI_captureSecondaryThread(JNIEnv* env, jclass) {
     JNI::env = env;
     GL46::captureSecondaryThread();
 }
@@ -111,7 +150,7 @@ using namespace Phosphophyllite::Quartz::JNI;
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     JNI::vm = vm;
     vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_8);
-    JNIclass = env->FindClass("Lnet/roguelogix/phosphophyllite/quartz/client/jni/JNI;");
+    JNIclass = env->FindClass("Lnet/roguelogix/phosphophyllite/quartz/internal/jni/JNI;");
     loadTextFileID = env->GetStaticMethodID(JNIclass, "loadTextFile", "(Ljava/lang/String;)Ljava/lang/String;");
     loadBinaryFileID = env->GetStaticMethodID(JNIclass, "loadBinaryFile",
                                               "(Ljava/lang/String;)Lsun/nio/ch/DirectBuffer;");
