@@ -46,11 +46,16 @@ public class StateCache {
         
         while (!toProcess.isEmpty()) {
             Map<String, Object> processingMap = toProcess.removeFirst();
-            String requiredState = (String) processingMap.get("state");
+            Map<String, Object> requiredState = (Map<String, Object>) processingMap.get("state");
             if (requiredState != null) {
-                String requiredStateValue = (String) processingMap.get("value");
-                if (!state.values.get(requiredState).equals(requiredStateValue)) {
-                    continue;
+                for (String s : requiredState.keySet()) {
+                    Object stateObject = requiredState.get(s);
+                    if(stateObject instanceof String){
+                        String stateString = (String)stateObject;
+                        if(!state.values.getOrDefault(s, "").equals(stateString)){
+                            continue;
+                        }
+                    }
                 }
             }
     
