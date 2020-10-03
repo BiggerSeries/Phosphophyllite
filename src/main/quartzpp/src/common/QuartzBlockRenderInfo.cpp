@@ -268,52 +268,52 @@ namespace Phosphophyllite::Quartz {
         // 0, 1: 1 LH
         // 1, 1: 0 HH
 
-        packedData.lightmap[0][0] = std::uint32_t(lightmapBlocklightEastLYLZ << 8u) | (lightmapSkylightEastLYLZ);
-        packedData.lightmap[0][1] = std::uint32_t(lightmapBlocklightEastLYHZ << 8u) | (lightmapSkylightEastLYHZ);
-        packedData.lightmap[0][2] = std::uint32_t(lightmapBlocklightEastHYLZ << 8u) | (lightmapSkylightEastHYLZ);
-        packedData.lightmap[0][3] = std::uint32_t(lightmapBlocklightEastHYHZ << 8u) | (lightmapSkylightEastHYHZ);
+        packedData.lightmap[0][0] = std::uint32_t(lightmapBlocklightEastLYLZ << 8u) | (lightmapSkylightEastLYLZ) | (AOEastLYLZ << 6);
+        packedData.lightmap[0][1] = std::uint32_t(lightmapBlocklightEastLYHZ << 8u) | (lightmapSkylightEastLYHZ) | (AOEastLYHZ << 6);
+        packedData.lightmap[0][2] = std::uint32_t(lightmapBlocklightEastHYLZ << 8u) | (lightmapSkylightEastHYLZ) | (AOEastHYLZ << 6);
+        packedData.lightmap[0][3] = std::uint32_t(lightmapBlocklightEastHYHZ << 8u) | (lightmapSkylightEastHYHZ) | (AOEastHYHZ << 6);
 
         packedData.lightmap[0][0] <<= 16u;
         packedData.lightmap[0][1] <<= 16u;
         packedData.lightmap[0][2] <<= 16u;
         packedData.lightmap[0][3] <<= 16u;
 
-        packedData.lightmap[0][0] |= std::uint32_t(lightmapBlocklightWestLYHZ << 8u) | (lightmapSkylightWestLYHZ);
-        packedData.lightmap[0][1] |= std::uint32_t(lightmapBlocklightWestLYLZ << 8u) | (lightmapSkylightWestLYLZ);
-        packedData.lightmap[0][2] |= std::uint32_t(lightmapBlocklightWestHYHZ << 8u) | (lightmapSkylightWestHYHZ);
-        packedData.lightmap[0][3] |= std::uint32_t(lightmapBlocklightWestHYLZ << 8u) | (lightmapSkylightWestHYLZ);
+        packedData.lightmap[0][0] |= std::uint32_t(lightmapBlocklightWestLYHZ << 8u) | (lightmapSkylightWestLYHZ) | (AOWestLYHZ << 6);
+        packedData.lightmap[0][1] |= std::uint32_t(lightmapBlocklightWestLYLZ << 8u) | (lightmapSkylightWestLYLZ) | (AOWestLYLZ << 6);
+        packedData.lightmap[0][2] |= std::uint32_t(lightmapBlocklightWestHYHZ << 8u) | (lightmapSkylightWestHYHZ) | (AOWestHYHZ << 6);
+        packedData.lightmap[0][3] |= std::uint32_t(lightmapBlocklightWestHYLZ << 8u) | (lightmapSkylightWestHYLZ) | (AOWestHYLZ << 6);
 
 
-        packedData.lightmap[1][0] = std::uint32_t(lightmapBlocklightTopHXHZ << 8u) | (lightmapSkylightTopHXHZ);
-        packedData.lightmap[1][1] = std::uint32_t(lightmapBlocklightTopLXHZ << 8u) | (lightmapSkylightTopLXHZ);
-        packedData.lightmap[1][2] = std::uint32_t(lightmapBlocklightTopHXLZ << 8u) | (lightmapSkylightTopHXLZ);
-        packedData.lightmap[1][3] = std::uint32_t(lightmapBlocklightTopLXLZ << 8u) | (lightmapSkylightTopLXLZ);
+        packedData.lightmap[1][0] = std::uint32_t(lightmapBlocklightTopHXHZ << 8u) | (lightmapSkylightTopHXHZ) | (AOTopHXHZ << 6);
+        packedData.lightmap[1][1] = std::uint32_t(lightmapBlocklightTopLXHZ << 8u) | (lightmapSkylightTopLXHZ) | (AOTopLXHZ << 6);
+        packedData.lightmap[1][2] = std::uint32_t(lightmapBlocklightTopHXLZ << 8u) | (lightmapSkylightTopHXLZ) | (AOTopHXLZ << 6);
+        packedData.lightmap[1][3] = std::uint32_t(lightmapBlocklightTopLXLZ << 8u) | (lightmapSkylightTopLXLZ) | (AOTopLXLZ << 6);
 
         packedData.lightmap[1][0] <<= 16u;
         packedData.lightmap[1][1] <<= 16u;
         packedData.lightmap[1][2] <<= 16u;
         packedData.lightmap[1][3] <<= 16u;
 
-        packedData.lightmap[1][0] |= std::uint32_t(lightmapBlocklightBottomHXLZ << 8u) | (lightmapSkylightBottomHXLZ);
-        packedData.lightmap[1][1] |= std::uint32_t(lightmapBlocklightBottomLXLZ << 8u) | (lightmapSkylightBottomLXLZ);
-        packedData.lightmap[1][2] |= std::uint32_t(lightmapBlocklightBottomHXHZ << 8u) | (lightmapSkylightBottomHXHZ);
-        packedData.lightmap[1][3] |= std::uint32_t(lightmapBlocklightBottomLXHZ << 8u) | (lightmapSkylightBottomLXHZ);
+        packedData.lightmap[1][0] |= std::uint32_t(lightmapBlocklightBottomHXLZ << 8u) | (lightmapSkylightBottomHXLZ) | (AOBottomHXLZ << 6);
+        packedData.lightmap[1][1] |= std::uint32_t(lightmapBlocklightBottomLXLZ << 8u) | (lightmapSkylightBottomLXLZ) | (AOBottomLXLZ << 6);
+        packedData.lightmap[1][2] |= std::uint32_t(lightmapBlocklightBottomHXHZ << 8u) | (lightmapSkylightBottomHXHZ) | (AOBottomHXHZ << 6);
+        packedData.lightmap[1][3] |= std::uint32_t(lightmapBlocklightBottomLXHZ << 8u) | (lightmapSkylightBottomLXHZ) | (AOBottomLXHZ << 6);
 
 
-        packedData.lightmap[2][0] = std::uint32_t(lightmapBlocklightSouthHXLY << 8u) | (lightmapSkylightSouthHXLY);
-        packedData.lightmap[2][1] = std::uint32_t(lightmapBlocklightSouthLXLY << 8u) | (lightmapSkylightSouthLXLY);
-        packedData.lightmap[2][2] = std::uint32_t(lightmapBlocklightSouthHXHY << 8u) | (lightmapSkylightSouthHXHY);
-        packedData.lightmap[2][3] = std::uint32_t(lightmapBlocklightSouthLXHY << 8u) | (lightmapSkylightSouthLXHY);
+        packedData.lightmap[2][0] = std::uint32_t(lightmapBlocklightSouthHXLY << 8u) | (lightmapSkylightSouthHXLY) | (AOSouthHXLY << 6);
+        packedData.lightmap[2][1] = std::uint32_t(lightmapBlocklightSouthLXLY << 8u) | (lightmapSkylightSouthLXLY) | (AOSouthLXLY << 6);
+        packedData.lightmap[2][2] = std::uint32_t(lightmapBlocklightSouthHXHY << 8u) | (lightmapSkylightSouthHXHY) | (AOSouthHXHY << 6);
+        packedData.lightmap[2][3] = std::uint32_t(lightmapBlocklightSouthLXHY << 8u) | (lightmapSkylightSouthLXHY) | (AOSouthLXHY << 6);
 
         packedData.lightmap[2][0] <<= 16u;
         packedData.lightmap[2][1] <<= 16u;
         packedData.lightmap[2][2] <<= 16u;
         packedData.lightmap[2][3] <<= 16u;
 
-        packedData.lightmap[2][0] |= std::uint32_t(lightmapBlocklightNorthLXLY << 8u) | (lightmapSkylightNorthLXLY);
-        packedData.lightmap[2][1] |= std::uint32_t(lightmapBlocklightNorthHXLY << 8u) | (lightmapSkylightNorthHXLY);
-        packedData.lightmap[2][2] |= std::uint32_t(lightmapBlocklightNorthLXHY << 8u) | (lightmapSkylightNorthLXHY);
-        packedData.lightmap[2][3] |= std::uint32_t(lightmapBlocklightNorthHXHY << 8u) | (lightmapSkylightNorthHXHY);
+        packedData.lightmap[2][0] |= std::uint32_t(lightmapBlocklightNorthLXLY << 8u) | (lightmapSkylightNorthLXLY) | (AONorthLXLY << 6);
+        packedData.lightmap[2][1] |= std::uint32_t(lightmapBlocklightNorthHXLY << 8u) | (lightmapSkylightNorthHXLY) | (AONorthHXLY << 6);
+        packedData.lightmap[2][2] |= std::uint32_t(lightmapBlocklightNorthLXHY << 8u) | (lightmapSkylightNorthLXHY) | (AONorthLXHY << 6);
+        packedData.lightmap[2][3] |= std::uint32_t(lightmapBlocklightNorthHXHY << 8u) | (lightmapSkylightNorthHXHY) | (AONorthHXHY << 6);
 
         return packedData;
     }

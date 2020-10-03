@@ -150,6 +150,15 @@ public class LightingManager {
     
     // well, "average", brings it into alignment with what the renderer is expecting anyway
     private static byte averageLightLevels(byte lightA, byte lightB, byte lightC, byte lightD) {
+        if (lightB == 0) {
+            lightB = lightA;
+        }
+        if (lightC == 0) {
+            lightC = lightA;
+        }
+        if (lightD == 0) {
+            lightD = lightA;
+        }
         return (byte) (lightA + lightB + lightC + lightD);
     }
     

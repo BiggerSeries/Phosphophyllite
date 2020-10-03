@@ -237,57 +237,81 @@ public class BlockRenderInfo implements ROBNObject {
         
         map.put("lightmapBlocklightWestLYLZ", lightmapBlocklightWestLYLZ);
         map.put("lightmapSkylightWestLYLZ", lightmapSkylightWestLYLZ);
+        map.put("AOWestLYLZ", AOWestLYLZ);
         map.put("lightmapBlocklightWestHYLZ", lightmapBlocklightWestHYLZ);
         map.put("lightmapSkylightWestHYLZ", lightmapSkylightWestHYLZ);
+        map.put("AOWestHYLZ", AOWestHYLZ);
         map.put("lightmapBlocklightWestLYHZ", lightmapBlocklightWestLYHZ);
         map.put("lightmapSkylightWestLYHZ", lightmapSkylightWestLYHZ);
+        map.put("AOWestLYHZ", AOWestLYHZ);
         map.put("lightmapBlocklightWestHYHZ", lightmapBlocklightWestHYHZ);
         map.put("lightmapSkylightWestHYHZ", lightmapSkylightWestHYHZ);
+        map.put("AOWestHYHZ", AOWestHYHZ);
         
         map.put("lightmapBlocklightEastLYLZ", lightmapBlocklightEastLYLZ);
         map.put("lightmapSkylightEastLYLZ", lightmapSkylightEastLYLZ);
+        map.put("AOEastLYLZ", AOEastLYLZ);
         map.put("lightmapBlocklightEastHYLZ", lightmapBlocklightEastHYLZ);
         map.put("lightmapSkylightEastHYLZ", lightmapSkylightEastHYLZ);
+        map.put("AOEastHYLZ", AOEastHYLZ);
         map.put("lightmapBlocklightEastLYHZ", lightmapBlocklightEastLYHZ);
         map.put("lightmapSkylightEastLYHZ", lightmapSkylightEastLYHZ);
+        map.put("AOEastLYHZ", AOEastLYHZ);
         map.put("lightmapBlocklightEastHYHZ", lightmapBlocklightEastHYHZ);
         map.put("lightmapSkylightEastHYHZ", lightmapSkylightEastHYHZ);
+        map.put("AOEastHYHZ", AOEastHYHZ);
         
         map.put("lightmapBlocklightTopLXLZ", lightmapBlocklightTopLXLZ);
         map.put("lightmapSkylightTopLXLZ", lightmapSkylightTopLXLZ);
+        map.put("AOTopLXLZ", AOTopLXLZ);
         map.put("lightmapBlocklightTopHXLZ", lightmapBlocklightTopHXLZ);
         map.put("lightmapSkylightTopHXLZ", lightmapSkylightTopHXLZ);
+        map.put("AOTopHXLZ", AOTopHXLZ);
         map.put("lightmapBlocklightTopLXHZ", lightmapBlocklightTopLXHZ);
         map.put("lightmapSkylightTopLXHZ", lightmapSkylightTopLXHZ);
+        map.put("AOTopLXHZ", AOTopLXHZ);
         map.put("lightmapBlocklightTopHXHZ", lightmapBlocklightTopHXHZ);
         map.put("lightmapSkylightTopHXHZ", lightmapSkylightTopHXHZ);
+        map.put("AOTopHXHZ", AOTopHXHZ);
         
         map.put("lightmapBlocklightBottomLXLZ", lightmapBlocklightBottomLXLZ);
         map.put("lightmapSkylightBottomLXLZ", lightmapSkylightBottomLXLZ);
+        map.put("AOBottomLXLZ", AOBottomLXLZ);
         map.put("lightmapBlocklightBottomHXLZ", lightmapBlocklightBottomHXLZ);
         map.put("lightmapSkylightBottomHXLZ", lightmapSkylightBottomHXLZ);
+        map.put("AOBottomHXLZ", AOBottomHXLZ);
         map.put("lightmapBlocklightBottomLXHZ", lightmapBlocklightBottomLXHZ);
         map.put("lightmapSkylightBottomLXHZ", lightmapSkylightBottomLXHZ);
+        map.put("AOBottomLXHZ", AOBottomLXHZ);
         map.put("lightmapBlocklightBottomHXHZ", lightmapBlocklightBottomHXHZ);
         map.put("lightmapSkylightBottomHXHZ", lightmapSkylightBottomHXHZ);
+        map.put("AOBottomHXHZ", AOBottomHXHZ);
         
         map.put("lightmapBlocklightSouthLXLY", lightmapBlocklightSouthLXLY);
         map.put("lightmapSkylightSouthLXLY", lightmapSkylightSouthLXLY);
+        map.put("AOSouthLXLY", AOSouthLXLY);
         map.put("lightmapBlocklightSouthHXLY", lightmapBlocklightSouthHXLY);
         map.put("lightmapSkylightSouthHXLY", lightmapSkylightSouthHXLY);
+        map.put("AOSouthHXLY", AOSouthHXLY);
         map.put("lightmapBlocklightSouthLXHY", lightmapBlocklightSouthLXHY);
         map.put("lightmapSkylightSouthLXHY", lightmapSkylightSouthLXHY);
+        map.put("AOSouthLXHY", AOSouthLXHY);
         map.put("lightmapBlocklightSouthHXHY", lightmapBlocklightSouthHXHY);
         map.put("lightmapSkylightSouthHXHY", lightmapSkylightSouthHXHY);
+        map.put("AOSouthHXHY", AOSouthHXHY);
         
         map.put("lightmapBlocklightNorthLXLY", lightmapBlocklightNorthLXLY);
         map.put("lightmapSkylightNorthLXLY", lightmapSkylightNorthLXLY);
+        map.put("AONorthLXLY", AONorthLXLY);
         map.put("lightmapBlocklightNorthHXLY", lightmapBlocklightNorthHXLY);
         map.put("lightmapSkylightNorthHXLY", lightmapSkylightNorthHXLY);
+        map.put("AONorthHXLY", AONorthHXLY);
         map.put("lightmapBlocklightNorthLXHY", lightmapBlocklightNorthLXHY);
         map.put("lightmapSkylightNorthLXHY", lightmapSkylightNorthLXHY);
+        map.put("AONorthLXHY", AONorthLXHY);
         map.put("lightmapBlocklightNorthHXHY", lightmapBlocklightNorthHXHY);
         map.put("lightmapSkylightNorthHXHY", lightmapSkylightNorthHXHY);
+        map.put("AONorthHXHY", AONorthHXHY);
         
         
         return map;
