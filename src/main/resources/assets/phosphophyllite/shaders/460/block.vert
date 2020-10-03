@@ -96,11 +96,6 @@ void main(){
 
     uint faceBit = 1u << faceID;
 
-    //    uint hiddenFaces = uint(blockPositionPacked >> 24) & 0xFFu;
-    //    uint hideFace = int((hiddenFaces & faceBit) == 0);
-    //    gl_Position.z = (hideFace * 2) + ((1 - hideFace) * gl_Position.z);
-    //    gl_Position.w = (hideFace * 1) + ((1 - hideFace) * gl_Position.w);
-
     // diffuse
     float diffuse = 0;
     // west
@@ -127,4 +122,8 @@ void main(){
     uint textureID = textureIndexRotationPacked >> 2;
     textureID *= uint(textureID < idLimit);
     textureHandle = texelFetch(textureHandleBuff, int(textureID)).xy;
+
+    uint hideFace = uint(uint(textureIndexRotationPacked >> 2) > uint((1 << 30) - 1));
+    gl_Position.z = (hideFace * 2) + ((1 - hideFace) * gl_Position.z);
+    gl_Position.w = (hideFace * 1) + ((1 - hideFace) * gl_Position.w);
 }

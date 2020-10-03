@@ -28,6 +28,13 @@ public class LightingManager {
     public static class BlockFaceLightData {
         public static final BlockFaceLightData defaultData = new BlockFaceLightData();
         
+        public boolean hideWest = false;
+        public boolean hideEast = false;
+        public boolean hideBottom = false;
+        public boolean hideTop = false;
+        public boolean hideNorth = false;
+        public boolean hideSouth = false;
+        
         public byte lightmapBlocklightWestLYLZ = 0x3F;
         public byte lightmapSkylightWestLYLZ = 0x3F;
         public byte AOWestLYLZ = 0;
@@ -212,83 +219,95 @@ public class LightingManager {
                             sectionLightData[i - 1][j - 1][k - 1] = lightData;
                         }
                         
-                        lightData.lightmapBlocklightWestLYLZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i - 1][j][k - 1]);
-                        lightData.lightmapSkylightWestLYLZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i - 1][j][k - 1]);
-                        lightData.AOWestLYLZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i - 1][j][k - 1]);
-                        lightData.lightmapBlocklightWestHYLZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i - 1][j][k - 1]);
-                        lightData.lightmapSkylightWestHYLZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i - 1][j][k - 1]);
-                        lightData.AOWestHYLZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i - 1][j][k - 1]);
-                        lightData.lightmapBlocklightWestLYHZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i - 1][j][k + 1]);
-                        lightData.lightmapSkylightWestLYHZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i - 1][j][k + 1]);
-                        lightData.AOWestLYHZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i - 1][j][k + 1]);
-                        lightData.lightmapBlocklightWestHYHZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i - 1][j][k + 1]);
-                        lightData.lightmapSkylightWestHYHZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i - 1][j][k + 1]);
-                        lightData.AOWestHYHZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i - 1][j][k + 1]);
+                        if (!(lightData.hideWest = opqaueBlocks[i - 1][j][k])) {
+                            lightData.lightmapBlocklightWestLYLZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i - 1][j][k - 1]);
+                            lightData.lightmapSkylightWestLYLZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i - 1][j][k - 1]);
+                            lightData.AOWestLYLZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i - 1][j][k - 1]);
+                            lightData.lightmapBlocklightWestHYLZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i - 1][j][k - 1]);
+                            lightData.lightmapSkylightWestHYLZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i - 1][j][k - 1]);
+                            lightData.AOWestHYLZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i - 1][j][k - 1]);
+                            lightData.lightmapBlocklightWestLYHZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i - 1][j][k + 1]);
+                            lightData.lightmapSkylightWestLYHZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i - 1][j][k + 1]);
+                            lightData.AOWestLYHZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i - 1][j][k + 1]);
+                            lightData.lightmapBlocklightWestHYHZ = averageLightLevels(blockLightLevels[i - 1][j][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i - 1][j][k + 1]);
+                            lightData.lightmapSkylightWestHYHZ = averageLightLevels(skyLightLevels[i - 1][j][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i - 1][j][k + 1]);
+                            lightData.AOWestHYHZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i - 1][j][k + 1]);
+                        }
                         
-                        lightData.lightmapBlocklightEastLYLZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i + 1][j][k - 1]);
-                        lightData.lightmapSkylightEastLYLZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i + 1][j][k - 1]);
-                        lightData.AOEastLYLZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i + 1][j][k - 1]);
-                        lightData.lightmapBlocklightEastHYLZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i + 1][j][k - 1]);
-                        lightData.lightmapSkylightEastHYLZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i + 1][j][k - 1]);
-                        lightData.AOEastHYLZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i + 1][j][k - 1]);
-                        lightData.lightmapBlocklightEastLYHZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i + 1][j][k + 1]);
-                        lightData.lightmapSkylightEastLYHZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i + 1][j][k + 1]);
-                        lightData.AOEastLYHZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i + 1][j][k + 1]);
-                        lightData.lightmapBlocklightEastHYHZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i + 1][j][k + 1]);
-                        lightData.lightmapSkylightEastHYHZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i + 1][j][k + 1]);
-                        lightData.AOEastHYHZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i + 1][j][k + 1]);
-                        
-                        lightData.lightmapBlocklightBottomLXLZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
-                        lightData.lightmapSkylightBottomLXLZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
-                        lightData.AOBottomLXLZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
-                        lightData.lightmapBlocklightBottomHXLZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
-                        lightData.lightmapSkylightBottomHXLZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
-                        lightData.AOBottomHXLZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
-                        lightData.lightmapBlocklightBottomLXHZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
-                        lightData.lightmapSkylightBottomLXHZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
-                        lightData.AOBottomLXHZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
-                        lightData.lightmapBlocklightBottomHXHZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
-                        lightData.lightmapSkylightBottomHXHZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
-                        lightData.AOBottomHXHZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
-                        
-                        lightData.lightmapBlocklightTopLXLZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
-                        lightData.lightmapSkylightTopLXLZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
-                        lightData.AOTopLXLZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
-                        lightData.lightmapBlocklightTopHXLZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
-                        lightData.lightmapSkylightTopHXLZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
-                        lightData.AOTopHXLZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
-                        lightData.lightmapBlocklightTopLXHZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
-                        lightData.lightmapSkylightTopLXHZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
-                        lightData.AOTopLXHZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
-                        lightData.lightmapBlocklightTopHXHZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
-                        lightData.lightmapSkylightTopHXHZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
-                        lightData.AOTopHXHZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
-                        
-                        lightData.lightmapBlocklightNorthLXLY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i - 1][j][k - 1], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
-                        lightData.lightmapSkylightNorthLXLY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i - 1][j][k - 1], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
-                        lightData.AONorthLXLY = AOMode(opqaueBlocks[i - 1][j][k - 1], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
-                        lightData.lightmapBlocklightNorthHXLY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i + 1][j][k - 1], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
-                        lightData.lightmapSkylightNorthHXLY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i + 1][j][k - 1], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
-                        lightData.AONorthHXLY = AOMode(opqaueBlocks[i + 1][j][k - 1], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
-                        lightData.lightmapBlocklightNorthLXHY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i - 1][j][k - 1], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
-                        lightData.lightmapSkylightNorthLXHY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i - 1][j][k - 1], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
-                        lightData.AONorthLXHY = AOMode(opqaueBlocks[i - 1][j][k - 1], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
-                        lightData.lightmapBlocklightNorthHXHY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i + 1][j][k - 1], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
-                        lightData.lightmapSkylightNorthHXHY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i + 1][j][k - 1], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
-                        lightData.AONorthHXHY = AOMode(opqaueBlocks[i + 1][j][k - 1], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
-                        
-                        lightData.lightmapBlocklightSouthLXLY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i - 1][j][k + 1], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
-                        lightData.lightmapSkylightSouthLXLY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i - 1][j][k + 1], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
-                        lightData.AOSouthLXLY = AOMode(opqaueBlocks[i - 1][j][k + 1], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
-                        lightData.lightmapBlocklightSouthHXLY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i + 1][j][k + 1], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
-                        lightData.lightmapSkylightSouthHXLY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i + 1][j][k + 1], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
-                        lightData.AOSouthHXLY = AOMode(opqaueBlocks[i + 1][j][k + 1], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
-                        lightData.lightmapBlocklightSouthLXHY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i - 1][j][k + 1], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
-                        lightData.lightmapSkylightSouthLXHY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i - 1][j][k + 1], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
-                        lightData.AOSouthLXHY = AOMode(opqaueBlocks[i - 1][j][k + 1], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
-                        lightData.lightmapBlocklightSouthHXHY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i + 1][j][k + 1], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
-                        lightData.lightmapSkylightSouthHXHY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i + 1][j][k + 1], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
-                        lightData.AOSouthHXHY = AOMode(opqaueBlocks[i + 1][j][k + 1], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
+                        if(!(lightData.hideEast = opqaueBlocks[i + 1][j][k])) {
+                            lightData.lightmapBlocklightEastLYLZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i + 1][j][k - 1]);
+                            lightData.lightmapSkylightEastLYLZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i + 1][j][k - 1]);
+                            lightData.AOEastLYLZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i + 1][j][k - 1]);
+                            lightData.lightmapBlocklightEastHYLZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i + 1][j][k - 1]);
+                            lightData.lightmapSkylightEastHYLZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i + 1][j][k - 1]);
+                            lightData.AOEastHYLZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i + 1][j][k - 1]);
+                            lightData.lightmapBlocklightEastLYHZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i + 1][j][k + 1]);
+                            lightData.lightmapSkylightEastLYHZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i + 1][j][k + 1]);
+                            lightData.AOEastLYHZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i + 1][j][k + 1]);
+                            lightData.lightmapBlocklightEastHYHZ = averageLightLevels(blockLightLevels[i + 1][j][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i + 1][j][k + 1]);
+                            lightData.lightmapSkylightEastHYHZ = averageLightLevels(skyLightLevels[i + 1][j][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i + 1][j][k + 1]);
+                            lightData.AOEastHYHZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i + 1][j][k + 1]);
+                        }
+    
+                        if(!(lightData.hideBottom = opqaueBlocks[i][j - 1][k])) {
+                            lightData.lightmapBlocklightBottomLXLZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
+                            lightData.lightmapSkylightBottomLXLZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
+                            lightData.AOBottomLXLZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
+                            lightData.lightmapBlocklightBottomHXLZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
+                            lightData.lightmapSkylightBottomHXLZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
+                            lightData.AOBottomHXLZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
+                            lightData.lightmapBlocklightBottomLXHZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i - 1][j - 1][k], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
+                            lightData.lightmapSkylightBottomLXHZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i - 1][j - 1][k], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
+                            lightData.AOBottomLXHZ = AOMode(opqaueBlocks[i - 1][j - 1][k], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
+                            lightData.lightmapBlocklightBottomHXHZ = averageLightLevels(blockLightLevels[i][j - 1][k], blockLightLevels[i + 1][j - 1][k], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
+                            lightData.lightmapSkylightBottomHXHZ = averageLightLevels(skyLightLevels[i][j - 1][k], skyLightLevels[i + 1][j - 1][k], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
+                            lightData.AOBottomHXHZ = AOMode(opqaueBlocks[i + 1][j - 1][k], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
+                        }
+    
+                        if(!(lightData.hideTop = opqaueBlocks[i][j + 1][k])) {
+                            lightData.lightmapBlocklightTopLXLZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
+                            lightData.lightmapSkylightTopLXLZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
+                            lightData.AOTopLXLZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
+                            lightData.lightmapBlocklightTopHXLZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
+                            lightData.lightmapSkylightTopHXLZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
+                            lightData.AOTopHXLZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
+                            lightData.lightmapBlocklightTopLXHZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i - 1][j + 1][k], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
+                            lightData.lightmapSkylightTopLXHZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i - 1][j + 1][k], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
+                            lightData.AOTopLXHZ = AOMode(opqaueBlocks[i - 1][j + 1][k], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
+                            lightData.lightmapBlocklightTopHXHZ = averageLightLevels(blockLightLevels[i][j + 1][k], blockLightLevels[i + 1][j + 1][k], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
+                            lightData.lightmapSkylightTopHXHZ = averageLightLevels(skyLightLevels[i][j + 1][k], skyLightLevels[i + 1][j + 1][k], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
+                            lightData.AOTopHXHZ = AOMode(opqaueBlocks[i + 1][j + 1][k], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
+                        }
+    
+                        if(!(lightData.hideNorth = opqaueBlocks[i][j][k - 1])) {
+                            lightData.lightmapBlocklightNorthLXLY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i - 1][j][k - 1], blockLightLevels[i - 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
+                            lightData.lightmapSkylightNorthLXLY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i - 1][j][k - 1], skyLightLevels[i - 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
+                            lightData.AONorthLXLY = AOMode(opqaueBlocks[i - 1][j][k - 1], opqaueBlocks[i - 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
+                            lightData.lightmapBlocklightNorthHXLY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i + 1][j][k - 1], blockLightLevels[i + 1][j - 1][k - 1], blockLightLevels[i][j - 1][k - 1]);
+                            lightData.lightmapSkylightNorthHXLY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i + 1][j][k - 1], skyLightLevels[i + 1][j - 1][k - 1], skyLightLevels[i][j - 1][k - 1]);
+                            lightData.AONorthHXLY = AOMode(opqaueBlocks[i + 1][j][k - 1], opqaueBlocks[i + 1][j - 1][k - 1], opqaueBlocks[i][j - 1][k - 1]);
+                            lightData.lightmapBlocklightNorthLXHY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i - 1][j][k - 1], blockLightLevels[i - 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
+                            lightData.lightmapSkylightNorthLXHY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i - 1][j][k - 1], skyLightLevels[i - 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
+                            lightData.AONorthLXHY = AOMode(opqaueBlocks[i - 1][j][k - 1], opqaueBlocks[i - 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
+                            lightData.lightmapBlocklightNorthHXHY = averageLightLevels(blockLightLevels[i][j][k - 1], blockLightLevels[i + 1][j][k - 1], blockLightLevels[i + 1][j + 1][k - 1], blockLightLevels[i][j + 1][k - 1]);
+                            lightData.lightmapSkylightNorthHXHY = averageLightLevels(skyLightLevels[i][j][k - 1], skyLightLevels[i + 1][j][k - 1], skyLightLevels[i + 1][j + 1][k - 1], skyLightLevels[i][j + 1][k - 1]);
+                            lightData.AONorthHXHY = AOMode(opqaueBlocks[i + 1][j][k - 1], opqaueBlocks[i + 1][j + 1][k - 1], opqaueBlocks[i][j + 1][k - 1]);
+                        }
+    
+                        if(!(lightData.hideSouth = opqaueBlocks[i][j][k + 1])) {
+                            lightData.lightmapBlocklightSouthLXLY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i - 1][j][k + 1], blockLightLevels[i - 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
+                            lightData.lightmapSkylightSouthLXLY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i - 1][j][k + 1], skyLightLevels[i - 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
+                            lightData.AOSouthLXLY = AOMode(opqaueBlocks[i - 1][j][k + 1], opqaueBlocks[i - 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
+                            lightData.lightmapBlocklightSouthHXLY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i + 1][j][k + 1], blockLightLevels[i + 1][j - 1][k + 1], blockLightLevels[i][j - 1][k + 1]);
+                            lightData.lightmapSkylightSouthHXLY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i + 1][j][k + 1], skyLightLevels[i + 1][j - 1][k + 1], skyLightLevels[i][j - 1][k + 1]);
+                            lightData.AOSouthHXLY = AOMode(opqaueBlocks[i + 1][j][k + 1], opqaueBlocks[i + 1][j - 1][k + 1], opqaueBlocks[i][j - 1][k + 1]);
+                            lightData.lightmapBlocklightSouthLXHY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i - 1][j][k + 1], blockLightLevels[i - 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
+                            lightData.lightmapSkylightSouthLXHY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i - 1][j][k + 1], skyLightLevels[i - 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
+                            lightData.AOSouthLXHY = AOMode(opqaueBlocks[i - 1][j][k + 1], opqaueBlocks[i - 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
+                            lightData.lightmapBlocklightSouthHXHY = averageLightLevels(blockLightLevels[i][j][k + 1], blockLightLevels[i + 1][j][k + 1], blockLightLevels[i + 1][j + 1][k + 1], blockLightLevels[i][j + 1][k + 1]);
+                            lightData.lightmapSkylightSouthHXHY = averageLightLevels(skyLightLevels[i][j][k + 1], skyLightLevels[i + 1][j][k + 1], skyLightLevels[i + 1][j + 1][k + 1], skyLightLevels[i][j + 1][k + 1]);
+                            lightData.AOSouthHXHY = AOMode(opqaueBlocks[i + 1][j][k + 1], opqaueBlocks[i + 1][j + 1][k + 1], opqaueBlocks[i][j + 1][k + 1]);
+                        }
                         
                         currentPos.add(0, 0, 1);
                     }

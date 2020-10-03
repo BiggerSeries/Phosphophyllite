@@ -134,6 +134,28 @@ public class BlockRenderInfo implements ROBNObject {
             return;
         }
         
+        if (lightData.hideWest) {
+            textureIDWest = -1;
+        }
+        if (lightData.hideEast) {
+            textureIDEast = -1;
+        }
+        
+        if (lightData.hideBottom) {
+            textureIDBottom = -1;
+        }
+        if (lightData.hideTop) {
+            textureIDTop = -1;
+        }
+        
+        if (lightData.hideNorth) {
+            textureIDNorth = -1;
+        }
+        if (lightData.hideSouth) {
+            textureIDSouth = -1;
+        }
+        
+        
         lightmapBlocklightWestLYLZ = lightData.lightmapBlocklightWestLYLZ;
         lightmapSkylightWestLYLZ = lightData.lightmapSkylightWestLYLZ;
         AOWestLYLZ = lightData.AOWestLYLZ;
