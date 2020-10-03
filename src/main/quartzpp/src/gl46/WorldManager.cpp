@@ -428,6 +428,7 @@ namespace Phosphophyllite::Quartz::GL46::World {
 
         for (auto& chunkMapPair : chunks) {
             glm::ivec3 chunkPos = chunkMapPair.first;
+            chunkPos *= RENDERCHUNK_SIZE;
             auto chunk = chunkMapPair.second;
 
 
@@ -439,9 +440,9 @@ namespace Phosphophyllite::Quartz::GL46::World {
             auto chunkClipVectorMax = chunkClipVector;
 
             for (std::uint32_t i = 1; i < 8; i++) {
-                chunkClipVector = glm::vec4(playerOffset, 1);
-                chunkClipVector += glm::vec4(((i & 1u) * RENDERCHUNK_SIZE), ((i & 2u) * RENDERCHUNK_SIZE / 2),
-                                             ((i & 4u) * RENDERCHUNK_SIZE / 4), 0);
+                chunkClipVector = glm::vec4(glm::dvec3(chunkPos) + playerOffset, 1);
+                chunkClipVector += glm::vec4(((i & 1u) * RENDERCHUNK_SIZE), (((i & 2u) * RENDERCHUNK_SIZE) / 2),
+                                             (((i & 4u) * RENDERCHUNK_SIZE) / 4), 0);
 
                 chunkClipVector = modelViewProjectionMatrix * chunkClipVector;
                 chunkClipVector /= chunkClipVector.w;
@@ -455,9 +456,6 @@ namespace Phosphophyllite::Quartz::GL46::World {
                 chunkClipVectorMin.z <= 1 && chunkClipVectorMax.z >= -1) {
                 drawCommands.emplace_back(chunk->drawCommand);
                 chunkIDs.emplace_back(chunk->slot);
-            } else {
-                drawCommands.emplace_back(chunk->drawCommand);
-                chunkIDs.emplace_back(chunk->slot);
             }
         }
 
@@ -469,6 +467,8 @@ namespace Phosphophyllite::Quartz::GL46::World {
         // just a sanity check
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
+        // AMD, fix your drivers
+        //        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_BYTE, drawCommands.data(), drawCommands.size(), sizeof(DrawElementsIndirectCommand));
         for (int i = 0; i < drawCommands.size(); ++i) {
             DrawElementsIndirectCommand drawCommand = drawCommands[i];
             glUniform1i(128, i);
@@ -478,8 +478,6 @@ namespace Phosphophyllite::Quartz::GL46::World {
                                                           drawCommand.baseInstance);
         }
 
-//        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_BYTE, drawCommands.data(), drawCommands.size(), sizeof(DrawElementsIndirectCommand));
-//        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, nullptr);
 
         glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 3, nullptr);
         glBindVertexArray(0);
