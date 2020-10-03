@@ -9,8 +9,6 @@ import net.roguelogix.phosphophyllite.quartz.internal.BlockRenderInfo;
 import net.roguelogix.phosphophyllite.robn.ROBN;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL21;
 import sun.nio.ch.DirectBuffer;
 
 import java.io.IOException;
