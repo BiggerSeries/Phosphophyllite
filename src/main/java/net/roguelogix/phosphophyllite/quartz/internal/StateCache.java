@@ -6,10 +6,7 @@ import net.roguelogix.phosphophyllite.repack.tnjson.TnJson;
 import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StateCache {
     
@@ -41,28 +38,29 @@ public class StateCache {
         
         TextureInfo textureInfo = new TextureInfo();
         
-        LinkedList<Map<String, Object>> toProcess = new LinkedList<>();
-        toProcess.add(jsonMap);
+        Stack<Map<String, Object>> toProcess = new Stack<>();
+        toProcess.push(jsonMap);
         
         while (!toProcess.isEmpty()) {
-            Map<String, Object> processingMap = toProcess.removeFirst();
+            Map<String, Object> processingMap = toProcess.pop();
             Map<String, Object> requiredState = (Map<String, Object>) processingMap.get("state");
             if (requiredState != null) {
                 for (String s : requiredState.keySet()) {
                     Object stateObject = requiredState.get(s);
-                    if(stateObject instanceof String){
-                        String stateString = (String)stateObject;
-                        if(!state.values.getOrDefault(s, "").equals(stateString)){
+                    if (stateObject instanceof String) {
+                        String stateString = (String) stateObject;
+                        if (!state.values.getOrDefault(s, "").equals(stateString)) {
                             continue;
                         }
                     }
                 }
             }
-    
+            
             List<Object> subBranches = (List<Object>) processingMap.get("branches");
-            if(subBranches != null) {
-                for (Object subBranch : subBranches) {
-                    toProcess.add((Map<String, Object>) subBranch);
+            if (subBranches != null) {
+                // reverse order so it will process the first one, well, first, when it pops them off
+                for (int i = subBranches.size() - 1; i >= 0; i--) {
+                    toProcess.push((Map<String, Object>) subBranches.get(i));
                 }
             }
             
@@ -74,7 +72,7 @@ public class StateCache {
                             Map<String, Object> textureMap = (Map<String, Object>) o;
                             for (String textureLocation : textureMap.keySet()) {
                                 switch (textureLocation.toLowerCase()) {
-                                    case "all":{
+                                    case "all": {
                                         String textureName = (String) textureMap.get(textureLocation);
                                         textureInfo.textureNameWest = textureName;
                                         textureInfo.textureNameEast = textureName;
@@ -84,27 +82,27 @@ public class StateCache {
                                         textureInfo.textureNameNorth = textureName;
                                         break;
                                     }
-                                    case "west":{
+                                    case "west": {
                                         textureInfo.textureNameWest = (String) textureMap.get(textureLocation);
                                         break;
                                     }
-                                    case "east":{
+                                    case "east": {
                                         textureInfo.textureNameEast = (String) textureMap.get(textureLocation);
                                         break;
                                     }
-                                    case "top":{
+                                    case "top": {
                                         textureInfo.textureNameTop = (String) textureMap.get(textureLocation);
                                         break;
                                     }
-                                    case "bottom":{
+                                    case "bottom": {
                                         textureInfo.textureNameBottom = (String) textureMap.get(textureLocation);
                                         break;
                                     }
-                                    case "south":{
+                                    case "south": {
                                         textureInfo.textureNameSouth = (String) textureMap.get(textureLocation);
                                         break;
                                     }
-                                    case "north":{
+                                    case "north": {
                                         textureInfo.textureNameNorth = (String) textureMap.get(textureLocation);
                                         break;
                                     }
@@ -113,12 +111,12 @@ public class StateCache {
                         }
                         break;
                     }
-                    case "rotations":{
+                    case "rotations": {
                         if (o instanceof Map) {
                             Map<String, Object> textureMap = (Map<String, Object>) o;
                             for (String rotationLocation : textureMap.keySet()) {
                                 switch (rotationLocation.toLowerCase()) {
-                                    case "all":{
+                                    case "all": {
                                         byte textureRotation = (byte) textureMap.get(rotationLocation);
                                         textureInfo.textureRotationWest = textureRotation;
                                         textureInfo.textureRotationEast = textureRotation;
@@ -128,27 +126,27 @@ public class StateCache {
                                         textureInfo.textureRotationNorth = textureRotation;
                                         break;
                                     }
-                                    case "west":{
+                                    case "west": {
                                         textureInfo.textureRotationWest = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
-                                    case "east":{
+                                    case "east": {
                                         textureInfo.textureRotationEast = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
-                                    case "top":{
+                                    case "top": {
                                         textureInfo.textureRotationTop = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
-                                    case "bottom":{
+                                    case "bottom": {
                                         textureInfo.textureRotationBottom = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
-                                    case "south":{
+                                    case "south": {
                                         textureInfo.textureRotationSouth = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
-                                    case "north":{
+                                    case "north": {
                                         textureInfo.textureRotationNorth = (byte) textureMap.get(rotationLocation);
                                         break;
                                     }
