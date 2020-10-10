@@ -79,7 +79,6 @@ public class RendererGL46CPP extends Renderer {
     
     @Override
     public void draw() {
-        GLFW.glfwSetInputMode(Minecraft.getInstance().getMainWindow().getHandle(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         if (!secondaryThread.isAlive()) {
             throw new RuntimeException("Secondary thread died");
         }
