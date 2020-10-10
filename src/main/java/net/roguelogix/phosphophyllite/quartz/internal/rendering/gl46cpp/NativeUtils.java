@@ -28,7 +28,7 @@
  *
  *
  */
-package net.roguelogix.phosphophyllite.quartz.internal.gl46cpp;
+package net.roguelogix.phosphophyllite.quartz.internal.rendering.gl46cpp;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
@@ -118,13 +118,6 @@ public class NativeUtils {
         try {
             System.load(temp.getAbsolutePath());
         } finally {
-//            if (isPosixCompliant()) {
-//                // Assume POSIX compliant file system, can be deleted after loading
-//                temp.delete();
-//            } else {
-//                // Assume non-POSIX, and don't delete until last file descriptor closed
-//                temp.deleteOnExit();
-//            }
             temp.deleteOnExit();
         }
     }

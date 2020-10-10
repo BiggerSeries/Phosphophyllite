@@ -51,14 +51,14 @@ int main() {
     thread.start();
 
 
-    auto id = loadTexture("phosphophyllite:textures/block/phosphophyllite_ore.png");
+//    auto id = loadTextures({"phosphophyllite:textures/block/phosphophyllite_ore.png"})[0];
     QuartzBlockRenderInfo renderInfo;
-    renderInfo.textureIDWest = id;
-    renderInfo.textureIDEast = id;
-    renderInfo.textureIDBottom = id;
-    renderInfo.textureIDTop = id;
-    renderInfo.textureIDSouth = id;
-    renderInfo.textureIDNorth = id;
+//    renderInfo.textureIDWest = id;
+//    renderInfo.textureIDEast = id;
+//    renderInfo.textureIDBottom = id;
+//    renderInfo.textureIDTop = id;
+//    renderInfo.textureIDSouth = id;
+//    renderInfo.textureIDNorth = id;
     World::setDrawInfo({renderInfo});
     renderInfo.x = 4;
     World::setDrawInfo({renderInfo});

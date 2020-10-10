@@ -6,55 +6,44 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.ResourceLocation;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class QuartzTile extends TileEntity {
+public class QuartzTile extends TileEntity implements IQuartzTile {
     
-    private QuartzState quartzState =
-            null;
+    private final QuartzState quartzState;
     
-    public QuartzTile(TileEntityType<?> tileEntityTypeIn) {
+    public QuartzTile(@Nonnull TileEntityType<?> tileEntityTypeIn) {
+        this(tileEntityTypeIn, tileEntityTypeIn.getRegistryName().getNamespace() + ":quartzstates/" + tileEntityTypeIn.getRegistryName().getPath());
+    }
+    public QuartzTile(@Nonnull TileEntityType<?> tileEntityTypeIn, String stateLocation) {
         super(tileEntityTypeIn);
-        ResourceLocation registryName = this.getType().getRegistryName();
-        assert registryName != null;
-        quartzState = new QuartzState(registryName.getNamespace() + ":quartzstates/" + registryName.getPath());
+        quartzState = new QuartzState(stateLocation);
         buildDefaultQuartzState(quartzState);
     }
     
     @Override
     public void onLoad() {
+        Quartz.registerTileEntity(this);
         pushQuartzStateUpdate();
     }
     
     @Override
     public void remove() {
-        assert world != null;
-        if (world.isRemote) {
-            Quartz.setQuartzState(world, new Vector3i(pos.getX(), pos.getY(), pos.getZ()), null);
-        }
+        Quartz.unregisterTileEntity(this);
     }
     
     @Override
     public void onChunkUnloaded() {
-        assert world != null;
-        if(world.isRemote){
-            Quartz.setQuartzState(world, new Vector3i(pos.getX(), pos.getY(), pos.getZ()), null);
-        }
+        Quartz.unregisterTileEntity(this);
     }
     
     protected void buildDefaultQuartzState(QuartzState state) {
     }
     
     private void pushQuartzStateUpdate() {
-        if (world != null) {
-            if (world.isRemote) {
-                Quartz.setQuartzState(world, new Vector3i(pos.getX(), pos.getY(), pos.getZ()), quartzState);
-            }
-        }
+        Quartz.requestBlockUpdate(this);
     }
     
     @Override
@@ -69,7 +58,7 @@ public class QuartzTile extends TileEntity {
     }
     
     @Override
-    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
+    public final void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
         CompoundNBT nbt = pkt.getNbtCompound();
         if (nbt.contains("userNBT")) {
             onUpdatePacketCompound(nbt.getCompound("userNBT"));
@@ -82,7 +71,7 @@ public class QuartzTile extends TileEntity {
     
     public final void setQuartzState(QuartzState state) {
         assert world != null;
-        quartzState = state.copy();
+        quartzState.copyFrom(state);
         world.notifyBlockUpdate(pos, getBlockState(), getBlockState(), 6);
     }
     
@@ -111,5 +100,10 @@ public class QuartzTile extends TileEntity {
     public CompoundNBT write(CompoundNBT nbt) {
         nbt.put("quartzState", quartzState.serializeNBT());
         return super.write(nbt);
+    }
+    
+    @Override
+    public QuartzState getState() {
+        return quartzState;
     }
 }

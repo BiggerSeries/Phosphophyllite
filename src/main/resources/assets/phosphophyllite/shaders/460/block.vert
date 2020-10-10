@@ -123,7 +123,7 @@ void main(){
     textureID *= uint(textureID < idLimit);
     textureHandle = texelFetch(textureHandleBuff, int(textureID)).xy;
 
-    uint hideFace = uint(uint(textureIndexRotationPacked >> 2) > uint((1 << 30) - 1));
+    uint hideFace = uint(uint(textureIndexRotationPacked >> 2) == uint((1 << 30) - 1));
     gl_Position.z = (hideFace * 2) + ((1 - hideFace) * gl_Position.z);
     gl_Position.w = (hideFace * 1) + ((1 - hideFace) * gl_Position.w);
 }

@@ -1,7 +1,10 @@
 package net.roguelogix.phosphophyllite.quartz.internal;
 
-import net.roguelogix.phosphophyllite.quartz.internal.LightingManager;
+import net.roguelogix.phosphophyllite.quartz.internal.management.LightingChunk;
+import net.roguelogix.phosphophyllite.quartz.internal.management.StateCache;
+import net.roguelogix.phosphophyllite.quartz.internal.management.TextureManagement;
 import net.roguelogix.phosphophyllite.robn.ROBNObject;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -113,12 +116,12 @@ public class BlockRenderInfo implements ROBNObject {
     public byte AONorthHXHY = 0;
     
     public void textureData(StateCache.TextureInfo textureInfo) {
-        textureIDWest = TextureIDMapping.idForTexture(textureInfo.textureNameWest);
-        textureIDEast = TextureIDMapping.idForTexture(textureInfo.textureNameEast);
-        textureIDBottom = TextureIDMapping.idForTexture(textureInfo.textureNameBottom);
-        textureIDTop = TextureIDMapping.idForTexture(textureInfo.textureNameTop);
-        textureIDNorth = TextureIDMapping.idForTexture(textureInfo.textureNameNorth);
-        textureIDSouth = TextureIDMapping.idForTexture(textureInfo.textureNameSouth);
+        textureIDWest = TextureManagement.getTextureID(textureInfo.textureNameWest);
+        textureIDEast = TextureManagement.getTextureID(textureInfo.textureNameEast);
+        textureIDBottom = TextureManagement.getTextureID(textureInfo.textureNameBottom);
+        textureIDTop = TextureManagement.getTextureID(textureInfo.textureNameTop);
+        textureIDNorth = TextureManagement.getTextureID(textureInfo.textureNameNorth);
+        textureIDSouth = TextureManagement.getTextureID(textureInfo.textureNameSouth);
         
         textureRotationWest = textureInfo.textureRotationWest;
         textureRotationEast = textureInfo.textureRotationEast;
@@ -128,7 +131,7 @@ public class BlockRenderInfo implements ROBNObject {
         textureRotationSouth = textureInfo.textureRotationSouth;
     }
     
-    public void lightingData(LightingManager.BlockFaceLightData lightData) {
+    public void lightingData(LightingChunk.BlockFaceLightData lightData) {
         if (lightData == null) {
             // this can happen at world load before the light manager has caught up
             return;
@@ -341,6 +344,6 @@ public class BlockRenderInfo implements ROBNObject {
     
     @Override
     public void fromROBNMap(Map<String, Object> map) {
-    
+        throw new NotImplementedException("BlockRenderInfo.readROBNMap shouldn't be used, see why it is");
     }
 }

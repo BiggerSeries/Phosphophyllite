@@ -1,0 +1,16 @@
+
+{
+    "required": true,
+    "package": "net.roguelogix.phosphophyllite.quartz.internal.mixin",
+    "compatibilityLevel": "JAVA_8",
+    "refmap": "phosphophyllite.refmap.json",
+    "mixins": [
+    ],
+    "client": [
+        "RenderChunkMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "minVersion": "0.8"
+}

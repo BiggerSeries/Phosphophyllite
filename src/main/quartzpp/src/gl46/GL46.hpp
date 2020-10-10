@@ -24,7 +24,7 @@ namespace Phosphophyllite::Quartz::GL46 {
 
     void captureSecondaryThread();
 
-    std::uint32_t loadTexture(std::string textureLocation);
+    std::vector<std::byte> loadTextures(std::vector<std::byte> buffer);
 
     void reloadShaders();
 }

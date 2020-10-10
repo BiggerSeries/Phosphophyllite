@@ -80,5 +80,11 @@ public class QuartzState implements INBTSerializable<CompoundNBT> {
             });
         }
     }
+    
+    public void copyFrom(QuartzState state) {
+        this.blockName = state.blockName;
+        this.values.clear();
+        this.values.putAll(state.values);
+    }
 }
 

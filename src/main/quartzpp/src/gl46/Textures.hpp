@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace Phosphophyllite::Quartz::GL46::Textures {
 
@@ -8,7 +9,9 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
 
     void shutdown();
 
-    std::uint32_t loadTexture(const std::string& location);
+//    std::uint32_t _loadTexture(const std::string& location);
+
+    std::vector<std::uint32_t> loadTextures(std::vector<std::string> locations);
 
     void activateTexture(std::uint32_t id);
 

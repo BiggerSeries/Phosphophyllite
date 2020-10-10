@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal;
+package net.roguelogix.phosphophyllite.quartz.internal.management;
 
 import net.minecraft.util.ResourceLocation;
 import net.roguelogix.phosphophyllite.quartz.api.QuartzState;
@@ -166,17 +166,50 @@ public class StateCache {
         return textureInfo;
     }
     
-    private static final HashMap<String, Map<String, Object>> jsonCache = new HashMap<>();
-    
-    private static Map<String, Object> loadJSON(String mapName) {
-        return jsonCache.computeIfAbsent(mapName, (k) -> {
-            String str = Util.readTextResourceLocation(new ResourceLocation(mapName + ".json5"));
-            return TnJson.parse(str);
-        });
+    public static Set<String> allTexturesUsedByStateJSON(String jsonName) {
+        Set<String> textureSet = new HashSet<>();
+        
+        Stack<Map<String, Object>> toProcess = new Stack<>();
+        toProcess.push(loadJSON(jsonName));
+        
+        while (!toProcess.empty()) {
+            Map<String, Object> map = toProcess.pop();
+            if(map.containsKey("branches")){
+                Object branches = map.get("branches");
+                if(branches instanceof List){
+                    List<?> branchesList = (List<?>) branches;
+                    for (Object o : branchesList) {
+                        if(o instanceof Map){
+                            Map<String, Object> branchMap = (Map<String, Object>) o;
+                            toProcess.push(branchMap);
+;                        }
+                    }
+                }
+            }
+            
+            if(map.containsKey("textures")){
+                Object textures = map.get("textures");
+                if(textures instanceof Map){
+                    Map<String, Object> texturesMap = (Map<String, Object>) textures;
+                    for (String s : texturesMap.keySet()) {
+                        Object textureLocation = texturesMap.get(s);
+                        if(textureLocation instanceof String){
+                            textureSet.add((String) textureLocation);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return textureSet;
     }
     
-    public void clear() {
-        infoCache.clear();
-        jsonCache.clear();
+    private static final HashMap<String, Map<String, Object>> jsonCache = new HashMap<>();
+    
+    private static Map<String, Object> loadJSON(String jsonName) {
+        return jsonCache.computeIfAbsent(jsonName, (k) ->{
+            String str = Util.readTextResourceLocation(new ResourceLocation(jsonName + ".json5"));
+            return TnJson.parse(str);
+        });
     }
 }

@@ -47,52 +47,118 @@ namespace Phosphophyllite::Quartz::GL46::Textures {
     }
 
 
-    std::uint32_t loadTexture(const std::string& location) {
+    std::uint32_t _loadTexture(const std::string& location) {
         ROGUELIB_STACKTRACE
         textures.emplace_back();
         std::uint32_t id = textures.size() - 1;
 
-        primaryQueue->enqueue([=]() {
-            ROGUELIB_LAMBDATRACE
 
-            // 30 bit limit as i shove rotation in the same 32bit VBO value,
-            // still a 1 billion texture limit, i dont see how this will be hit
-            if (id >= (1u << 30u)) {
-                // how, just fucking how?
-                throw Exceptions::FatalInvalidState(ROGUELIB_EXCEPTION_INFO, "Texture id limit exceeded");
-            }
+        // 30 bit limit as i shove rotation in the same 32bit VBO value,
+        // still a 1 billion texture limit, i dont see how this will be hit
+        if (id >= (1u << 30u)) {
+            // how, just fucking how?
+            throw Exceptions::FatalInvalidState(ROGUELIB_EXCEPTION_INFO, "Texture id limit exceeded");
+        }
 
-            Texture& tex = textures[id];
-            tex.location = location;
-            glCreateTextures(GL_TEXTURE_2D, 1, &tex.glID);
+        Texture& tex = textures[id];
+        tex.location = location;
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex.glID);
 
-            glTextureParameteri(tex.glID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-            glTextureParameteri(tex.glID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(tex.glID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+        glTextureParameteri(tex.glID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            std::vector<std::uint8_t> data = JNI::loadBinaryFile(tex.location);
+        std::vector<std::uint8_t> data = JNI::loadBinaryFile(tex.location);
+        int x;
+        int y;
+        std::uint8_t* imageData =
+                stbi_load_from_memory(data.data(), data.size(), &x, &y, nullptr, STBI_rgb_alpha);
+
+        int maxSize = std::max(x, y);
+        int levels = (int) std::floor(std::log2(maxSize)) + 1;
+
+        glTextureStorage2D(tex.glID, levels, GL_RGBA8, x, y);
+        glTextureSubImage2D(tex.glID, 0, 0, 0, x, y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, imageData);
+        glGenerateTextureMipmap(tex.glID);
+
+        stbi_image_free(imageData);
+
+        textures[id].handle = glGetTextureHandleARB(textures[id].glID);
+
+        // yes i know im on the primary thread right now,
+        // this makes it so that it takes care of all the textures currently enqueued to load before updating the buffer
+        primaryQueue->enqueue([]() {
+            updateBuffer();
+        });
+
+        return id;
+    }
+
+    std::vector<std::uint32_t> loadTextures(std::vector<std::string> locations) {
+        struct LoadedImage {
+            int id;
             int x;
             int y;
-            std::uint8_t* imageData =
-                    stbi_load_from_memory(data.data(), data.size(), &x, &y, nullptr, STBI_rgb_alpha);
+            std::uint8_t* imageData;
+            std::string location;
+        };
 
-            int maxSize = std::max(x, y);
+        std::vector<std::uint32_t> ids;
+        ids.resize(locations.size());
+
+        std::vector<LoadedImage> loadedImages;
+
+        for (int i = 0; i < locations.size(); ++i) {
+            std::string location = locations[i];
+            ids[i] = (textures.empty()) * -1;
+
+            std::vector<std::uint8_t> data = JNI::loadBinaryFile(location);
+
+            if (data.empty()) {
+                continue;
+            }
+
+            LoadedImage image = {};
+            image.location = std::move(location);
+
+            image.imageData = stbi_load_from_memory(data.data(), data.size(), &image.x, &image.y, nullptr, 4);
+
+            if (image.imageData == nullptr) {
+                continue;
+            }
+
+            ids[i] = textures.size();
+            image.id = ids[i];
+            textures.emplace_back();
+
+            loadedImages.push_back(image);
+        }
+
+        std::vector<GLuint> glIDs;
+        glIDs.resize(loadedImages.size());
+        glCreateTextures(GL_TEXTURE_2D, glIDs.size(), glIDs.data());
+        for (int i = 0; i < loadedImages.size(); ++i) {
+            const auto& image = loadedImages[i];
+            Texture& texture = textures[image.id];
+
+            texture.location = image.location;
+            texture.glID = glIDs[i];
+
+            int maxSize = std::max(image.x, image.y);
             int levels = (int) std::floor(std::log2(maxSize)) + 1;
 
-            glTextureStorage2D(tex.glID, levels, GL_RGBA8, x, y);
-            glTextureSubImage2D(tex.glID, 0, 0, 0, x, y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, imageData);
-            glGenerateTextureMipmap(tex.glID);
+            glTextureParameteri(texture.glID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+            glTextureParameteri(texture.glID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTextureStorage2D(texture.glID, levels, GL_RGBA8, image.x, image.y);
+            glTextureSubImage2D(texture.glID, 0, 0, 0, image.x, image.y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, image.imageData);
+            glGenerateTextureMipmap(texture.glID);
+            textures[image.id].handle = glGetTextureHandleARB(textures[image.id].glID);
 
-            stbi_image_free(imageData);
+            stbi_image_free(image.imageData);
+        }
 
-            textures[id].handle = glGetTextureHandleARB(textures[id].glID);
+        updateBuffer();
 
-            // yes i know im on the primary thread right now,
-            // this makes it so that it takes care of all the textures currently enqueued to load before updating the buffer
-            primaryQueue->enqueue([]() {
-                updateBuffer();
-            });
-        });
-        return id;
+        return ids;
     }
 
     void reloadTextures() {

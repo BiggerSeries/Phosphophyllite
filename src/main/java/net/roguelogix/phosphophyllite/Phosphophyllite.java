@@ -19,7 +19,7 @@ import java.util.Comparator;
 public class Phosphophyllite {
     public static final String modid = "phosphophyllite";
     
-    public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Main");
+    public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite-Main");
     public static final ArrayList<MultiblockController> controllersToTick = new ArrayList<>();
     public static final ArrayList<MultiblockTile> tilesToAttach = new ArrayList<>();
     public static long lastTime = 0;

@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.gl46cpp;
+package net.roguelogix.phosphophyllite.quartz.internal.rendering.gl46cpp;
 
 import sun.nio.ch.DirectBuffer;
 
@@ -16,7 +16,7 @@ public class JNI {
     
     public static native void updateBlockRenderInfo(DirectBuffer dataBuff);
     
-    public static native int loadTexture(String textureLocation);
+    public static native void loadTextures(DirectBuffer input, DirectBuffer output);
     
     public static native void reloadShaders();
 }

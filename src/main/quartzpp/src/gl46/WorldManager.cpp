@@ -290,8 +290,6 @@ namespace Phosphophyllite::Quartz::GL46::World {
                             glCopyNamedBufferSubData(blockPositionsBuffer, blockPositionsBuffer,
                                                      oldBlockSlotBytePos,
                                                      newBlockSlotBytePos, sizeof(QuartzBlockRenderInfo::Packed));
-
-                            return;
                         } else {
                             // last block, just yeet it
                             chunk->drawCommand.instanceCount--;
@@ -305,7 +303,7 @@ namespace Phosphophyllite::Quartz::GL46::World {
                         availableBufferSlots.emplace_back(chunk->slot);
                     }
                 }
-                return;
+                continue;
             }
 
             // update or add the block

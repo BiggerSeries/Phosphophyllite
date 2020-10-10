@@ -125,9 +125,10 @@ namespace Phosphophyllite::Quartz::GL46 {
         Logging::info("Secondary thread shutdown");
     }
 
-    // i really need a batched way to do this
-    std::uint32_t loadTexture(std::string textureLocation) {
-        return Textures::loadTexture(textureLocation);
+    std::vector<std::byte> loadTextures(std::vector<std::byte> buffer) {
+        auto textureLocations = ROBN::fromROBN<std::vector<std::string>>(std::move(buffer));
+        auto textureIDs = Textures::loadTextures(textureLocations);
+        return ROBN::toROBN(textureIDs);
     }
 
     void reloadShaders() {

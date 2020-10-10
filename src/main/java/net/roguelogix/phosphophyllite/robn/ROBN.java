@@ -95,12 +95,12 @@ public class ROBN {
                 return Double;
             }
             
-            if (Collection.class.isAssignableFrom(tClass)) {
-                return Vector;
-            }
-            
             if (java.util.Map.class.isAssignableFrom(tClass) || ROBNObject.class.isAssignableFrom(tClass)) {
                 return Map;
+            }
+    
+            if (Collection.class.isAssignableFrom(tClass)) {
+                return Vector;
             }
             
             return Undefined;
