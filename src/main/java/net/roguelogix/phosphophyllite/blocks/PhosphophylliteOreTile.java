@@ -16,6 +16,14 @@ public class PhosphophylliteOreTile extends QuartzTile implements ITickableTileE
     }
     
     @Override
+    public void onLoad() {
+        if(this.getPos().getX() % 2 == 0){
+            this.getQuartzState().with("statetest", "true");
+        }
+        super.onLoad();
+    }
+    
+    @Override
     public void tick() {
 
     }

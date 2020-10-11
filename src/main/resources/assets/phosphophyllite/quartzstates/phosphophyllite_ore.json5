@@ -1,5 +1,20 @@
 {
-    "textures": {
-        "all": "phosphophyllite:textures/block/phosphophyllite_ore.png"
-    }
+    textures: {
+        all: "phosphophyllite:textures/block/phosphophyllite_ore.png"
+    },
+    branches: [
+        {
+            state: {
+                "==": [
+                    {
+                        var: "statetest"
+                    },
+                    true
+                ]
+            },
+            rotations: {
+                top: 2
+            }
+        }
+    ]
 }

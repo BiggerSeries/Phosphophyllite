@@ -1,7 +1,10 @@
 package net.roguelogix.phosphophyllite.quartz.internal.management;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import net.minecraft.util.ResourceLocation;
 import net.roguelogix.phosphophyllite.quartz.api.QuartzState;
+import net.roguelogix.phosphophyllite.repack.jsonlogic.JsonLogic;
+import net.roguelogix.phosphophyllite.repack.jsonlogic.JsonLogicException;
 import net.roguelogix.phosphophyllite.repack.tnjson.TnJson;
 import net.roguelogix.phosphophyllite.util.Util;
 
@@ -26,6 +29,7 @@ public class StateCache {
         public byte textureRotationNorth = 0;
     }
     
+    private static final JsonLogic jsonLogic = new JsonLogic();
     private static final HashMap<String, HashMap<HashMap<String, String>, TextureInfo>> infoCache = new HashMap<>();
     
     public static TextureInfo infoForState(@Nonnull QuartzState state) {
@@ -45,14 +49,20 @@ public class StateCache {
             Map<String, Object> processingMap = toProcess.pop();
             Map<String, Object> requiredState = (Map<String, Object>) processingMap.get("state");
             if (requiredState != null) {
-                for (String s : requiredState.keySet()) {
-                    Object stateObject = requiredState.get(s);
-                    if (stateObject instanceof String) {
-                        String stateString = (String) stateObject;
-                        if (!state.values.getOrDefault(s, "").equals(stateString)) {
-                            continue;
-                        }
+                // ok, gotta shove this at jsonlogic, so, need that back in JSON
+                String jsonStr = TnJson.toJson(requiredState);
+                try {
+                    Object jsonLogicResultObj = jsonLogic.apply(jsonStr, state.values);
+                    if (!(jsonLogicResultObj instanceof Boolean)) {
+                        EventHandling.LOGGER.warn("Failed to parse QuartzState JSONLogic for file " + state.blockName + " with state " + state.values.toString());
+                        return new TextureInfo();
                     }
+                    if (!(boolean) jsonLogicResultObj) {
+                        continue;
+                    }
+                } catch (JsonLogicException e) {
+                    e.printStackTrace();
+                    continue;
                 }
             }
             
@@ -127,27 +137,27 @@ public class StateCache {
                                         break;
                                     }
                                     case "west": {
-                                        textureInfo.textureRotationWest = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationWest = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                     case "east": {
-                                        textureInfo.textureRotationEast = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationEast = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                     case "top": {
-                                        textureInfo.textureRotationTop = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationTop = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                     case "bottom": {
-                                        textureInfo.textureRotationBottom = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationBottom = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                     case "south": {
-                                        textureInfo.textureRotationSouth = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationSouth = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                     case "north": {
-                                        textureInfo.textureRotationNorth = (byte) textureMap.get(rotationLocation);
+                                        textureInfo.textureRotationNorth = ((Integer) textureMap.get(rotationLocation)).byteValue();
                                         break;
                                     }
                                 }
@@ -174,26 +184,27 @@ public class StateCache {
         
         while (!toProcess.empty()) {
             Map<String, Object> map = toProcess.pop();
-            if(map.containsKey("branches")){
+            if (map.containsKey("branches")) {
                 Object branches = map.get("branches");
-                if(branches instanceof List){
+                if (branches instanceof List) {
                     List<?> branchesList = (List<?>) branches;
                     for (Object o : branchesList) {
-                        if(o instanceof Map){
+                        if (o instanceof Map) {
                             Map<String, Object> branchMap = (Map<String, Object>) o;
                             toProcess.push(branchMap);
-;                        }
+                            ;
+                        }
                     }
                 }
             }
             
-            if(map.containsKey("textures")){
+            if (map.containsKey("textures")) {
                 Object textures = map.get("textures");
-                if(textures instanceof Map){
+                if (textures instanceof Map) {
                     Map<String, Object> texturesMap = (Map<String, Object>) textures;
                     for (String s : texturesMap.keySet()) {
                         Object textureLocation = texturesMap.get(s);
-                        if(textureLocation instanceof String){
+                        if (textureLocation instanceof String) {
                             textureSet.add((String) textureLocation);
                         }
                     }
@@ -207,7 +218,7 @@ public class StateCache {
     private static final HashMap<String, Map<String, Object>> jsonCache = new HashMap<>();
     
     private static Map<String, Object> loadJSON(String jsonName) {
-        return jsonCache.computeIfAbsent(jsonName, (k) ->{
+        return jsonCache.computeIfAbsent(jsonName, (k) -> {
             String str = Util.readTextResourceLocation(new ResourceLocation(jsonName + ".json5"));
             return TnJson.parse(str);
         });
