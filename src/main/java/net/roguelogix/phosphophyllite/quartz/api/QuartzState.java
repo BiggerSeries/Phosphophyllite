@@ -58,9 +58,7 @@ public class QuartzState implements INBTSerializable<CompoundNBT> {
         CompoundNBT nbt = new CompoundNBT();
         nbt.putString("blockName", blockName);
         CompoundNBT valueMap = new CompoundNBT();
-        values.forEach((k, v) -> {
-            valueMap.putString(k, v);
-        });
+        values.forEach(valueMap::putString);
         nbt.put("values", valueMap);
         return nbt;
     }
