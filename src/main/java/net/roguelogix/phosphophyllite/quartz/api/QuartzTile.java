@@ -42,8 +42,13 @@ public class QuartzTile extends TileEntity implements IQuartzTile {
     protected void buildDefaultQuartzState(QuartzState state) {
     }
     
-    private void pushQuartzStateUpdate() {
-        Quartz.requestBlockUpdate(this);
+    public void pushQuartzStateUpdate() {
+        if(this.world == null){
+            return;
+        }
+        if(world.isRemote) {
+            Quartz.requestBlockUpdate(this);
+        }
     }
     
     @Override
