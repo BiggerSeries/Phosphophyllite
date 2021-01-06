@@ -67,7 +67,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             // if all are positive, technically zero is valid for them
             // dont know why you would use zero, but that's not my problem
             // i guess to lock out using the machine?
-            if ((controller.minSize.x | controller.minSize.y | controller.minSize.z) > 0) {
+            if ((controller.minSize.x | controller.minSize.y | controller.minSize.z) >= 0) {
                 if (
                         allowedOrientation.x < controller.minSize.x ||
                                 allowedOrientation.y < controller.minSize.y ||
@@ -78,7 +78,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             }
             // you can also just set one of these lower than the above
             // see the below bounds checks
-            if ((controller.maxSize.x | controller.maxSize.y | controller.maxSize.z) > 0) {
+            if ((controller.maxSize.x | controller.maxSize.y | controller.maxSize.z) >= 0) {
                 if (
                         allowedOrientation.x > controller.maxSize.x ||
                                 allowedOrientation.y > controller.maxSize.y ||
