@@ -1,13 +1,16 @@
 package net.roguelogix.phosphophyllite;
 
+import net.minecraft.resources.DataPackRegistries;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
 import net.roguelogix.phosphophyllite.registry.Registry;
@@ -33,10 +36,22 @@ public class Phosphophyllite {
         MinecraftForge.EVENT_BUS.register(this);
     }
     
+    
+    public static DataPackRegistries dataPackRegistries;
+    
+    @SubscribeEvent
+    public void onAddReloadListenerEvent(AddReloadListenerEvent reloadListenerEvent) {
+        dataPackRegistries = reloadListenerEvent.getDataPackRegistries();
+    }
+    
+    @SubscribeEvent
+    public void onServerStopped(FMLServerStoppedEvent serverStoppedEvent) {
+        dataPackRegistries = null;
+    }
+    
     public static long tickNumber() {
         return tick;
     }
-    
     
     private static final HashMap<ServerWorld, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
     private static final HashMap<ServerWorld, ArrayList<MultiblockTile<?, ?>>> tilesToAttach = new HashMap<>();
