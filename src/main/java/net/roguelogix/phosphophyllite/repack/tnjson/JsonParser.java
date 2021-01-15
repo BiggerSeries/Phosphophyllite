@@ -120,6 +120,10 @@ class JsonParser {
     while (index < maxLength) {
       char c = getTokenBegin(); //skip to begin
 
+      if(index >= maxLength){
+        throw new ParseException("Invalid JSON given, unfinished map found", index, "");
+      }
+      
       if (c == '}') {
         index++;
         return map;
