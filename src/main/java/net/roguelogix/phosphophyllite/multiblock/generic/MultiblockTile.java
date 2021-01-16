@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -51,7 +52,12 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
         assert world != null;
         if (allowAttach && attemptAttach && !world.isRemote) {
             attemptAttach = false;
-            if(((MultiblockBlock)this.getBlockState().getBlock()).usesAssmeblyState()){
+            Block thisBlock = this.getBlockState().getBlock();
+            if (!(thisBlock instanceof MultiblockBlock)) {
+                // can happen if a block is broken in the same tick it is placed
+                return;
+            }
+            if(((MultiblockBlock)thisBlock).usesAssmeblyState()){
                 world.setBlockState(this.pos, this.getBlockState().with(ASSEMBLED, false));
             }
             if (controller != null) {
