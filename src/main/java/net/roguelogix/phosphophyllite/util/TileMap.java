@@ -106,24 +106,36 @@ public class TileMap<TileType extends TileEntity> {
         return getTile(pos) != null;
     }
     
+    public boolean containsPos(Vector3i pos) {
+        return getTile(pos) != null;
+    }
+    
     @Nullable
-    public TileType getTile(BlockPos pos) {
-        scratchVector.set(pos.getX() >> 4, pos.getY() >> 4, pos.getZ() >> 4);
+    public TileType getTile(Vector3ic pos) {
+        int x = pos.x(), y = pos.y(), z = pos.z();
+        scratchVector.set(pos.x() >> 4, pos.y() >> 4, pos.z() >> 4);
         TileEntity[][][] sectionArray = internalMap.get(scratchVector);
+        // getTile(BlockPos) passes the scratch vector in, so, i cant assume that pos isn't the scratchvector
         if (sectionArray == null) {
             return null;
         }
-        TileEntity[][] XsubSection = sectionArray[pos.getX() & 15];
+        TileEntity[][] XsubSection = sectionArray[x & 15];
         if (XsubSection == null) {
             return null;
         }
-        TileEntity[] XYsubSection = XsubSection[pos.getY() & 15];
+        TileEntity[] XYsubSection = XsubSection[y & 15];
         if (XYsubSection == null) {
             return null;
         }
         
         //noinspection unchecked
-        return (TileType) XYsubSection[pos.getZ() & 15];
+        return (TileType) XYsubSection[z & 15];
+    }
+    
+    @Nullable
+    public TileType getTile(BlockPos pos) {
+        scratchVector.set(pos.getX(), pos.getY(), pos.getZ());
+        return getTile(scratchVector);
     }
     
     public void forEach(BiConsumer<BlockPos, TileType> consumer) {

@@ -78,6 +78,19 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         return maxCoord;
     }
     
+    @Nullable
+    public TileType getTile(Vector3i position) {
+        return blocks.getTile(position);
+    }
+    
+    @Nullable
+    public TileType getTile(BlockPos position) {
+        return blocks.getTile(position);
+    }
+    
+    public boolean containsTile(TileType tile) {
+        return blocks.containsTile(tile);
+    }
     
     private void updateMinMaxCoordinates() {
         if (blocks.isEmpty() || !updateExtremes) {
