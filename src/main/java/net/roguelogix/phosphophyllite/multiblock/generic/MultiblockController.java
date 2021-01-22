@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class MultiblockController<ControllerType extends MultiblockController<ControllerType, TileType>, TileType extends MultiblockTile<ControllerType, TileType>> {
+public class MultiblockController<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> {
     
     protected final World world;
     
@@ -47,7 +47,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     private boolean shouldUpdateNBT = false;
     private CompoundNBT cachedNBT = null;
     
-    private final Validator<MultiblockTile<?, ?>> tileTypeValidator;
+    private final Validator<MultiblockTile<?, ?, ?>> tileTypeValidator;
     private Validator<ControllerType> assemblyValidator = c -> true;
     
     protected ValidationError lastValidationError = null;
@@ -55,7 +55,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     long lastTick = -1;
     
     
-    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?>> tileTypeValidator) {
+    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator) {
         this.tileTypeValidator = tileTypeValidator;
         this.world = world;
         Phosphophyllite.addController(this);
@@ -127,7 +127,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         });
     }
     
-    final void attemptAttach(@Nonnull MultiblockTile<?, ?> toAttachGeneric) {
+    final void attemptAttach(@Nonnull MultiblockTile<?, ?, ?> toAttachGeneric) {
         
         if (!tileTypeValidator.validate(toAttachGeneric)) {
             return;

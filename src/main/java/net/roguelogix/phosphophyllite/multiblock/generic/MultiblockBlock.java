@@ -20,7 +20,7 @@ import javax.annotation.Nullable;
 
 import static net.roguelogix.phosphophyllite.multiblock.generic.ConnectedTextureStates.*;
 
-public class MultiblockBlock extends Block {
+public class MultiblockBlock<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends Block {
     
     public static final BooleanProperty ASSEMBLED = BooleanProperty.create("assembled");
     

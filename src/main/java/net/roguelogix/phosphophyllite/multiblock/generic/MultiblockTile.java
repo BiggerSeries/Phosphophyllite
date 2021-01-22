@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 
 import static net.roguelogix.phosphophyllite.multiblock.generic.MultiblockBlock.ASSEMBLED;
 
-public abstract class MultiblockTile<ControllerType extends MultiblockController<ControllerType, TileType>, TileType extends MultiblockTile<ControllerType, TileType>> extends TileEntity {
+public abstract class MultiblockTile<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends TileEntity {
     protected ControllerType controller;
     
     public TileType self() {
@@ -73,10 +73,10 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 if (chunk != null) {
                     TileEntity possibleTile = chunk.getTileEntity(possibleTilePos);
                     if (possibleTile instanceof MultiblockTile) {
-                        if (((MultiblockTile<?, ?>) possibleTile).controller != null) {
-                            ((MultiblockTile<?, ?>) possibleTile).controller.attemptAttach(this);
+                        if (((MultiblockTile<?, ?, ?>) possibleTile).controller != null) {
+                            ((MultiblockTile<?, ?, ?>) possibleTile).controller.attemptAttach(this);
                         } else {
-                            ((MultiblockTile<?, ?>) possibleTile).attemptAttach = true;
+                            ((MultiblockTile<?, ?, ?>) possibleTile).attemptAttach = true;
                         }
                     }
                 }

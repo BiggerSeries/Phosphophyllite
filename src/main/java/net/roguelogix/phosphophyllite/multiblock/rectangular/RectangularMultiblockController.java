@@ -17,9 +17,9 @@ import javax.annotation.Nullable;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
-public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType>, TileType extends RectangularMultiblockTile<ControllerType, TileType>> extends MultiblockController<ControllerType, TileType> {
+public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockController<ControllerType, TileType, BlockType> {
     
-    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?>> tileTypeValidator) {
+    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator) {
         super(world, tileTypeValidator);
         setAssemblyValidator(null);
     }
