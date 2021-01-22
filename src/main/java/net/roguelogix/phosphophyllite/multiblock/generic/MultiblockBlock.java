@@ -14,6 +14,8 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.World;
+import net.roguelogix.phosphophyllite.multiblock.rectangular.RectangularMultiblockController;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,6 +41,11 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
             defaultState = defaultState.with(WEST_CONNECTED_PROPERTY, false);
         }
         this.setDefaultState(defaultState);
+    }
+    
+    @Override
+    public final boolean hasTileEntity(BlockState state) {
+        return true;
     }
     
     public boolean connectedTexture() {
