@@ -47,7 +47,8 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     private boolean shouldUpdateNBT = false;
     private CompoundNBT cachedNBT = null;
     
-    private final Validator<MultiblockTile<?, ?, ?>> tileTypeValidator;
+    protected final Validator<MultiblockTile<?, ?, ?>> tileTypeValidator;
+    protected final Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator;
     private Validator<ControllerType> assemblyValidator = c -> true;
     
     protected ValidationError lastValidationError = null;
@@ -55,8 +56,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     long lastTick = -1;
     
     
-    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator) {
+    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
         this.tileTypeValidator = tileTypeValidator;
+        this.blockTypeValidator = blockTypeValidator;
         this.world = world;
         Phosphophyllite.addController(this);
     }

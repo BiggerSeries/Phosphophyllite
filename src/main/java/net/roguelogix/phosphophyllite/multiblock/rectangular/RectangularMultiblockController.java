@@ -5,10 +5,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
-import net.roguelogix.phosphophyllite.multiblock.generic.ValidationError;
-import net.roguelogix.phosphophyllite.multiblock.generic.Validator;
+import net.roguelogix.phosphophyllite.multiblock.generic.*;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.Util;
 
@@ -19,8 +16,8 @@ import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition
 
 public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockController<ControllerType, TileType, BlockType> {
     
-    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator) {
-        super(world, tileTypeValidator);
+    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator,  @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
+        super(world, tileTypeValidator, blockTypeValidator);
         setAssemblyValidator(null);
     }
     
