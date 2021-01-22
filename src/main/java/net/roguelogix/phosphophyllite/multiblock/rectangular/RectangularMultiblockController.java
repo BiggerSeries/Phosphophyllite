@@ -159,6 +159,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                             break;
                         }
                     }
+                    throw new InvalidBlock(block, pos, "generic");
                 }
             }
         });
