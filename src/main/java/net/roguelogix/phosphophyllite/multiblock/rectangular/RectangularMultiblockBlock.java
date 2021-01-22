@@ -4,14 +4,12 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.state.StateContainer;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockBlock;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
 
 import javax.annotation.Nonnull;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
-public class RectangularMultiblockBlock<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockBlock<ControllerType, TileType, BlockType> {
+public abstract class RectangularMultiblockBlock<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockBlock<ControllerType, TileType, BlockType> {
     
     public RectangularMultiblockBlock(@Nonnull Properties properties) {
         super(properties);
@@ -32,7 +30,17 @@ public class RectangularMultiblockBlock<ControllerType extends RectangularMultib
         }
     }
     
-    public boolean usesAxisPositions(){
+    public boolean usesAxisPositions() {
         return false;
+    }
+    
+    public abstract boolean isGoodForInterior();
+    
+    public abstract boolean isGoodForExterior();
+    
+    public abstract boolean isGoodForFrame();
+    
+    public boolean isGoodForCorner(){
+        return isGoodForFrame();
     }
 }
