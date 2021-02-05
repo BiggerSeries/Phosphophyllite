@@ -97,9 +97,9 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     
     @Override
     public final void remove() {
+        allowAttach = false;
         if (controller != null) {
             controller.detach(self());
-            allowAttach = false;
         }
         super.remove();
     }
