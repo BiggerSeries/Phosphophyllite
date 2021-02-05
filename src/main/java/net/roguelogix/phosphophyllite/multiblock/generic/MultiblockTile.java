@@ -116,6 +116,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
             controller.detach(self(), true);
         }
         allowAttach = false;
+        super.onChunkUnloaded();
     }
     
     @Nonnull
