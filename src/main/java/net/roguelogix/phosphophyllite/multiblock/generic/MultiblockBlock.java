@@ -103,12 +103,16 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     }
     
     private void updateConnectedTextureState(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state) {
-        state = state.with(TOP_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.UP)).getBlock() == this);
-        state = state.with(BOTTOM_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.DOWN)).getBlock() == this);
-        state = state.with(NORTH_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.NORTH)).getBlock() == this);
-        state = state.with(SOUTH_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.SOUTH)).getBlock() == this);
-        state = state.with(EAST_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.EAST)).getBlock() == this);
-        state = state.with(WEST_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.WEST)).getBlock() == this);
+        state = state.with(TOP_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.UP)).getBlock()));
+        state = state.with(BOTTOM_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.DOWN)).getBlock()));
+        state = state.with(NORTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.NORTH)).getBlock()));
+        state = state.with(SOUTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.SOUTH)).getBlock()));
+        state = state.with(EAST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.EAST)).getBlock()));
+        state = state.with(WEST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.WEST)).getBlock()));
         worldIn.setBlockState(pos, state, 2);
+    }
+    
+    protected boolean connectToBlock(Block block){
+        return block == this;
     }
 }
