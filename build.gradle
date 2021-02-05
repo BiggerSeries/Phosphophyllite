@@ -25,13 +25,6 @@ archivesBaseName = 'phosphophyllite-1.16.4'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
-repositories {
-    maven {
-        url 'https://www.dogforce-games.com/maven/'
-    }
-}
-
-
 minecraft {
     // The mappings can be changed at any time, and must be in the following format.
     // snapshot_YYYYMMDD   Snapshot are built nightly.
@@ -95,16 +88,6 @@ minecraft {
                 }
             }
         }
-    }
-}
-
-repositories {
-    maven {
-        name = "CurseForge"
-        url = "https://minecraft.curseforge.com/api/maven/"
-    }
-    maven {
-        url = "https://www.cursemaven.com"
     }
 }
 
