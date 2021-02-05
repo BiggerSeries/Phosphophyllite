@@ -105,8 +105,8 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     public final void remove() {
         if (controller != null) {
             controller.detach(self());
-            allowAttach = false;
         }
+        allowAttach = false;
         super.remove();
     }
     
@@ -114,8 +114,8 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     public void onChunkUnloaded() {
         if (controller != null) {
             controller.detach(self(), true);
-            allowAttach = false;
         }
+        allowAttach = false;
     }
     
     @Nonnull
