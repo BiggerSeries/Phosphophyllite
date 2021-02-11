@@ -1,3 +1,6 @@
+# 1.16.4-0.4.2
+ - add check for performant
+
 # 1.16.4-0.4.1
  - fix bug in TileMap, caused weird multiblock issues after detaching blocks from a multiblock, in some cases
 
