@@ -11,6 +11,10 @@ import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
         name = "general"
 )
 public class PhosphophylliteConfig {
+    
+    @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = true)
+    public static boolean bypassPerformantCheck = false;
+    
     @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig
     public static class GUI{
         @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value(range = "[50,)")

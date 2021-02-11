@@ -8,6 +8,7 @@ import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
 import net.roguelogix.phosphophyllite.registry.Registry;
@@ -31,6 +32,22 @@ public class Phosphophyllite {
     public Phosphophyllite() {
         Registry.onModLoad();
         MinecraftForge.EVENT_BUS.register(this);
+    
+        if(PhosphophylliteConfig.bypassPerformantCheck){
+            LOGGER.warn("Performant check bypassed");
+            LOGGER.warn("Performant " + (FMLLoader.getLoadingModList().getModFileById("performant") != null ? "is" : "is not") + " present");
+        }else{
+            if (FMLLoader.getLoadingModList().getModFileById("performant") != null) {
+                throw new IllegalStateException("" +
+                        "Performant is incompatible with Phosphophyllite\n" +
+                        "This is a known issue with performant and it breaking other mods, the author does not care\n" +
+                        "GitHub issue on the matter: https://github.com/someaddons/performant_issues/issues/70\n" +
+                        "To bypass this check add \"bypassPerformantCheck: true\" to your phosphophyllite config\n" +
+                        "If you bypass this check I (RogueLogix) will not provide any support for any issues related to Phosphophyllite or the mods that use it\n" +
+                        "If you believe your issue is unrelated, disabled performant and reproduce it\n" +
+                        "By choosing to bypass this check you understand that here there be dragons");
+            }
+        }
     }
     
     public static long tickNumber() {
