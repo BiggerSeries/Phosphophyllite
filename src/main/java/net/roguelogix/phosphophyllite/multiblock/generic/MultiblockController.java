@@ -311,12 +311,12 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
     }
     
-    public void update() {
+    public final void update() {
         if (lastTick >= Phosphophyllite.tickNumber()) {
             return;
         }
         lastTick = Phosphophyllite.tickNumber();
-        
+    
         if (updateAssemblyAtTick < lastTick) {
             updateMinMaxCoordinates();
             updateAssemblyState();
