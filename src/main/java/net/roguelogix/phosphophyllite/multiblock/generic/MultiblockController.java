@@ -393,8 +393,8 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
         }
-        
-        if (state == AssemblyState.ASSEMBLED && world.isAreaLoaded(minCoord().x(), minCoord().y(), minCoord().z(), maxCoord().x(), maxCoord().y(), maxCoord().z())) {
+    
+        if (state == AssemblyState.ASSEMBLED) {
             tick();
             toTick.forEach(ITickableMultiblockTile::tick);
         } else if (state == AssemblyState.DISASSEMBLED) {
