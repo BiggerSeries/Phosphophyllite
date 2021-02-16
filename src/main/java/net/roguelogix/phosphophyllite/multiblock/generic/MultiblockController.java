@@ -397,6 +397,8 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         if (state == AssemblyState.ASSEMBLED && world.isAreaLoaded(minCoord().x(), minCoord().y(), minCoord().z(), maxCoord().x(), maxCoord().y(), maxCoord().z())) {
             tick();
             toTick.forEach(ITickableMultiblockTile::tick);
+        } else if (state == AssemblyState.DISASSEMBLED) {
+            disassembledTick();
         }
     }
     
@@ -575,6 +577,13 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      * is not called if the multiblock is dissassembled or paused
      */
     public void tick() {
+    }
+    
+    /**
+     * Called at the end of a tick for dissassembled multiblocks only
+     * not called if the multiblock is assembled or paused
+     */
+    public void disassembledTick() {
     }
     
     /**
