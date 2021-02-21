@@ -1,3 +1,20 @@
+# 1.16.5-0.5.0-alpha.0
+ - correct do not care bounds range checks
+ - patch json loading bug
+ - add data loading helper
+ - fix class cast exception when a block is broken in the same tick its placed
+ - add block type to multiblock API generics
+ - allow multiblock controller to be queried for a tile
+ - add block type validator, and allow validators to be accessed by sub classes
+ - default to block not allowed instead of allowed
+ - move tile placement validation from multiblock controller to tiles
+ - dont attempt to attach on the client (fixes bag of yurting bug)
+ - add ability for tiles to decide what blocks their textures connect to
+ - add tick for when a multiblock is disassembled
+ - add heat body helper
+ - add fluid handling helpers
+ - trim out empty config clazz node elements
+
 # 1.16.4-0.4.2
  - add check for performant
 
