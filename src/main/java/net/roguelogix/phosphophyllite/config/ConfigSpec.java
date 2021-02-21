@@ -113,6 +113,9 @@ public class ConfigSpec {
                 }
                 trimmedElements.add(newElement);
             }
+            if (trimmedElements.size() == 0) {
+                return null;
+            }
             return new Element(Element.Type.Section, node.comment, element.name, trimmedElements.toArray());
         } else if (node instanceof SpecObjectNode) {
             if (element.type != Element.Type.Section) {
@@ -302,13 +305,19 @@ public class ConfigSpec {
                     for (Element element : elements) {
                         if (entry.getKey().equals(element.name)) {
                             if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                                subElements.add(regenerateElementTreeForNode(element, entry.getValue(), null, entry.getKey(), enableAdvanced));
+                                Element subElement = regenerateElementTreeForNode(element, entry.getValue(), null, entry.getKey(), enableAdvanced);
+                                if (subElement.asArray().length != 0) {
+                                    subElements.add(subElement);
+                                }
                             }
                             break nextEntry;
                         }
                     }
                     if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                        subElements.add(regenerateElementTreeForNode(null, entry.getValue(), null, entry.getKey(), enableAdvanced));
+                        Element subElement = regenerateElementTreeForNode(null, entry.getValue(), null, entry.getKey(), enableAdvanced);
+                        if (subElement.asArray().length != 0) {
+                            subElements.add(subElement);
+                        }
                     }
                 }
             }
