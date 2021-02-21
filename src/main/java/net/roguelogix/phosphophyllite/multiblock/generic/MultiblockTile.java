@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -21,7 +22,7 @@ import javax.annotation.Nonnull;
 
 import static net.roguelogix.phosphophyllite.multiblock.generic.MultiblockBlock.ASSEMBLED;
 
-public abstract class MultiblockTile<ControllerType extends MultiblockController<ControllerType, TileType>, TileType extends MultiblockTile<ControllerType, TileType>> extends TileEntity {
+public abstract class MultiblockTile<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends TileEntity {
     protected ControllerType controller;
     
     public TileType self() {
@@ -51,7 +52,12 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
         assert world != null;
         if (allowAttach && attemptAttach && !world.isRemote) {
             attemptAttach = false;
-            if(((MultiblockBlock)this.getBlockState().getBlock()).usesAssmeblyState()){
+            Block thisBlock = this.getBlockState().getBlock();
+            if (!(thisBlock instanceof MultiblockBlock)) {
+                // can happen if a block is broken in the same tick it is placed
+                return;
+            }
+            if(((MultiblockBlock)thisBlock).usesAssmeblyState()){
                 world.setBlockState(this.pos, this.getBlockState().with(ASSEMBLED, false));
             }
             if (controller != null) {
@@ -67,10 +73,10 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 if (chunk != null) {
                     TileEntity possibleTile = chunk.getTileEntity(possibleTilePos);
                     if (possibleTile instanceof MultiblockTile) {
-                        if (((MultiblockTile<?, ?>) possibleTile).controller != null) {
-                            ((MultiblockTile<?, ?>) possibleTile).controller.attemptAttach(this);
+                        if (((MultiblockTile<?, ?, ?>) possibleTile).controller != null) {
+                            ((MultiblockTile<?, ?, ?>) possibleTile).controller.attemptAttach(this);
                         } else {
-                            ((MultiblockTile<?, ?>) possibleTile).attemptAttach = true;
+                            ((MultiblockTile<?, ?, ?>) possibleTile).attemptAttach = true;
                         }
                     }
                 }
@@ -99,8 +105,8 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     public final void remove() {
         if (controller != null) {
             controller.detach(self());
-            allowAttach = false;
         }
+        allowAttach = false;
         super.remove();
     }
     
@@ -108,8 +114,9 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     public void onChunkUnloaded() {
         if (controller != null) {
             controller.detach(self(), true);
-            allowAttach = false;
         }
+        allowAttach = false;
+        super.onChunkUnloaded();
     }
     
     @Nonnull

@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class MultiblockController<ControllerType extends MultiblockController<ControllerType, TileType>, TileType extends MultiblockTile<ControllerType, TileType>> {
+public class MultiblockController<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> {
     
     protected final World world;
     
@@ -47,7 +47,8 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     private boolean shouldUpdateNBT = false;
     private CompoundNBT cachedNBT = null;
     
-    private final Validator<MultiblockTile<?, ?>> tileTypeValidator;
+    protected final Validator<MultiblockTile<?, ?, ?>> tileTypeValidator;
+    protected final Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator;
     private Validator<ControllerType> assemblyValidator = c -> true;
     
     protected ValidationError lastValidationError = null;
@@ -55,8 +56,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     long lastTick = -1;
     
     
-    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?>> tileTypeValidator) {
+    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
         this.tileTypeValidator = tileTypeValidator;
+        this.blockTypeValidator = blockTypeValidator;
         this.world = world;
         Phosphophyllite.addController(this);
     }
@@ -78,6 +80,19 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         return maxCoord;
     }
     
+    @Nullable
+    public TileType getTile(Vector3i position) {
+        return blocks.getTile(position);
+    }
+    
+    @Nullable
+    public TileType getTile(BlockPos position) {
+        return blocks.getTile(position);
+    }
+    
+    public boolean containsTile(TileType tile) {
+        return blocks.containsTile(tile);
+    }
     
     private void updateMinMaxCoordinates() {
         if (blocks.isEmpty() || !updateExtremes) {
@@ -127,7 +142,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         });
     }
     
-    final void attemptAttach(@Nonnull MultiblockTile<?, ?> toAttachGeneric) {
+    final void attemptAttach(@Nonnull MultiblockTile<?, ?, ?> toAttachGeneric) {
         
         if (!tileTypeValidator.validate(toAttachGeneric)) {
             return;
@@ -296,17 +311,11 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
     }
     
-    public void update() {
+    public final void update() {
         if (lastTick >= Phosphophyllite.tickNumber()) {
             return;
         }
         lastTick = Phosphophyllite.tickNumber();
-        
-        if (updateAssemblyAtTick < lastTick) {
-            updateMinMaxCoordinates();
-            updateAssemblyState();
-            updateAssemblyAtTick = Long.MAX_VALUE;
-        }
         
         if (blocks.isEmpty()) {
             // why are we being ticked?
@@ -355,6 +364,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                     for (TileType tile : toOrphan) {
                         detach(tile, state == AssemblyState.PAUSED, false);
                     }
+                    updateAssemblyAtTick = Long.MIN_VALUE;
                 }
             }
             checkForDetachments = false;
@@ -372,16 +382,24 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                     tile.controller = self();
                     onPartPlaced(tile);
                 });
-                updateExtremes = true;
-                updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
             }
+            updateExtremes = true;
+            updateAssemblyAtTick = Long.MIN_VALUE;
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
         }
+    
+        if (updateAssemblyAtTick < lastTick) {
+            updateMinMaxCoordinates();
+            updateAssemblyState();
+            updateAssemblyAtTick = Long.MAX_VALUE;
+        }
         
-        if (state == AssemblyState.ASSEMBLED && world.isAreaLoaded(minCoord().x(), minCoord().y(), minCoord().z(), maxCoord().x(), maxCoord().y(), maxCoord().z())) {
+        if (state == AssemblyState.ASSEMBLED) {
             tick();
             toTick.forEach(ITickableMultiblockTile::tick);
+        } else if (state == AssemblyState.DISASSEMBLED) {
+            disassembledTick();
         }
     }
     
@@ -563,6 +581,13 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     }
     
     /**
+     * Called at the end of a tick for dissassembled multiblocks only
+     * not called if the multiblock is assembled or paused
+     */
+    public void disassembledTick() {
+    }
+    
+    /**
      * Called when a part is added to the multiblock structure
      * not called in conjunction with onPartPlaced
      * <p>
@@ -640,6 +665,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      * called after @read but before first call to @tick
      */
     protected void onUnpaused() {
+    
     }
     
     /**

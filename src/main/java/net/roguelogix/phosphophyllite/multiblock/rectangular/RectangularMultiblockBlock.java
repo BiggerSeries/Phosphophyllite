@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
-public class RectangularMultiblockBlock extends MultiblockBlock {
+public abstract class RectangularMultiblockBlock<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockBlock<ControllerType, TileType, BlockType> {
     
     public RectangularMultiblockBlock(@Nonnull Properties properties) {
         super(properties);
@@ -30,7 +30,17 @@ public class RectangularMultiblockBlock extends MultiblockBlock {
         }
     }
     
-    public boolean usesAxisPositions(){
+    public boolean usesAxisPositions() {
         return false;
+    }
+    
+    public abstract boolean isGoodForInterior();
+    
+    public abstract boolean isGoodForExterior();
+    
+    public abstract boolean isGoodForFrame();
+    
+    public boolean isGoodForCorner(){
+        return isGoodForFrame();
     }
 }

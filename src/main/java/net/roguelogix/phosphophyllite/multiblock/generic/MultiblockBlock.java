@@ -14,13 +14,15 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.World;
+import net.roguelogix.phosphophyllite.multiblock.rectangular.RectangularMultiblockController;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static net.roguelogix.phosphophyllite.multiblock.generic.ConnectedTextureStates.*;
 
-public class MultiblockBlock extends Block {
+public class MultiblockBlock<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends Block {
     
     public static final BooleanProperty ASSEMBLED = BooleanProperty.create("assembled");
     
@@ -39,6 +41,11 @@ public class MultiblockBlock extends Block {
             defaultState = defaultState.with(WEST_CONNECTED_PROPERTY, false);
         }
         this.setDefaultState(defaultState);
+    }
+    
+    @Override
+    public final boolean hasTileEntity(BlockState state) {
+        return true;
     }
     
     public boolean connectedTexture() {
@@ -96,12 +103,16 @@ public class MultiblockBlock extends Block {
     }
     
     private void updateConnectedTextureState(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state) {
-        state = state.with(TOP_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.UP)).getBlock() == this);
-        state = state.with(BOTTOM_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.DOWN)).getBlock() == this);
-        state = state.with(NORTH_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.NORTH)).getBlock() == this);
-        state = state.with(SOUTH_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.SOUTH)).getBlock() == this);
-        state = state.with(EAST_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.EAST)).getBlock() == this);
-        state = state.with(WEST_CONNECTED_PROPERTY, worldIn.getBlockState(pos.offset(Direction.WEST)).getBlock() == this);
+        state = state.with(TOP_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.UP)).getBlock()));
+        state = state.with(BOTTOM_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.DOWN)).getBlock()));
+        state = state.with(NORTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.NORTH)).getBlock()));
+        state = state.with(SOUTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.SOUTH)).getBlock()));
+        state = state.with(EAST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.EAST)).getBlock()));
+        state = state.with(WEST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.WEST)).getBlock()));
         worldIn.setBlockState(pos, state, 2);
+    }
+    
+    protected boolean connectToBlock(Block block){
+        return block == this;
     }
 }

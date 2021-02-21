@@ -5,10 +5,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
-import net.roguelogix.phosphophyllite.multiblock.generic.ValidationError;
-import net.roguelogix.phosphophyllite.multiblock.generic.Validator;
+import net.roguelogix.phosphophyllite.multiblock.generic.*;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.Util;
 
@@ -17,10 +14,10 @@ import javax.annotation.Nullable;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
-public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType>, TileType extends RectangularMultiblockTile<ControllerType, TileType>> extends MultiblockController<ControllerType, TileType> {
+public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockController<ControllerType, TileType, BlockType> {
     
-    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?>> tileTypeValidator) {
-        super(world, tileTypeValidator);
+    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator,  @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
+        super(world, tileTypeValidator, blockTypeValidator);
         setAssemblyValidator(null);
     }
     
@@ -67,7 +64,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             // if all are positive, technically zero is valid for them
             // dont know why you would use zero, but that's not my problem
             // i guess to lock out using the machine?
-            if ((controller.minSize.x | controller.minSize.y | controller.minSize.z) > 0) {
+            if ((controller.minSize.x | controller.minSize.y | controller.minSize.z) >= 0) {
                 if (
                         allowedOrientation.x < controller.minSize.x ||
                                 allowedOrientation.y < controller.minSize.y ||
@@ -78,7 +75,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             }
             // you can also just set one of these lower than the above
             // see the below bounds checks
-            if ((controller.maxSize.x | controller.maxSize.y | controller.maxSize.z) > 0) {
+            if ((controller.maxSize.x | controller.maxSize.y | controller.maxSize.z) >= 0) {
                 if (
                         allowedOrientation.x > controller.maxSize.x ||
                                 allowedOrientation.y > controller.maxSize.y ||
@@ -114,7 +111,13 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             }
             switch (extremes) {
                 case 3: {
-                    if (controller.cornerValidator != null) {
+                    if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
+                        if (!((BlockType) block).isGoodForCorner()) {
+                            throw new InvalidBlock(block, pos, "corner");
+                        } else {
+                            break;
+                        }
+                    } else if (controller.cornerValidator != null) {
                         // can you be a corner?
                         if (!controller.cornerValidator.validate(block)) {
                             throw new InvalidBlock(block, pos, "corner");
@@ -124,7 +127,13 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                     }
                 }
                 case 2: {
-                    if (controller.frameValidator != null) {
+                    if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
+                        if (!((BlockType) block).isGoodForFrame()) {
+                            throw new InvalidBlock(block, pos, "frame");
+                        } else {
+                            break;
+                        }
+                    } else if (controller.frameValidator != null) {
                         // dont care whats on the corners, but we do on the frame as a whole
                         if (!controller.frameValidator.validate(block)) {
                             throw new InvalidBlock(block, pos, "frame");
@@ -134,7 +143,13 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                     }
                 }
                 case 1: {
-                    if (controller.exteriorValidator != null) {
+                    if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
+                        if (!((BlockType) block).isGoodForExterior()) {
+                            throw new InvalidBlock(block, pos, "exterior");
+                        } else {
+                            break;
+                        }
+                    } else if (controller.exteriorValidator != null) {
                         // oh, so you dont give a fuck about the frame either, do you even care are the exterior
                         if (!controller.exteriorValidator.validate(block)) {
                             throw new InvalidBlock(block, pos, "exterior");
@@ -145,7 +160,13 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                 }
                 default: {
                     if (extremes == 0) {
-                        if (controller.interiorValidator != null) {
+                        if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
+                            if (!((BlockType) block).isGoodForInterior()) {
+                                throw new InvalidBlock(block, pos, "interior");
+                            } else {
+                                break;
+                            }
+                        } else if (controller.interiorValidator != null) {
                             // you must care about the inside, right?
                             if (!controller.interiorValidator.validate(block)) {
                                 throw new InvalidBlock(block, pos, "interior");
@@ -162,6 +183,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                             break;
                         }
                     }
+                    throw new InvalidBlock(block, pos, "generic");
                 }
             }
         });
