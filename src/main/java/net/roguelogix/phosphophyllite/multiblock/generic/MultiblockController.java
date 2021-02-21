@@ -316,12 +316,6 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             return;
         }
         lastTick = Phosphophyllite.tickNumber();
-    
-        if (updateAssemblyAtTick < lastTick) {
-            updateMinMaxCoordinates();
-            updateAssemblyState();
-            updateAssemblyAtTick = Long.MAX_VALUE;
-        }
         
         if (blocks.isEmpty()) {
             // why are we being ticked?
@@ -370,6 +364,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                     for (TileType tile : toOrphan) {
                         detach(tile, state == AssemblyState.PAUSED, false);
                     }
+                    updateAssemblyAtTick = Long.MIN_VALUE;
                 }
             }
             checkForDetachments = false;
@@ -387,13 +382,19 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                     tile.controller = self();
                     onPartPlaced(tile);
                 });
-                updateExtremes = true;
-                updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
             }
+            updateExtremes = true;
+            updateAssemblyAtTick = Long.MIN_VALUE;
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
         }
     
+        if (updateAssemblyAtTick < lastTick) {
+            updateMinMaxCoordinates();
+            updateAssemblyState();
+            updateAssemblyAtTick = Long.MAX_VALUE;
+        }
+        
         if (state == AssemblyState.ASSEMBLED) {
             tick();
             toTick.forEach(ITickableMultiblockTile::tick);
@@ -664,6 +665,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      * called after @read but before first call to @tick
      */
     protected void onUnpaused() {
+    
     }
     
     /**
