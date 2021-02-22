@@ -22,13 +22,13 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     protected final World world;
     
     protected final TileMap<TileType> blocks = new TileMap<>();
-    protected final Set<ITickableMultiblockTile> toTick = new HashSet<>();
-    protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new HashSet<>();
-    protected final Set<IOnAssemblyTile> onAssemblyTiles = new HashSet<>();
+    protected final Set<ITickableMultiblockTile> toTick = new LinkedHashSet<>();
+    protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
+    protected final Set<IOnAssemblyTile> onAssemblyTiles = new LinkedHashSet<>();
     private boolean checkForDetachments = false;
     private boolean updateExtremes = true;
     private long updateAssemblyAtTick = Long.MAX_VALUE;
-    protected final Set<ControllerType> controllersToMerge = new HashSet<>();
+    protected final Set<ControllerType> controllersToMerge = new LinkedHashSet<>();
     protected final List<BlockPos> removedBlocks = new LinkedList<>();
     
     private final Vector3i minCoord = new Vector3i();
