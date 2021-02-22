@@ -24,6 +24,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     protected final TileMap<TileType> blocks = new TileMap<>();
     protected final Set<ITickableMultiblockTile> toTick = new HashSet<>();
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new HashSet<>();
+    protected final Set<IOnAssemblyTile> onAssemblyTiles = new HashSet<>();
     private boolean checkForDetachments = false;
     private boolean updateExtremes = true;
     private long updateAssemblyAtTick = Long.MAX_VALUE;
@@ -221,6 +222,10 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         if (toAttach instanceof IAssemblyAttemptedTile) {
             assemblyAttemptedTiles.add((IAssemblyAttemptedTile) toAttach);
         }
+        if (toAttach instanceof IOnAssemblyTile) {
+            onAssemblyTiles.add((IOnAssemblyTile) toAttach);
+        }
+        
         toAttach.controller = self();
         if (toAttach.preExistingBlock) {
             if (toAttach.controllerData != null) {
@@ -249,6 +254,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         }
         if (toDetach instanceof IAssemblyAttemptedTile) {
             assemblyAttemptedTiles.remove(toDetach);
+        }
+        if (toDetach instanceof IOnAssemblyTile) {
+            onAssemblyTiles.remove(toDetach);
         }
         
         if (onChunkUnload) {
@@ -432,6 +440,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                 onAssembled();
             }
             assembledBlockStates();
+            onAssemblyTiles.forEach(IOnAssemblyTile::onAssembly);
         } else {
             if (oldState == AssemblyState.ASSEMBLED) {
                 state = AssemblyState.DISASSEMBLED;
