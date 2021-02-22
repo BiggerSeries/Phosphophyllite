@@ -2,11 +2,13 @@ package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 import net.roguelogix.phosphophyllite.multiblock.generic.*;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import net.roguelogix.phosphophyllite.util.BlockStates;
 import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nonnull;
@@ -16,7 +18,7 @@ import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition
 
 public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockController<ControllerType, TileType, BlockType> {
     
-    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator,  @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
+    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
         super(world, tileTypeValidator, blockTypeValidator);
         setAssemblyValidator(null);
     }
@@ -228,6 +230,22 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                 state = state.with(Z_AXIS_POSITION, AxisPosition.UPPER);
             } else {
                 state = state.with(Z_AXIS_POSITION, AxisPosition.MIDDLE);
+            }
+        }
+        if (block.usesFaceDirection()) {
+            BlockPos pos = tile.getPos();
+            if (pos.getX() == minCoord().x()) {
+                state = state.with(BlockStates.FACING, Direction.WEST);
+            } else if (pos.getX() == maxCoord().x()) {
+                state = state.with(BlockStates.FACING, Direction.EAST);
+            } else if (pos.getY() == minCoord().y()) {
+                state = state.with(BlockStates.FACING, Direction.DOWN);
+            } else if (pos.getY() == maxCoord().y()) {
+                state = state.with(BlockStates.FACING, Direction.UP);
+            } else if (pos.getZ() == minCoord().z()) {
+                state = state.with(BlockStates.FACING, Direction.NORTH);
+            } else if (pos.getZ() == maxCoord().z()) {
+                state = state.with(BlockStates.FACING, Direction.SOUTH);
             }
         }
         return state;

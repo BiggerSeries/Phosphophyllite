@@ -3,7 +3,9 @@ package net.roguelogix.phosphophyllite.multiblock.rectangular;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.state.StateContainer;
+import net.minecraft.util.Direction;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockBlock;
+import net.roguelogix.phosphophyllite.util.BlockStates;
 
 import javax.annotation.Nonnull;
 
@@ -18,6 +20,9 @@ public abstract class RectangularMultiblockBlock<ControllerType extends Rectangu
             setDefaultState(getDefaultState().with(Y_AXIS_POSITION, MIDDLE));
             setDefaultState(getDefaultState().with(Z_AXIS_POSITION, MIDDLE));
         }
+        if (usesFaceDirection()){
+            setDefaultState(getDefaultState().with(BlockStates.FACING, Direction.UP));
+        }
     }
     
     @Override
@@ -28,9 +33,16 @@ public abstract class RectangularMultiblockBlock<ControllerType extends Rectangu
             builder.add(Y_AXIS_POSITION);
             builder.add(Z_AXIS_POSITION);
         }
+        if(usesFaceDirection()){
+            builder.add(BlockStates.FACING);
+        }
     }
     
     public boolean usesAxisPositions() {
+        return false;
+    }
+    
+    public boolean usesFaceDirection(){
         return false;
     }
     
