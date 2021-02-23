@@ -57,7 +57,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 // can happen if a block is broken in the same tick it is placed
                 return;
             }
-            if(((MultiblockBlock)thisBlock).usesAssmeblyState()){
+            if(((MultiblockBlock)thisBlock).usesAssemblyState()){
                 world.setBlockState(this.pos, this.getBlockState().with(ASSEMBLED, false));
             }
             if (controller != null) {
@@ -164,7 +164,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     @Nonnull
     public ActionResultType onBlockActivated(@Nonnull PlayerEntity player, @Nonnull Hand handIn) {
         if (handIn == Hand.MAIN_HAND) {
-            if (player.getHeldItemMainhand() == ItemStack.EMPTY && (!((MultiblockBlock) getBlockState().getBlock()).usesAssmeblyState() || !getBlockState().get(ASSEMBLED))) {
+            if (player.getHeldItemMainhand() == ItemStack.EMPTY && (!((MultiblockBlock) getBlockState().getBlock()).usesAssemblyState() || !getBlockState().get(ASSEMBLED))) {
                 if (controller != null && controller.assemblyState() != MultiblockController.AssemblyState.ASSEMBLED) {
                     if (controller.lastValidationError != null) {
                         player.sendMessage(controller.lastValidationError.getTextComponent(), player.getUniqueID());

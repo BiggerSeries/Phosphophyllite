@@ -709,7 +709,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     
     protected BlockState assembledTileState(TileType tile) {
         BlockState state = tile.getBlockState();
-        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssmeblyState()) {
+        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssemblyState()) {
             state = state.with(MultiblockBlock.ASSEMBLED, true);
         }
         return state;
@@ -717,7 +717,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     
     protected BlockState disassembledTileState(TileType tile) {
         BlockState state = tile.getBlockState();
-        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssmeblyState()) {
+        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssemblyState()) {
             state = state.with(MultiblockBlock.ASSEMBLED, false);
         }
         return state;

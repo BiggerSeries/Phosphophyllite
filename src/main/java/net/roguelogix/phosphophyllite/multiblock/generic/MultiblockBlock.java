@@ -27,7 +27,7 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     public MultiblockBlock(Properties properties) {
         super(properties);
         BlockState defaultState = this.getDefaultState();
-        if(usesAssmeblyState()) {
+        if(usesAssemblyState()) {
             defaultState = defaultState.with(ASSEMBLED, false);
         }
         if (connectedTexture()) {
@@ -50,7 +50,7 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
         return false;
     }
     
-    public boolean usesAssmeblyState(){
+    public boolean usesAssemblyState(){
         return true;
     }
     
@@ -71,7 +71,7 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     @Override
     protected void fillStateContainer(@Nonnull StateContainer.Builder<Block, BlockState> builder) {
         super.fillStateContainer(builder);
-        if(usesAssmeblyState()) {
+        if(usesAssemblyState()) {
             builder.add(ASSEMBLED);
         }
         if (connectedTexture()) {
