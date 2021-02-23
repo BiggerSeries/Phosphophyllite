@@ -25,6 +25,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     protected final Set<ITickableMultiblockTile> toTick = new LinkedHashSet<>();
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
     protected final Set<IOnAssemblyTile> onAssemblyTiles = new LinkedHashSet<>();
+    protected final Set<IOnDisassemblyTile> onDisassemblyTiles = new LinkedHashSet<>();
     private boolean checkForDetachments = false;
     private boolean updateExtremes = true;
     private long updateAssemblyAtTick = Long.MAX_VALUE;
@@ -225,6 +226,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         if (toAttach instanceof IOnAssemblyTile) {
             onAssemblyTiles.add((IOnAssemblyTile) toAttach);
         }
+        if (toAttach instanceof IOnDisassemblyTile) {
+            onDisassemblyTiles.add((IOnDisassemblyTile) toAttach);
+        }
         
         toAttach.controller = self();
         if (toAttach.preExistingBlock) {
@@ -257,6 +261,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         }
         if (toDetach instanceof IOnAssemblyTile) {
             onAssemblyTiles.remove(toDetach);
+        }
+        if (toDetach instanceof IOnDisassemblyTile) {
+            onDisassemblyTiles.remove(toDetach);
         }
         
         if (onChunkUnload) {
@@ -447,6 +454,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                 onDisassembled();
                 disassembledBlockStates();
                 updateCachedNBT();
+                onDisassemblyTiles.forEach(IOnDisassemblyTile::onDisassembly);
             }
         }
         for (IAssemblyAttemptedTile assemblyAttemptedTile : assemblyAttemptedTiles) {
