@@ -20,6 +20,7 @@ import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.WorldGenRegistries;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.gen.GenerationStage;
 import net.minecraft.world.gen.feature.ConfiguredFeature;
@@ -41,6 +42,7 @@ import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -62,6 +64,7 @@ import java.util.stream.Collectors;
 public class Registry {
     
     private static final HashMap<String, HashSet<Block>> blocksRegistered = new HashMap<>();
+    private static final HashMap<String, HashMap<ResourceLocation, ConfiguredFeature<?, ?>>> featuresRegistered = new HashMap<>();
     private static final HashMap<Class<?>, HashSet<Block>> tileEntityBlocksToRegister = new HashMap<>();
     
     interface EventBS<T extends IForgeRegistryEntry<T>> extends Consumer<RegistryEvent.Register<T>> {
@@ -169,6 +172,7 @@ public class Registry {
             FMLJavaModLoadingContext.get().getModEventBus().addListener((TextureStitchEvent.Pre e) -> onTextureStitch(e, modNamespace, classes));
         }
         FMLJavaModLoadingContext.get().getModEventBus().addListener((FMLLoadCompleteEvent e) -> onLoadComplete(e, modNamespace, classes));
+        FMLJavaModLoadingContext.get().getModEventBus().addListener((FMLCommonSetupEvent e) -> onCommonSetup(e, modNamespace, classes));
         
         MinecraftForge.EVENT_BUS.addListener((BiomeLoadingEvent biomeEvent) -> {
             registerWorldGen(modNamespace, classes, biomeEvent);
@@ -538,10 +542,55 @@ public class Registry {
 //        ConfigManager.runPostLoads();
     }
     
+    
+    private static synchronized void onCommonSetup(FMLCommonSetupEvent clientSetupEvent, String modNamespace, Set<Class<?>> classes) {
+        Set<Class<?>> ores = classes.stream().filter(c -> c.isAnnotationPresent(RegisterOre.class)).collect(Collectors.toSet());
+        HashSet<Block> blocksRegistered = Registry.blocksRegistered.computeIfAbsent(modNamespace, k -> new HashSet<>());
+        HashMap<ResourceLocation, ConfiguredFeature<?, ?>> featuresRegistered = Registry.featuresRegistered.computeIfAbsent(modNamespace, k -> new HashMap<>());
+    
+        for (Class<?> ore : ores) {
+            try {
+                RegisterBlock blockAnnotation = ore.getAnnotation(RegisterBlock.class);
+                
+                Block oreInstance = null;
+                for (Block block : blocksRegistered) {
+                    if (Objects.requireNonNull(block.getRegistryName())
+                            .toString().equals(modNamespace + ":" + blockAnnotation.name())) {
+                        oreInstance = block;
+                    }
+                }
+                
+                assert oreInstance instanceof IPhosphophylliteOre;
+                IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstance;
+                
+                
+                RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatureConfig.FillerBlockType.BASE_STONE_NETHER : OreFeatureConfig.FillerBlockType.BASE_STONE_OVERWORLD;
+                
+                ConfiguredFeature<?, ?> feature = Feature.ORE
+                        .withConfiguration(new OreFeatureConfig(fillerBlock, oreInstance.getDefaultState(), oreInfo.size()))
+                        .withPlacement(Placement.RANGE.configure(new TopSolidRangeConfig(oreInfo.minLevel(), 0, oreInfo.maxLevel())))
+                        .square()
+                        .func_242731_b(oreInfo.count());
+                
+                boolean doSpawn = oreInfo.doSpawn();
+                
+                VanillaFeatureWrapper<?, ?> wrapper = new VanillaFeatureWrapper<>(feature, () -> doSpawn);
+    
+                Block finalOreInstance = oreInstance;
+                featuresRegistered.put(finalOreInstance.getRegistryName(), wrapper);
+                clientSetupEvent.enqueueWork(() -> net.minecraft.util.registry.Registry.register(WorldGenRegistries.CONFIGURED_FEATURE, finalOreInstance.getRegistryName(), wrapper));
+                
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            }
+        }
+        
+    }
+    
     private static synchronized void registerWorldGen(String modNamespace, Set<Class<?>> classes, BiomeLoadingEvent biomeEvent) {
         Set<Class<?>> ores = classes.stream().filter(c -> c.isAnnotationPresent(RegisterOre.class)).collect(Collectors.toSet());
-        HashSet<Block> blocksRegistered = Registry.blocksRegistered
-                .computeIfAbsent(modNamespace, k -> new HashSet<>());
+        HashSet<Block> blocksRegistered = Registry.blocksRegistered.computeIfAbsent(modNamespace, k -> new HashSet<>());
+        HashMap<ResourceLocation, ConfiguredFeature<?, ?>> featuresRegistered = Registry.featuresRegistered.computeIfAbsent(modNamespace, k -> new HashMap<>());
         
         for (Class<?> ore : ores) {
             try {
@@ -565,26 +614,13 @@ public class Registry {
                     }
                 }
                 
-                final Block finalOreInstance = oreInstance;
-                
                 if ((biomeEvent.getCategory() == Biome.Category.NETHER) != oreInfo.isNetherOre()) {
                     return;
                 }
                 
-                biomeEvent.getGeneration().getFeatures(GenerationStage.Decoration.UNDERGROUND_ORES).add(() -> {
-                    
-                    RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatureConfig.FillerBlockType.BASE_STONE_NETHER : OreFeatureConfig.FillerBlockType.BASE_STONE_OVERWORLD;
-                    
-                    ConfiguredFeature<?, ?> feature = Feature.ORE
-                            .withConfiguration(new OreFeatureConfig(fillerBlock, finalOreInstance.getDefaultState(), oreInfo.size()))
-                            .withPlacement(Placement.RANGE.configure(new TopSolidRangeConfig(oreInfo.minLevel(), 0, oreInfo.maxLevel())))
-                            .square()
-                            .func_242731_b(oreInfo.count());
-                    
-                    boolean doSpawn = oreInfo.doSpawn();
-    
-                    return new VanillaFeatureWrapper<>(feature, () -> doSpawn);
-                });
+                ConfiguredFeature<?, ?> feature = featuresRegistered.get(oreInstance.getRegistryName());
+                
+                biomeEvent.getGeneration().getFeatures(GenerationStage.Decoration.UNDERGROUND_ORES).add(() -> feature);
             } catch (NullPointerException e) {
                 e.printStackTrace();
             }
