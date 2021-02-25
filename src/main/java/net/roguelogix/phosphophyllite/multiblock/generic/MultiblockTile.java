@@ -57,7 +57,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 // can happen if a block is broken in the same tick it is placed
                 return;
             }
-            if(((MultiblockBlock)thisBlock).usesAssemblyState()){
+            if (((MultiblockBlock) thisBlock).usesAssemblyState()) {
                 world.setBlockState(this.pos, this.getBlockState().with(ASSEMBLED, false));
             }
             if (controller != null) {
@@ -91,7 +91,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     public void validate() {
         super.validate();
         attemptAttach();
-        if(world.isRemote){
+        if (world.isRemote) {
             controllerData = null;
         }
     }
@@ -179,6 +179,8 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 // no its not getting translated, its debug info, *english*
                 if (controller != null) {
                     player.sendMessage(new StringTextComponent(getDebugInfo()), player.getUniqueID());
+                } else if (!world.isRemote) {
+                    player.sendMessage(new StringTextComponent("null controller on server"), player.getUniqueID());
                 }
                 return ActionResultType.SUCCESS;
                 
