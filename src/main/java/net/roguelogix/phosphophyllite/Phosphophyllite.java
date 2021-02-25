@@ -34,11 +34,11 @@ public class Phosphophyllite {
     public Phosphophyllite() {
         Registry.onModLoad();
         MinecraftForge.EVENT_BUS.register(this);
-    
-        if(PhosphophylliteConfig.bypassPerformantCheck){
+        
+        if (PhosphophylliteConfig.bypassPerformantCheck) {
             LOGGER.warn("Performant check bypassed");
             LOGGER.warn("Performant " + (FMLLoader.getLoadingModList().getModFileById("performant") != null ? "is" : "is not") + " present");
-        }else{
+        } else {
             if (FMLLoader.getLoadingModList().getModFileById("performant") != null) {
                 throw new IllegalStateException("" +
                         "Performant is incompatible with Phosphophyllite\n" +
@@ -100,10 +100,10 @@ public class Phosphophyllite {
             // apparently, stragglers can exist
             //noinspection SuspiciousMethodCalls
             tilesToAttach.remove(worldUnloadEvent.getWorld());
+            newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
+            oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
+            newTiles.removeIf(multiblockTile -> multiblockTile.getWorld() == worldUnloadEvent.getWorld());
         }
-        newControllers.clear();
-        oldControllers.clear();
-        newTiles.clear();
     }
     
     @SubscribeEvent
