@@ -1,3 +1,10 @@
+# 1.16.5-0.5.0-alpha.1
+ - add on assembly and disassembly listeners
+ - add automatic face direction capabilities for rectangular
+ - register configuredfeatures for oregen
+ - add null controller debeefer message
+ - fix null controller with dimension teleporting
+
 # 1.16.5-0.5.0-alpha.0
  - correct do not care bounds range checks
  - patch json loading bug
