@@ -287,9 +287,7 @@ public class ConfigSpec {
                 {
                     for (Element element : elements) {
                         if (entry.getKey().equals(element.name)) {
-                            if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                                subElements.add(regenerateElementTreeForNode(element, entry.getValue(), null, entry.getKey(), enableAdvanced));
-                            }
+                            subElements.add(regenerateElementTreeForNode(element, entry.getValue(), null, entry.getKey(), enableAdvanced));
                             break nextEntry;
                         }
                     }
@@ -343,9 +341,7 @@ public class ConfigSpec {
                 {
                     for (Element element : elements) {
                         if (entry.getKey().equals(element.name)) {
-                            if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                                subElements.add(regenerateElementTreeForNode(element, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced));
-                            }
+                            subElements.add(regenerateElementTreeForNode(element, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced));
                             break nextEntry;
                         }
                     }
