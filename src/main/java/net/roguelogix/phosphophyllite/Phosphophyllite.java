@@ -46,7 +46,7 @@ public class Phosphophyllite {
                         "GitHub issue on the matter: https://github.com/someaddons/performant_issues/issues/70\n" +
                         "To bypass this check add \"bypassPerformantCheck: true\" to your phosphophyllite config\n" +
                         "If you bypass this check I (RogueLogix) will not provide any support for any issues related to Phosphophyllite or the mods that use it\n" +
-                        "If you believe your issue is unrelated, disabled performant and reproduce it\n" +
+                        "If you believe your issue is unrelated, disable performant and reproduce it\n" +
                         "By choosing to bypass this check you understand that here there be dragons");
             }
         }
