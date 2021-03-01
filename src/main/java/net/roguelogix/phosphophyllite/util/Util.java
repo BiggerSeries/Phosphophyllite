@@ -54,7 +54,10 @@ public class Util {
     }
     
     public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, World world, BiConsumer<BlockState, Vector3i> func) {
-        Vector3i currentPosition = new Vector3i();
+        chunkCachedBlockStateIteration(start, end, world, func, new Vector3i());
+    }
+    
+    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, World world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
         for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
             for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
                 int chunkX = X >> 4;
@@ -73,12 +76,12 @@ public class Util {
                     for (int x = sectionMinX; x < sectionMaxX; x++) {
                         for (int y = sectionMinY; y < sectionMaxY; y++) {
                             for (int z = sectionMinZ; z < sectionMaxZ; z++) {
-                                currentPosition.set(x, y, z);
+                                scratchVector.set(x, y, z);
                                 BlockState state = Blocks.AIR.getDefaultState();
                                 if (chunkSection != null) {
                                     state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
                                 }
-                                func.accept(state, currentPosition);
+                                func.accept(state, scratchVector);
                             }
                         }
                     }
