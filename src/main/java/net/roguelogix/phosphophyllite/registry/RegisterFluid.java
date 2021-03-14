@@ -6,6 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RegisterFluid {
     
+    String modid() default "";
+    
     String name();
     
     boolean registerBucket() default false;

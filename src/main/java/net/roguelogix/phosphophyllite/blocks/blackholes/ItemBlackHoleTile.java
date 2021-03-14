@@ -9,6 +9,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
+import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,6 +19,9 @@ public class ItemBlackHoleTile extends TileEntity implements IItemHandler {
     
     @RegisterTileEntity.Type
     public static TileEntityType<?> TYPE;
+    
+    @RegisterTileEntity.Supplier
+    public static final TileSupplier SUPPLIER = ItemBlackHoleTile::new;
     
     public ItemBlackHoleTile() {
         super(TYPE);

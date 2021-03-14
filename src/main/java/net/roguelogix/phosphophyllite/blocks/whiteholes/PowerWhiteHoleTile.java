@@ -9,6 +9,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
+import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,6 +19,9 @@ public class PowerWhiteHoleTile extends TileEntity implements IEnergyStorage, IT
     
     @RegisterTileEntity.Type
     public static TileEntityType<?> TYPE;
+    
+    @RegisterTileEntity.Supplier
+    public static final TileSupplier SUPPLIER = PowerWhiteHoleTile::new;
     
     public PowerWhiteHoleTile() {
         super(TYPE);

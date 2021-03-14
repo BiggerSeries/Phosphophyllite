@@ -6,6 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RegisterBlock {
     
+    String modid() default "";
+    
     String name();
     
     boolean registerItem() default true;
@@ -13,8 +15,6 @@ public @interface RegisterBlock {
     boolean creativeTab() default true;
     
     Class<?> tileEntityClass() default RegisterBlock.class;
-    
-    String tag() default "";
     
     @Retention(RetentionPolicy.RUNTIME)
     @interface Instance {

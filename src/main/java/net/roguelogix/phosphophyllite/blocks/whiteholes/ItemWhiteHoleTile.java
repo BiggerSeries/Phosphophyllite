@@ -15,6 +15,7 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
+import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,6 +26,9 @@ public class ItemWhiteHoleTile extends TileEntity implements IItemHandler, ITick
     
     @RegisterTileEntity.Type
     public static TileEntityType<?> TYPE;
+    
+    @RegisterTileEntity.Supplier
+    public static final TileSupplier SUPPLIER = ItemWhiteHoleTile::new;
     
     public ItemWhiteHoleTile() {
         super(TYPE);

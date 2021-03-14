@@ -32,7 +32,7 @@ public class Phosphophyllite {
     private static long tick = 0;
     
     public Phosphophyllite() {
-        Registry.onModLoad();
+        new Registry();
         MinecraftForge.EVENT_BUS.register(this);
         
         if (PhosphophylliteConfig.bypassPerformantCheck) {

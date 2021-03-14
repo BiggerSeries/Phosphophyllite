@@ -22,6 +22,19 @@ public class Event {
         }
     }
     
+    @SuppressWarnings("unused")
+    public synchronized boolean join(int timeout) {
+        if (wasTriggered.get()) {
+            return true;
+        }
+        try {
+            wait(timeout);
+        } catch (InterruptedException ignored) {
+        }
+        
+        return wasTriggered.get();
+    }
+    
     public synchronized void trigger() {
         if (wasTriggered.get()) {
             return;

@@ -6,6 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 
 public @interface RegisterTileEntity {
+    
+    String modid() default "";
+    
     String name();
     
     @Retention(RetentionPolicy.RUNTIME)
@@ -14,5 +17,9 @@ public @interface RegisterTileEntity {
     
     @Retention(RetentionPolicy.RUNTIME)
     @interface Renderer {
+    }
+    
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Supplier {
     }
 }

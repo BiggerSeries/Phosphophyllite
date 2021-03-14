@@ -9,6 +9,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
+import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,6 +19,9 @@ public class FluidBlackHoleTile extends TileEntity implements IFluidHandler {
     
     @RegisterTileEntity.Type
     public static TileEntityType<?> TYPE;
+    
+    @RegisterTileEntity.Supplier
+    public static final TileSupplier SUPPLIER = FluidBlackHoleTile::new;
     
     public FluidBlackHoleTile() {
         super(TYPE);

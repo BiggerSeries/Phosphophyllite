@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.threading;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -14,12 +15,18 @@ public class WorkQueue {
     
     private final ArrayList<DequeueThread> dequeueThreads = new ArrayList<>();
     
+    public WorkQueue(){
+        // workaround for FML issue
+        // triggers the classloading here instead of the finalizer
+        dequeueThreads.forEach(DequeueThread::finish);
+    }
+    
     private static class DequeueThread implements Runnable {
-        private final Queue<Runnable> queue;
+        private final WeakReference<Queue<Runnable>> queue;
         private final AtomicBoolean stop = new AtomicBoolean(false);
         
         public DequeueThread(Queue<Runnable> queue) {
-            this.queue = queue;
+            this.queue = new WeakReference<>(queue);
             Thread thread = new Thread(this);
             thread.setDaemon(true); // just, because, shouldn't be necessary, but just because
             thread.start();
@@ -27,6 +34,10 @@ public class WorkQueue {
         
         public void run() {
             while (!stop.get()) {
+                Queue<Runnable> queue = this.queue.get();
+                if (queue == null) {
+                    return;
+                }
                 Runnable nextItem = queue.poll();
                 if (nextItem == null) {
                     synchronized (queue) {
