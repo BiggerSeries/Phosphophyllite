@@ -27,6 +27,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
@@ -149,7 +150,7 @@ public class Registry {
         ModBus.addGenericListener(ContainerType.class, this::containerRegistration);
         ModBus.addGenericListener(TileEntityType.class, this::tileEntityRegistration);
         
-        MinecraftForge.EVENT_BUS.addListener(this::biomeLoadingEventHandler);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
