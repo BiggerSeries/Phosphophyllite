@@ -106,6 +106,9 @@ repositories {
     maven {
         url = "https://www.cursemaven.com"
     }
+    maven {
+        url =  'https://modmaven.dev/'
+    }
 }
 
 dependencies {
@@ -138,6 +141,8 @@ dependencies {
 //    runtime fg.deobf('curse.maven:jei:3039710')
 //    runtime fg.deobf('curse.maven:mekanism:2996531')
 //    runtime fg.deobf('curse.maven:mekanismGens:2996533')
+
+    compileOnly "mekanism:Mekanism:${mekanism_mc_version}-${mekanism_version}:api"
 
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
