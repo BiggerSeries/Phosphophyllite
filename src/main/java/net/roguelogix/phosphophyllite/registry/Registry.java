@@ -54,7 +54,7 @@ import java.util.function.Supplier;
 
 public class Registry {
     
-    private static final Logger LOGGER = LogManager.getLogger("Phosphohyllite/Registry");
+    private static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Registry");
     
     private static final WorkQueue preEventWorkQueue = new WorkQueue();
     private static boolean stopWorkerThread = false;
