@@ -118,6 +118,7 @@ public class Registry {
         annotationMap.put(RegisterTileEntity.class.getName(), this::registerTileEntityAnnotation);
         annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
         annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
+        annotationMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
     }
     
     public Registry() {
@@ -869,7 +870,28 @@ public class Registry {
         });
     }
     
-    private void registerConfigAnnotation(String modNamespace, Class<?> configClazz) {
+    private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {
         ConfigManager.registerConfig(configClazz, modNamespace);
+    }
+    
+    private void onModLoadAnnotation(String modNamespace, Class<?> modLoadClazz, final String memberName) {
+        try {
+            Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
+            if(!Modifier.isStatic(method.getModifiers())){
+                LOGGER.error("Cannot call non-static @OnModLoad method " + method.getName() + " in " + modLoadClazz.getSimpleName());
+                return;
+            }
+            
+            if(method.getParameterCount() != 0){
+                LOGGER.error("Cannot call @OnModLoad method with parameters " + method.getName() + " in " + modLoadClazz.getSimpleName());
+                return;
+            }
+            
+            method.setAccessible(true);
+            method.invoke(null);
+            
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 }
