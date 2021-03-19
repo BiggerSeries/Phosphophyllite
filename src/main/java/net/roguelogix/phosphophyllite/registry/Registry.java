@@ -137,7 +137,7 @@ public class Registry {
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
                     // class loaded, so, pass it off to the handler
-                    handler.run(modNamespace, clazz);
+                    handler.run(modNamespace, clazz, annotation.getMemberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                 }
             }
@@ -216,10 +216,10 @@ public class Registry {
     }
     
     private interface AnnotationHandler {
-        void run(final String modNamespace, final Class<?> clazz);
+        void run(final String modNamespace, final Class<?> clazz, final String memberName);
     }
     
-    private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz) {
+    private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
         assert blockClazz.isAnnotationPresent(RegisterBlock.class);
         
         final RegisterBlock annotation = blockClazz.getAnnotation(RegisterBlock.class);
@@ -373,7 +373,7 @@ public class Registry {
         }
     }
     
-    private void registerItemAnnotation(String modNamespace, Class<?> itemClazz) {
+    private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
         assert itemClazz.isAnnotationPresent(RegisterItem.class);
         
         final RegisterItem annotation = itemClazz.getAnnotation(RegisterItem.class);
@@ -452,7 +452,7 @@ public class Registry {
         });
     }
     
-    private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz) {
+    private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
         assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
         
         final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
@@ -583,7 +583,7 @@ public class Registry {
         }
     }
     
-    private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz) {
+    private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
         assert containerClazz.isAnnotationPresent(RegisterContainer.class);
         
         final RegisterContainer annotation = containerClazz.getAnnotation(RegisterContainer.class);
@@ -691,7 +691,7 @@ public class Registry {
         });
     }
     
-    private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz) {
+    private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
         assert tileClazz.isAnnotationPresent(RegisterTileEntity.class);
         
         final RegisterTileEntity annotation = tileClazz.getAnnotation(RegisterTileEntity.class);
@@ -803,7 +803,7 @@ public class Registry {
         });
     }
     
-    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz) {
+    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
         assert oreClazz.isAnnotationPresent(RegisterOre.class);
         
         if (!oreClazz.isAnnotationPresent(RegisterBlock.class)) {
