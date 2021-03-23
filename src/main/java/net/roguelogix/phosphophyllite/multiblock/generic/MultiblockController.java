@@ -392,10 +392,10 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
                 newToMerge.addAll(otherController.controllersToMerge);
                 otherController.controllersToMerge.clear();
                 this.onMerge(otherController);
-                this.blocks.addAll(otherController.blocks);
                 otherController.blocks.forEachTile(tile -> {
-                    tile.controller = self();
-                    onPartPlaced(tile);
+                    tile.controller = null;
+                    tile.preExistingBlock = false;
+                    attemptAttach(tile);
                 });
             }
             updateExtremes = true;
