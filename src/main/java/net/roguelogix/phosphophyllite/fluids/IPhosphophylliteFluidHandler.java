@@ -32,6 +32,7 @@ public interface IPhosphophylliteFluidHandler extends IFluidHandler {
     default FluidStack getFluidInTank(int tank) {
         stack.setFluid(fluidTypeInTank(tank));
         stack.setAmount(fluidAmountInTank(tank));
+        stack.setTag(fluidTagInTank(tank));
         return stack;
     }
     
