@@ -10,6 +10,7 @@ import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -172,9 +173,9 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
             if (player.getHeldItemMainhand() == ItemStack.EMPTY && (!((MultiblockBlock) getBlockState().getBlock()).usesAssemblyState() || !getBlockState().get(ASSEMBLED))) {
                 if (controller != null && controller.assemblyState() != MultiblockController.AssemblyState.ASSEMBLED) {
                     if (controller.lastValidationError != null) {
-                        player.sendMessage(controller.lastValidationError.getTextComponent(), player.getUniqueID());
+                        player.sendMessage(controller.lastValidationError.getTextComponent(), Util.DUMMY_UUID);
                     } else {
-                        player.sendMessage(new TranslationTextComponent("multiblock.error.phosphophyllite.unknown"), player.getUniqueID());
+                        player.sendMessage(new TranslationTextComponent("multiblock.error.phosphophyllite.unknown"), Util.DUMMY_UUID);
                     }
                     
                 }
@@ -183,9 +184,9 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
             } else if (player.getHeldItemMainhand().getItem() == DebugTool.INSTANCE) {
                 // no its not getting translated, its debug info, *english*
                 if (controller != null) {
-                    player.sendMessage(new StringTextComponent(getDebugInfo()), player.getUniqueID());
+                    player.sendMessage(new StringTextComponent(getDebugInfo()), Util.DUMMY_UUID);
                 } else if (!world.isRemote) {
-                    player.sendMessage(new StringTextComponent("null controller on server"), player.getUniqueID());
+                    player.sendMessage(new StringTextComponent("null controller on server"), Util.DUMMY_UUID);
                 }
                 return ActionResultType.SUCCESS;
                 
