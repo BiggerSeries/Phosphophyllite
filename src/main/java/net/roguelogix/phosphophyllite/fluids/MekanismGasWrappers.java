@@ -288,7 +288,7 @@ public class MekanismGasWrappers {
         @Override
         public Fluid fluidTypeInTank(int tank) {
             GasStack gasStack = gasHandler.getChemicalInTank(tank);
-            if (lastMapping == null || lastMapping.gases.contains(gasStack.getRaw())) {
+            if (lastMapping == null || !lastMapping.gases.contains(gasStack.getRaw())) {
                 Mapping map = gasToFluidMap.get(gasStack.getRaw());
                 if (map == null) {
                     return Fluids.EMPTY;
@@ -315,7 +315,7 @@ public class MekanismGasWrappers {
                 return 0;
             }
             GasStack gasStack = gasHandler.getChemicalInTank(tank);
-            if (lastMapping == null || lastMapping.gases.contains(gasStack.getRaw())) {
+            if (lastMapping == null || !lastMapping.gases.contains(gasStack.getRaw())) {
                 Mapping map = gasToFluidMap.get(gasStack.getRaw());
                 if (map == null) {
                     return 0;
@@ -330,7 +330,7 @@ public class MekanismGasWrappers {
         
         @Override
         public boolean fluidValidForTank(int tank, Fluid fluid) {
-            if (lastMapping == null || lastMapping.fluids.contains(fluid)) {
+            if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
                 Mapping map = fluidToGasMap.get(fluid);
                 if (map == null) {
                     return false;
@@ -352,7 +352,7 @@ public class MekanismGasWrappers {
             if (tag != null) {
                 return 0;
             }
-            if (lastMapping == null || lastMapping.fluids.contains(fluid)) {
+            if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
                 Mapping map = fluidToGasMap.get(fluid);
                 if (map == null) {
                     return 0;
@@ -385,7 +385,7 @@ public class MekanismGasWrappers {
             if (tag != null) {
                 return 0;
             }
-            if (lastMapping == null || lastMapping.fluids.contains(fluid)) {
+            if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
                 Mapping map = fluidToGasMap.get(fluid);
                 if (map == null) {
                     return 0;
@@ -432,7 +432,7 @@ public class MekanismGasWrappers {
         public GasStack getChemicalInTank(int tank) {
             Fluid fluid = fluidHandler.fluidTypeInTank(tank);
             long amount = fluidHandler.fluidAmountInTank(tank);
-            if (lastMapping == null || lastMapping.fluids.contains(fluid)) {
+            if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
                 Mapping map = fluidToGasMap.get(fluid);
                 if (map == null) {
                     return GasStack.EMPTY;
@@ -464,7 +464,7 @@ public class MekanismGasWrappers {
         
         @Override
         public boolean isValid(int tank, GasStack stack) {
-            if (lastMapping == null || lastMapping.gases.contains(stack.getRaw())) {
+            if (lastMapping == null || !lastMapping.gases.contains(stack.getRaw())) {
                 Mapping map = gasToFluidMap.get(stack.getRaw());
                 if (map == null) {
                     return false;
@@ -483,7 +483,7 @@ public class MekanismGasWrappers {
         
         @Override
         public GasStack insertChemical(int tank, GasStack stack, Action action) {
-            if (lastMapping == null || lastMapping.gases.contains(stack.getRaw())) {
+            if (lastMapping == null || !lastMapping.gases.contains(stack.getRaw())) {
                 Mapping map = gasToFluidMap.get(stack.getRaw());
                 if (map == null) {
                     return stack;
@@ -519,7 +519,7 @@ public class MekanismGasWrappers {
         @Override
         public GasStack extractChemical(int tank, long gasAmount, Action action) {
             Fluid fluid = fluidHandler.fluidTypeInTank(tank);
-            if (lastMapping == null || lastMapping.fluids.contains(fluid)) {
+            if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
                 Mapping map = fluidToGasMap.get(fluid);
                 if (map == null) {
                     return GasStack.EMPTY;
