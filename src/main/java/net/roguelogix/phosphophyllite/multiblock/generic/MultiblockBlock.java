@@ -88,7 +88,7 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     public void neighborChanged(@Nonnull BlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
         if (connectedTexture()) {
-            updateConnectedTextureState(worldIn, pos, this.getDefaultState());
+            updateConnectedTextureState(worldIn, pos, state);
         }
     }
     
