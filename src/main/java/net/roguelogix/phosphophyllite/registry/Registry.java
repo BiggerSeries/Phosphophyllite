@@ -489,8 +489,9 @@ public class Registry {
             
             Supplier<? extends PhosphophylliteFluid> stillSupplier = () -> fluids[0];
             Supplier<? extends PhosphophylliteFluid> flowingSupplier = () -> fluids[1];
-            FluidAttributes.Builder attributes = FluidAttributes.builder(new ResourceLocation(modid, "fluid/" + name + "_flowing"), new ResourceLocation(modid, "fluid/" + name + "_still"));
-            attributes.overlay(new ResourceLocation(modid, "fluid/" + name + "_overlay")).color(annotation.color());
+            FluidAttributes.Builder attributes = FluidAttributes.builder(new ResourceLocation(modid, "fluid/" + name + "_still"), new ResourceLocation(modid, "fluid/" + name + "_flowing"));
+//            attributes.overlay(new ResourceLocation(modid, "fluid/" + name + "_overlay"));
+            attributes.color(annotation.color());
             ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(stillSupplier, flowingSupplier, attributes);
             if (annotation.registerBucket()) {
                 properties.bucket(() -> bucketArray[0]);
