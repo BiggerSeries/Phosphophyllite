@@ -349,7 +349,7 @@ public class MekanismGasWrappers {
         
         @Override
         public long fill(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate) {
-            if (tag != null) {
+            if (tag != null || fluid == Fluids.EMPTY) {
                 return 0;
             }
             if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {
@@ -382,7 +382,7 @@ public class MekanismGasWrappers {
         
         @Override
         public long drain(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate) {
-            if (tag != null) {
+            if (tag != null || fluid == Fluids.EMPTY) {
                 return 0;
             }
             if (lastMapping == null || !lastMapping.fluids.contains(fluid)) {

@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.fluids;
 
 import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -56,6 +57,9 @@ public class FluidHandlerWrapper implements IPhosphophylliteFluidHandler {
     
     @Override
     public boolean fluidValidForTank(int tank, Fluid fluid) {
+        if(fluid == Fluids.EMPTY){
+            return false;
+        }
         scratchStack.setFluid(fluid);
         scratchStack.setAmount(0);
         return handler.isFluidValid(tank, scratchStack);
@@ -63,6 +67,9 @@ public class FluidHandlerWrapper implements IPhosphophylliteFluidHandler {
     
     @Override
     public long fill(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate) {
+        if(fluid == Fluids.EMPTY){
+            return 0;
+        }
         scratchStack.setFluid(fluid);
         scratchStack.setTag(tag);
         scratchStack.setAmount(amount);
@@ -71,6 +78,9 @@ public class FluidHandlerWrapper implements IPhosphophylliteFluidHandler {
     
     @Override
     public long drain(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate) {
+        if(fluid == Fluids.EMPTY){
+            return 0;
+        }
         scratchStack.setFluid(fluid);
         scratchStack.setTag(tag);
         scratchStack.setAmount(amount);

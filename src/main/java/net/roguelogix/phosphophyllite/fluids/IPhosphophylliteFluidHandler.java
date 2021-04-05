@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.fluids;
 
 import mcp.MethodsReturnNonnullByDefault;
 import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -31,6 +32,9 @@ public interface IPhosphophylliteFluidHandler extends IFluidHandler {
     @Nonnull
     default FluidStack getFluidInTank(int tank) {
         stack.setFluid(fluidTypeInTank(tank));
+        if(stack.getRawFluid() == Fluids.EMPTY){
+            return FluidStack.EMPTY;
+        }
         stack.setAmount(fluidAmountInTank(tank));
         stack.setTag(fluidTagInTank(tank));
         return stack;
