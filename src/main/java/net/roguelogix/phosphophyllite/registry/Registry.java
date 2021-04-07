@@ -87,6 +87,7 @@ public class Registry {
     
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Item> itemRegistryEvent;
+    private final Event itemGroupCreationEvent = new Event();
     private ItemGroup itemGroup = null;
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
@@ -143,6 +144,10 @@ public class Registry {
                 }
             }
         }
+        
+        // in case you didnt register one, this will make sure the items still get registered
+        itemGroupCreationEvent.trigger();
+    
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
         ModBus.addGenericListener(Block.class, this::blockRegistration);
@@ -357,6 +362,7 @@ public class Registry {
                         items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
                     }
                 };
+                itemGroupCreationEvent.trigger();
             }
             
             itemRegistrationQueue.enqueue(() -> {
@@ -438,7 +444,7 @@ public class Registry {
             }
             
             itemArray[0] = item;
-        });
+        }, itemGroupCreationEvent);
         
         itemRegistrationQueue.enqueue(() -> {
             if (!itemCreationEvent.join(10000)) {
