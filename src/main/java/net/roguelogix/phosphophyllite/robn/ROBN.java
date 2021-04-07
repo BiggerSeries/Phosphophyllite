@@ -101,7 +101,7 @@ public class ROBN {
                 return Vector;
             }
             
-            if (java.util.Map.class.isAssignableFrom(tClass)) {
+            if (java.util.Map.class.isAssignableFrom(tClass) || ROBNObject.class.isAssignableFrom(tClass)) {
                 return Map;
             }
             
@@ -218,6 +218,10 @@ public class ROBN {
         }
         if (t instanceof Pair) {
             pairToROBN((Pair<?, ?>) t, buf);
+            return;
+        }
+        if(t instanceof ROBNObject){
+            mapToROBN(((ROBNObject) t).toROBNMap(), buf);
             return;
         }
         throw new IllegalArgumentException("Unknown object type");
