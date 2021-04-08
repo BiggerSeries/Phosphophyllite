@@ -1,3 +1,16 @@
+# 1.16.5-0.5.0-beta
+ - config properly handles hidden and advanced values
+ - new registry backend, some front end changes
+ - extent fluid handler to handle NBT
+ - add mekanism gas <-> fluid wrappers
+ - add fluid handler type wrapper
+ - add energy storage extension
+ - add energy storage type wrapper
+ - add onRemoved multiblock tile call
+ - fix some merging issues
+ - use DUMMY_UUID for error messages, may fix messages not showing
+ - dont reset other blockstate when updating connected texture state
+
 # 1.16.5-0.5.0-alpha.1
  - add on assembly and disassembly listeners
  - add automatic face direction capabilities for rectangular
