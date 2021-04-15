@@ -1,3 +1,6 @@
+# 1.16.5-0.5.0-beta.1
+ - fix weird issue with recipe loading (https://github.com/AllTheMods/ATM-6/issues/1384, https://github.com/AllTheMods/ATM-6/issues/1399)
+
 # 1.16.5-0.5.0-beta
  - config properly handles hidden and advanced values
  - new registry backend, some front end changes
