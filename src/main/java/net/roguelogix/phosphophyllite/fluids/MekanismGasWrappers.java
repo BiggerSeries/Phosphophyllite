@@ -6,16 +6,15 @@ import mekanism.api.chemical.gas.Gas;
 import mekanism.api.chemical.gas.GasStack;
 import mekanism.api.chemical.gas.IGasHandler;
 import mekanism.api.recipes.RotaryRecipe;
+import net.minecraft.client.resources.ReloadListener;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.crafting.IRecipeType;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IFutureReloadListener;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Unit;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -26,15 +25,12 @@ import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -111,7 +107,20 @@ public class MekanismGasWrappers {
     }
     
     private static void addReloadEventListener(AddReloadListenerEvent event) {
-        event.addListener(MekanismGasWrappers::onReload);
+        event.addListener(new ReloadListener<Void>() {
+            @Override
+            protected Void prepare(IResourceManager resourceManagerIn, IProfiler profilerIn) {
+                return null;
+            }
+    
+            @Override
+            protected void apply(Void objectIn, IResourceManager resourceManagerIn, IProfiler profilerIn) {
+                reloadQueue.enqueue(MekanismGasWrappers::reloadMappings);
+                if (server != null) {
+                    reloadQueue.runAll();
+                }
+            }
+        });
     }
     
     private static MinecraftServer server;
@@ -240,17 +249,6 @@ public class MekanismGasWrappers {
                 mapping.fluidStacks.add(new FluidStack(fluid, 0));
             }
         }
-    }
-    
-    @Nonnull
-    private static CompletableFuture<Void> onReload(IFutureReloadListener.IStage stage, IResourceManager resourceManager, IProfiler preparationsProfiler, IProfiler reloadProfiler, Executor backgroundExecutor, Executor gameExecutor) {
-        reloadQueue.enqueue(MekanismGasWrappers::reloadMappings);
-        if (server != null) {
-            reloadQueue.runAll();
-        }
-        stage.markCompleteAwaitingOthers(Unit.INSTANCE);
-        return CompletableFuture.runAsync(() -> {
-        });
     }
     
     private static void removeMapping(Mapping mapping) {
