@@ -180,12 +180,16 @@ public class ConfigSpec {
             Enum<?>[] enumVals = (Enum<?>[]) ((SpecEnumNode) node).enumClass.getEnumConstants();
             String[] enumValStrings = new String[enumVals.length];
             for (int i = 0; i < enumVals.length; i++) {
-                enumValStrings[i] = enumVals[i].toString();
+                enumValStrings[i] = enumVals[i].toString().toLowerCase(Locale.ENGLISH);
             }
             String nameGiven = element.asString().toLowerCase(Locale.ENGLISH);
             Enum<?> givenVal = null;
             for (int i = 0; i < enumValStrings.length; i++) {
                 if (nameGiven.equals(enumValStrings[i])) {
+                    if (((SpecEnumNode) node).allowedValues.length == 0) {
+                        givenVal = enumVals[i];
+                        break;
+                    }
                     for (String allowedValue : ((SpecEnumNode) node).allowedValues) {
                         if (nameGiven.equals(allowedValue.toLowerCase(Locale.ENGLISH))) {
                             givenVal = enumVals[i];
