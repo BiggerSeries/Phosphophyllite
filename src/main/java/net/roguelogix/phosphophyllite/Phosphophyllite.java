@@ -14,6 +14,7 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
 import net.roguelogix.phosphophyllite.registry.Registry;
+import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -68,6 +69,8 @@ public class Phosphophyllite {
     public static long tickNumber() {
         return tick;
     }
+
+    public static final WorkQueue serverQueue = new WorkQueue();
     
     private static final HashMap<ServerWorld, ArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new HashMap<>();
     private static final HashMap<ServerWorld, ArrayList<MultiblockTile<?, ?, ?>>> tilesToAttach = new HashMap<>();
@@ -115,7 +118,9 @@ public class Phosphophyllite {
             return;
         }
         tick++;
-        
+
+        serverQueue.runAll();
+
         for (MultiblockController<?, ?, ?> newController : newControllers) {
             controllersToTick.computeIfAbsent((ServerWorld) newController.getWorld(), k -> new ArrayList<>()).add(newController);
         }
