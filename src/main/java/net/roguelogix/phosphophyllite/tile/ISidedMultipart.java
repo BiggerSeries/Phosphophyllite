@@ -22,7 +22,7 @@ public interface ISidedMultipart {
         
         @OnModLoad
         static void onModLoad() {
-            PhosphophylliteTile.registerModule(ISidedMultipart.class, SidedMultipartModule::new);
+            ModuleRegistry.registerModule(ISidedMultipart.class, SidedMultipartModule::new);
         }
         
         @Nonnull

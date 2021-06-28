@@ -18,8 +18,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -27,39 +25,13 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
     
-    private static final LinkedHashMap<Class<?>, Function<TileEntity, ITileModule>> moduleRegistry = new LinkedHashMap<>();
-    private static final ArrayList<BiConsumer<Class<?>, Function<TileEntity, ITileModule>>> externalRegistrars = new ArrayList<>();
-    
-    /**
-     * Registers an ITileModule and the interface the tile class will implement to signal to create an instance at tile creation
-     * <p>
-     * Also passes this value to any external registries registered below
-     *
-     * @param moduleInterface: Interface class that will be implemented by the tile.
-     * @param constructor:     Creates an instance of an ITileModule for the given tile with the interface implemented
-     */
-    public synchronized static void registerModule(Class<?> moduleInterface, Function<TileEntity, ITileModule> constructor) {
-        moduleRegistry.put(moduleInterface, constructor);
-        externalRegistrars.forEach(c -> c.accept(moduleInterface, constructor));
-    }
-    
-    /**
-     * allows for external implementations of the ITileModule system, so extensions from PhosphophylliteTile and PhosphophylliteBlock aren't forced
-     *
-     * @param registrar external ITileModuleRegistration function
-     */
-    public synchronized static void registerExternalRegistrar(BiConsumer<Class<?>, Function<TileEntity, ITileModule>> registrar) {
-        externalRegistrars.add(registrar);
-        moduleRegistry.forEach(registrar);
-    }
-    
     private final LinkedHashMap<Class<?>, ITileModule> modules = new LinkedHashMap<>();
     private final ArrayList<ITileModule> moduleList = new ArrayList<>();
     
     public PhosphophylliteTile(TileEntityType<?> tileEntityTypeIn) {
         super(tileEntityTypeIn);
         Class<?> thisClazz = this.getClass();
-        moduleRegistry.forEach((clazz, constructor) -> {
+        ModuleRegistry.forEach((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
                 ITileModule module = constructor.apply(this);
                 modules.put(clazz, module);
