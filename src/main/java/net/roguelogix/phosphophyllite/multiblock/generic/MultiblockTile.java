@@ -194,4 +194,22 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
         }
         return ActionResultType.PASS;
     }
+    
+    protected BlockState assembledBlockState() {
+        BlockState state = getBlockState();
+        //noinspection unchecked
+        if (((BlockType) state.getBlock()).usesAssemblyState()) {
+            state = state.with(MultiblockBlock.ASSEMBLED, true);
+        }
+        return state;
+    }
+    
+    protected BlockState disassembledBlockState() {
+        BlockState state = getBlockState();
+        //noinspection unchecked
+        if (((BlockType) state.getBlock()).usesAssemblyState()) {
+            state = state.with(MultiblockBlock.ASSEMBLED, false);
+        }
+        return state;
+    }
 }

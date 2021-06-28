@@ -472,7 +472,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     private void assembledBlockStates() {
         final HashMap<BlockPos, BlockState> newStates = new LinkedHashMap<>();
         blocks.forEach((pos, tile) -> {
-            BlockState state = assembledTileState(tile);
+            BlockState state = tile.assembledBlockState();
             if (state != tile.getBlockState()) {
                 newStates.put(pos, state);
                 tile.updateContainingBlockInfo();
@@ -484,7 +484,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     private void disassembledBlockStates() {
         final HashMap<BlockPos, BlockState> newStates = new LinkedHashMap<>();
         blocks.forEach((pos, tile) -> {
-            BlockState state = disassembledTileState(tile);
+            BlockState state = tile.disassembledBlockState();
             if (state != tile.getBlockState()) {
                 newStates.put(tile.getPos(), state);
                 tile.updateContainingBlockInfo();
@@ -707,19 +707,4 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         return new CompoundNBT();
     }
     
-    protected BlockState assembledTileState(TileType tile) {
-        BlockState state = tile.getBlockState();
-        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssemblyState()) {
-            state = state.with(MultiblockBlock.ASSEMBLED, true);
-        }
-        return state;
-    }
-    
-    protected BlockState disassembledTileState(TileType tile) {
-        BlockState state = tile.getBlockState();
-        if (((MultiblockBlock) tile.getBlockState().getBlock()).usesAssemblyState()) {
-            state = state.with(MultiblockBlock.ASSEMBLED, false);
-        }
-        return state;
-    }
 }
