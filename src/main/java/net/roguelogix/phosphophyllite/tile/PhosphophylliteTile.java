@@ -23,130 +23,59 @@ import java.util.function.Function;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class PhosphophylliteTile extends TileEntity implements IModularTile{
+public class PhosphophylliteTile extends TileEntity implements IModularTile {
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
     
-    private static final LinkedHashMap<Class<?>, Function<TileEntity, Module>> moduleRegistry = new LinkedHashMap<>();
-    private static final ArrayList<BiConsumer<Class<?>, Function<TileEntity, Module>>> externalRegistrars = new ArrayList<>();
+    private static final LinkedHashMap<Class<?>, Function<TileEntity, ITileModule>> moduleRegistry = new LinkedHashMap<>();
+    private static final ArrayList<BiConsumer<Class<?>, Function<TileEntity, ITileModule>>> externalRegistrars = new ArrayList<>();
     
     /**
-     * Registers a module and the interface the tile class will implement to signal to create an instance at tile creation
+     * Registers an ITileModule and the interface the tile class will implement to signal to create an instance at tile creation
      * <p>
      * Also passes this value to any external registries registered below
      *
      * @param moduleInterface: Interface class that will be implemented by the tile.
-     * @param constructor:     Creates an instance of a module for the given tile with the interface implemented
+     * @param constructor:     Creates an instance of an ITileModule for the given tile with the interface implemented
      */
-    public synchronized static void registerModule(Class<?> moduleInterface, Function<TileEntity, Module> constructor) {
+    public synchronized static void registerModule(Class<?> moduleInterface, Function<TileEntity, ITileModule> constructor) {
         moduleRegistry.put(moduleInterface, constructor);
         externalRegistrars.forEach(c -> c.accept(moduleInterface, constructor));
     }
     
     /**
-     * allows for external implementations of the module system, so extensions from PhosphophylliteTile and PhosphophylliteBlock aren't forced
+     * allows for external implementations of the ITileModule system, so extensions from PhosphophylliteTile and PhosphophylliteBlock aren't forced
      *
-     * @param registrar external moduleRegistration function
+     * @param registrar external ITileModuleRegistration function
      */
-    public synchronized static void registerExternalRegistrar(BiConsumer<Class<?>, Function<TileEntity, Module>> registrar) {
+    public synchronized static void registerExternalRegistrar(BiConsumer<Class<?>, Function<TileEntity, ITileModule>> registrar) {
         externalRegistrars.add(registrar);
         moduleRegistry.forEach(registrar);
     }
     
-    public interface Module {
-        
-        TileEntity getTile();
-        
-        void onAdded();
-        
-        void onRemoved(boolean chunkUnload);
-        
-        /**
-         * coped from ICapabilityProvider
-         * <p>
-         * Retrieves the Optional handler for the capability requested on the specific side.
-         * The return value <strong>CAN</strong> be the same for multiple faces.
-         * Modders are encouraged to cache this value, using the listener capabilities of the Optional to
-         * be notified if the requested capability get lost.
-         *
-         * @param cap  The capability to check
-         * @param side The Side to check from,
-         *             <strong>CAN BE NULL</strong>. Null is defined to represent 'internal' or 'self'
-         * @return The requested an optional holding the requested capability.
-         */
-        default <T> LazyOptional<T> capability(final Capability<T> cap, final @Nullable Direction side) {
-            return LazyOptional.empty();
-        }
-        
-        String saveKey();
-        
-        /**
-         * Standard world save NBT
-         *
-         * @param nbt
-         */
-        void readNBT(CompoundNBT nbt);
-        
-        @Nullable
-        CompoundNBT writeNBT();
-        
-        /**
-         * Initial server -> client sync on client side chunk load
-         *
-         * @param nbt
-         */
-        default void handleDataNBT(CompoundNBT nbt) {
-            // mimmicks behavior of IForgeTileEntity
-            readNBT(nbt);
-        }
-        
-        @Nullable
-        default CompoundNBT getDataNBT() {
-            // mimmicks behavior of IForgeTileEntity
-            return writeNBT();
-        }
-        
-        /**
-         * Updates while chunk is loaded
-         *
-         * @param nbt
-         */
-        default void handleUpdateNBT(CompoundNBT nbt) {
-        }
-        
-        @Nullable
-        default CompoundNBT getUpdateNBT() {
-            return null;
-        }
-        
-        default String getDebugInfo() {
-            return "";
-        }
-    }
-    
-    private final LinkedHashMap<Class<?>, Module> modules = new LinkedHashMap<>();
-    private final ArrayList<Module> moduleList = new ArrayList<>();
+    private final LinkedHashMap<Class<?>, ITileModule> modules = new LinkedHashMap<>();
+    private final ArrayList<ITileModule> moduleList = new ArrayList<>();
     
     public PhosphophylliteTile(TileEntityType<?> tileEntityTypeIn) {
         super(tileEntityTypeIn);
         Class<?> thisClazz = this.getClass();
         moduleRegistry.forEach((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
-                Module module = constructor.apply(this);
+                ITileModule module = constructor.apply(this);
                 modules.put(clazz, module);
                 moduleList.add(module);
             }
         });
     }
     
-    public Module getModule(Class<?> interfaceClazz) {
+    public ITileModule getModule(Class<?> interfaceClazz) {
         return modules.get(interfaceClazz);
     }
     
     @Override
     public final void onLoad() {
         super.onLoad();
-        moduleList.forEach(Module::onAdded);
+        moduleList.forEach(ITileModule::onAdded);
         onAdded();
     }
     
@@ -178,7 +107,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
             readNBT(local);
         }
         CompoundNBT subNBTs = compound.getCompound("sub");
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
                 CompoundNBT nbt = subNBTs.getCompound(key);
@@ -191,12 +120,12 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
     public final CompoundNBT write(CompoundNBT compound) {
         CompoundNBT superNBT = super.write(compound);
         CompoundNBT subNBTs = new CompoundNBT();
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             CompoundNBT nbt = module.writeNBT();
             if (nbt != null) {
                 String key = module.saveKey();
                 if (subNBTs.contains(key)) {
-                    // TODO: log warning
+                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getPos());
                 }
                 subNBTs.put(key, nbt);
             }
@@ -227,7 +156,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
             handleDataNBT(local);
         }
         CompoundNBT subNBTs = compound.getCompound("sub");
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
                 CompoundNBT nbt = subNBTs.getCompound(key);
@@ -240,7 +169,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
     public final CompoundNBT getUpdateTag() {
         CompoundNBT superNBT = super.getUpdateTag();
         CompoundNBT subNBTs = new CompoundNBT();
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             CompoundNBT nbt = module.getDataNBT();
             if (nbt != null) {
                 String key = module.saveKey();
@@ -283,7 +212,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
             handleUpdateNBT(local);
         }
         CompoundNBT subNBTs = compound.getCompound("sub");
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
                 CompoundNBT nbt = subNBTs.getCompound(key);
@@ -297,7 +226,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
     public final SUpdateTileEntityPacket getUpdatePacket() {
         boolean sendPacket = false;
         CompoundNBT subNBTs = new CompoundNBT();
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             CompoundNBT nbt = module.getUpdateNBT();
             if (nbt != null) {
                 sendPacket = true;
@@ -332,7 +261,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile{
     @Nonnull
     public final <T> LazyOptional<T> getCapability(final Capability<T> cap, final @Nullable Direction side) {
         LazyOptional<T> optional = capability(cap, side);
-        for (Module module : moduleList) {
+        for (ITileModule module : moduleList) {
             LazyOptional<T> moduleOptional = module.capability(cap, side);
             if (moduleOptional.isPresent()) {
                 if (optional.isPresent()) {
