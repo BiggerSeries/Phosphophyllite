@@ -1,3 +1,9 @@
+# 1.16.5-0.5.0
+ - add modular tile system (multiblock system to be ported over), consider alpha, its untested right now
+   - add sided multipart module helper
+ - move tile blockstate update to tile class from controller, should help with modularity/extensions
+ - fix config enum options
+
 # 1.16.5-0.5.0-beta.1
  - fix weird issue with recipe loading (https://github.com/AllTheMods/ATM-6/issues/1384, https://github.com/AllTheMods/ATM-6/issues/1399)
 
