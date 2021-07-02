@@ -21,6 +21,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     
     protected final World world;
     
+    private boolean hasSaveDelegate = false;
     protected final TileMap<TileType> blocks = new TileMap<>();
     protected final Set<ITickableMultiblockTile> toTick = new LinkedHashSet<>();
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
@@ -230,6 +231,14 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             onDisassemblyTiles.add((IOnDisassemblyTile) toAttach);
         }
         
+        if (toAttach.isSaveDelegate) {
+            if (hasSaveDelegate) {
+                toAttach.isSaveDelegate = false;
+            } else {
+                hasSaveDelegate = true;
+            }
+        }
+        
         toAttach.controller = self();
         if (toAttach.preExistingBlock) {
             if (toAttach.controllerData != null) {
@@ -275,6 +284,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             toDetach.attemptAttach();
         }
         
+        if(toDetach.isSaveDelegate){
+            hasSaveDelegate = false;
+        }
         
         if (blocks.isEmpty()) {
             Phosphophyllite.removeController(this);
@@ -403,7 +415,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
         }
-    
+        
         if (updateAssemblyAtTick < lastTick) {
             updateMinMaxCoordinates();
             updateAssemblyState();
@@ -448,6 +460,12 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             }
             assembledBlockStates();
             onAssemblyTiles.forEach(IOnAssemblyTile::onAssembly);
+            if(!hasSaveDelegate){
+                TileType tile = blocks.getOne();
+                assert tile != null;
+                tile.isSaveDelegate = true;
+                hasSaveDelegate = true;
+            }
         } else {
             if (oldState == AssemblyState.ASSEMBLED) {
                 state = AssemblyState.DISASSEMBLED;

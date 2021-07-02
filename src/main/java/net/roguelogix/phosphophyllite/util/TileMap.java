@@ -8,6 +8,7 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -174,5 +175,37 @@ public class TileMap<TileType extends TileEntity> {
     
     public int size() {
         return size;
+    }
+    
+    @Nullable
+    public TileType getOne() {
+        if (isEmpty()) {
+            return null;
+        }
+        Iterator<TileEntity[][][]> iter = internalMap.values().iterator();
+        if (!iter.hasNext()) {
+            return null;
+        }
+        TileEntity[][][] tiles = iter.next();
+        if (tiles == null) {
+            return null;
+        }
+        for (TileEntity[][] tile2d : tiles) {
+            if (tile2d == null) {
+                continue;
+            }
+            for (TileEntity[] tile1d : tile2d) {
+                if(tile1d == null){
+                    continue;
+                }
+                for (TileEntity tileEntity : tile1d) {
+                    if(tileEntity != null){
+                        //noinspection unchecked
+                        return (TileType) tileEntity;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

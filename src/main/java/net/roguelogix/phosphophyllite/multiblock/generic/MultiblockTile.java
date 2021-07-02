@@ -44,6 +44,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     
     private boolean attemptAttach = true;
     private boolean allowAttach = true;
+    boolean isSaveDelegate = false;
     
     public MultiblockTile(@Nonnull TileEntityType<?> tileEntityTypeIn) {
         super(tileEntityTypeIn);
@@ -58,7 +59,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
                 // can happen if a block is broken in the same tick it is placed
                 return;
             }
-            if (((MultiblockBlock) thisBlock).usesAssemblyState()) {
+            if (((MultiblockBlock<?, ?, ?>) thisBlock).usesAssemblyState()) {
                 world.setBlockState(this.pos, this.getBlockState().with(ASSEMBLED, false));
             }
             if (controller != null) {
@@ -148,6 +149,7 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
         if (compound.contains("userdata")) {
             readNBT(compound.getCompound("userdata"));
         }
+        isSaveDelegate = compound.getBoolean("isSaveDelegate");
         preExistingBlock = true;
     }
     
@@ -156,10 +158,11 @@ public abstract class MultiblockTile<ControllerType extends MultiblockController
     @Nonnull
     public final CompoundNBT write(@Nonnull CompoundNBT compound) {
         super.write(compound);
-        if (controller != null && controller.blocks.containsTile(self())) {
+        if (isSaveDelegate && controller != null && controller.blocks.containsTile(self())) {
             compound.put("controllerData", controller.getNBT());
         }
         compound.put("userdata", writeNBT());
+        compound.putBoolean("isSaveDelegate", isSaveDelegate);
         return compound;
     }
     
