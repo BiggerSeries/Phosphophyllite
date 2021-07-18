@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -118,12 +119,35 @@ public class Util {
             ChunkSection[] chunkSections = chunk.getSections();
             states.forEach((bPos, state) -> {
                 ChunkSection section = chunkSections[bPos.getY() >> 4];
-                if(section != null) {
+                if (section != null) {
                     BlockState oldState = section.setBlockState(bPos.getX() & 15, bPos.getY() & 15, bPos.getZ() & 15, state);
                     world.notifyBlockUpdate(bPos, oldState, state, 0);
                 }
             });
             chunk.markDirty();
         });
+    }
+    
+    public static Direction directionFromPositions(BlockPos reference, BlockPos neighbor) {
+        int xDifference = reference.getX() - neighbor.getX();
+        int yDifference = reference.getY() - neighbor.getY();
+        int zDifference = reference.getZ() - neighbor.getZ();
+        if(Math.abs(xDifference) + Math.abs(yDifference) + Math.abs(zDifference) > 1){
+            throw new IllegalArgumentException("positions not neighbors");
+        }
+        if (xDifference == -1) {
+            return Direction.WEST;
+        } else if (xDifference == 1) {
+            return Direction.EAST;
+        } else if (yDifference == -1) {
+            return Direction.DOWN;
+        } else if (yDifference == 1) {
+            return Direction.UP;
+        } else if (zDifference == -1) {
+            return Direction.NORTH;
+        } else if (zDifference == 1) {
+            return Direction.SOUTH;
+        }
+        throw new IllegalArgumentException("identical positions gives");
     }
 }
