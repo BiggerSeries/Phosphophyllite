@@ -15,7 +15,7 @@ public class WorkQueue {
     
     private final ArrayList<DequeueThread> dequeueThreads = new ArrayList<>();
     
-    public WorkQueue(){
+    public WorkQueue() {
         // workaround for FML issue
         // triggers the classloading here instead of the finalizer
         dequeueThreads.forEach(DequeueThread::finish);
@@ -25,9 +25,12 @@ public class WorkQueue {
         private final WeakReference<Queue<Runnable>> queue;
         private final AtomicBoolean stop = new AtomicBoolean(false);
         
-        public DequeueThread(Queue<Runnable> queue) {
+        public DequeueThread(Queue<Runnable> queue, String name) {
             this.queue = new WeakReference<>(queue);
             Thread thread = new Thread(this);
+            if(name != null){
+                thread.setName(name);
+            }
             thread.setDaemon(true); // just, because, shouldn't be necessary, but just because
             thread.start();
         }
@@ -62,12 +65,16 @@ public class WorkQueue {
     }
     
     public WorkQueue addProcessingThread() {
-        return addProcessingThreads(1);
+        return addProcessingThreads(1, null);
     }
     
     public WorkQueue addProcessingThreads(int threads) {
+        return addProcessingThreads(threads, null);
+    }
+    
+    public WorkQueue addProcessingThreads(int threads, String name) {
         for (int i = 0; i < threads; i++) {
-            dequeueThreads.add(new DequeueThread(queue));
+            dequeueThreads.add(new DequeueThread(queue, name == null ? null : name + i));
         }
         return this;
     }
