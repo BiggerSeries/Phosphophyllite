@@ -8,6 +8,7 @@ import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.apache.logging.log4j.LogManager;
@@ -28,8 +29,11 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     private final LinkedHashMap<Class<?>, ITileModule> modules = new LinkedHashMap<>();
     private final ArrayList<ITileModule> moduleList = new ArrayList<>();
     
-    public PhosphophylliteTile(TileEntityType<?> tileEntityTypeIn) {
+    public PhosphophylliteTile(TileEntityType<?> tileEntityTypeIn, BlockState blockState) {
         super(tileEntityTypeIn);
+        if (!(blockState.getBlock() instanceof PhosphophylliteBlock)) {
+            throw new IllegalStateException("PhosphophylliteTiles must only be on a PhosphophylliteBlock");
+        }
         Class<?> thisClazz = this.getClass();
         ModuleRegistry.forEach((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
@@ -263,4 +267,11 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
         return LazyOptional.empty();
     }
     
+    void onBlockUpdate(BlockPos neighborPos) {
+        assert world != null;
+        BlockState neighborBlockState = world.getBlockState(neighborPos);
+        for (ITileModule module : moduleList) {
+            module.onBlockUpdate(neighborBlockState, neighborPos);
+        }
+    }
 }

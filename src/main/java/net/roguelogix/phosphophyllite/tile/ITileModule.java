@@ -1,8 +1,10 @@
 package net.roguelogix.phosphophyllite.tile;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 
@@ -16,6 +18,9 @@ public interface ITileModule {
     }
     
     default void onRemoved(boolean chunkUnload){
+    }
+    
+    default void onBlockUpdate(BlockState neighborBlockState, BlockPos neighborPos){
     }
     
     /**

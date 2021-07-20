@@ -1,9 +1,11 @@
 package net.roguelogix.phosphophyllite.tile;
 
 import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.block.BlockState;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
@@ -44,7 +46,7 @@ public interface ISidedMultipart {
             return tile;
         }
         
-        ITileModule getSideModule(@Nullable Direction side) {
+        public ITileModule getSideModule(@Nullable Direction side) {
             if (side == null) {
                 return coreModule;
             }
@@ -55,7 +57,12 @@ public interface ISidedMultipart {
             return module;
         }
         
-        void setSideModule(@Nullable ITileModule module, @Nullable Direction side) {
+        public <T> T getSideModule(@Nullable Direction side, Class<T> moduleType) {
+            //noinspection unchecked
+            return (T) getSideModule(side);
+        }
+        
+        public void setSideModule(@Nullable ITileModule module, @Nullable Direction side) {
             if (side == null) {
                 if (module != null) {
                     coreModule = module;
@@ -227,7 +234,7 @@ public interface ISidedMultipart {
             builder.append(coreModule.getDebugInfo());
             for (Direction value : Direction.values()) {
                 ITileModule module = sidedModules[value.getIndex()];
-                if(module != null){
+                if (module != null) {
                     builder.append("\n");
                     builder.append(value);
                     builder.append(":\n");
@@ -241,6 +248,16 @@ public interface ISidedMultipart {
         @Override
         public String saveKey() {
             return "PhosphophylliteMultipartTileModule";
+        }
+        
+        @Override
+        public void onBlockUpdate(BlockState neighborBlockState, BlockPos neighborPos) {
+            coreModule.onBlockUpdate(neighborBlockState, neighborPos);
+            for (ITileModule sidedModule : sidedModules) {
+                if (sidedModule != null) {
+                    sidedModule.onBlockUpdate(neighborBlockState, neighborPos);
+                }
+            }
         }
     }
 }
