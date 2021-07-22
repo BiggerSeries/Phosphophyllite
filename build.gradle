@@ -142,6 +142,9 @@ dependencies {
 //    runtime fg.deobf('curse.maven:mekanism:2996531')
 //    runtime fg.deobf('curse.maven:mekanismGens:2996533')
 
+    compileOnly fg.deobf('curse.maven:tita-287342:3346366')
+    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
+
     compileOnly "mekanism:Mekanism:${mekanism_mc_version}-${mekanism_version}:api"
 
     // For more info...

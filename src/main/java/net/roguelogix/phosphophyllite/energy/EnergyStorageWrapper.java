@@ -1,12 +1,30 @@
 package net.roguelogix.phosphophyllite.energy;
 
+import com.buuz135.industrial.block.misc.tile.InfinityChargerTile;
+import com.buuz135.industrial.item.infinity.InfinityEnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 
-public class EnergyStorageWrapper implements IPhosphophylliteEnergyStorage{
+public class EnergyStorageWrapper implements IPhosphophylliteEnergyStorage {
     
-    public static IPhosphophylliteEnergyStorage wrap(IEnergyStorage storage){
-        if(storage instanceof IPhosphophylliteEnergyStorage){
+    private static Class<?> infinityEnergyStorageClazz = null;
+    
+    static {
+        try {
+            infinityEnergyStorageClazz = InfinityEnergyStorage.class;
+        } catch (NoClassDefFoundError ignored) {
+            // expected when the mod isn't loaded
+        }
+    }
+    
+    public static IPhosphophylliteEnergyStorage wrap(IEnergyStorage storage) {
+        if (storage instanceof IPhosphophylliteEnergyStorage) {
             return (IPhosphophylliteEnergyStorage) storage;
+        }
+        if (infinityEnergyStorageClazz != null) {
+            // class is loaded
+            if(storage instanceof InfinityEnergyStorage){
+                return new InfinityEnergyStorageWrapper((InfinityEnergyStorage<?>) storage);
+            }
         }
         return new EnergyStorageWrapper(storage);
     }
@@ -14,7 +32,7 @@ public class EnergyStorageWrapper implements IPhosphophylliteEnergyStorage{
     
     final IEnergyStorage storage;
     
-    private EnergyStorageWrapper(IEnergyStorage storage){
+    private EnergyStorageWrapper(IEnergyStorage storage) {
         this.storage = storage;
     }
     
