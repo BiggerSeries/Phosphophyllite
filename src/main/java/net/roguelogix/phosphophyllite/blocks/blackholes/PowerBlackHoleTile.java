@@ -7,6 +7,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyStorage;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
@@ -14,7 +15,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @RegisterTileEntity(name = "power_black_hole")
-public class PowerBlackHoleTile extends TileEntity implements IEnergyStorage {
+public class PowerBlackHoleTile extends TileEntity implements IPhosphophylliteEnergyStorage {
     
     @RegisterTileEntity.Type
     public static TileEntityType<?> TYPE;
@@ -36,32 +37,32 @@ public class PowerBlackHoleTile extends TileEntity implements IEnergyStorage {
     }
     
     @Override
-    public int receiveEnergy(int maxReceive, boolean simulate) {
-        return maxReceive;
+    public long insertEnergy(long maxInsert, boolean simulate) {
+        return maxInsert;
     }
     
     @Override
-    public int extractEnergy(int maxExtract, boolean simulate) {
+    public long extractEnergy(long maxExtract, boolean simulate) {
         return 0;
     }
     
     @Override
-    public int getEnergyStored() {
+    public long energyStored() {
         return 0;
     }
     
     @Override
-    public int getMaxEnergyStored() {
-        return Integer.MAX_VALUE;
+    public long maxEnergyStored() {
+        return Long.MAX_VALUE;
+    }
+    
+    @Override
+    public boolean canInsert() {
+        return true;
     }
     
     @Override
     public boolean canExtract() {
         return false;
-    }
-    
-    @Override
-    public boolean canReceive() {
-        return true;
     }
 }

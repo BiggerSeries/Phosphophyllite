@@ -8,6 +8,8 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.roguelogix.phosphophyllite.energy.EnergyStorageWrapper;
+import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyStorage;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
@@ -66,13 +68,23 @@ public class PowerWhiteHoleTile extends TileEntity implements IEnergyStorage, IT
         return false;
     }
     
+    private final IEnergyStorage[] lastCapability = new IEnergyStorage[6];
+    private final IPhosphophylliteEnergyStorage[] wrapped = new IPhosphophylliteEnergyStorage[6];
+    
     @Override
     public void tick() {
         assert world != null;
         for (Direction direction : Direction.values()) {
             TileEntity te = world.getTileEntity(pos.offset(direction));
-            if(te != null){
-                te.getCapability(CapabilityEnergy.ENERGY, direction.getOpposite()).ifPresent(c -> c.receiveEnergy(Integer.MAX_VALUE, false));
+            if (te != null) {
+                te.getCapability(CapabilityEnergy.ENERGY, direction.getOpposite()).ifPresent(c -> {
+                    final int directionIndex = direction.getIndex();
+                    if (c != lastCapability[directionIndex]) {
+                        lastCapability[directionIndex] = c;
+                        wrapped[directionIndex] = EnergyStorageWrapper.wrap(c);
+                    }
+                    wrapped[directionIndex].insertEnergy(Long.MAX_VALUE, false);
+                });
             }
         }
     }
