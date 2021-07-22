@@ -1,3 +1,9 @@
+# 1.16.5-0.5.1
+ - use save delegate, massively reduces save/load time, and save size
+ - fix config enum reading, it was still broken
+ - add work queues for off thread  work
+ - add wrapper for industrial foregoing
+
 # 1.16.5-0.5.0
  - add modular tile system (multiblock system to be ported over), consider alpha, its untested right now
    - add sided multipart module helper
