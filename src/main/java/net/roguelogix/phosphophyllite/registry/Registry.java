@@ -1,27 +1,29 @@
 package net.roguelogix.phosphophyllite.registry;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.FlowingFluidBlock;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderTypeLookup;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.item.*;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.WorldGenRegistries;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.gen.GenerationStage;
-import net.minecraft.world.gen.feature.ConfiguredFeature;
-import net.minecraft.world.gen.feature.Feature;
-import net.minecraft.world.gen.feature.OreFeatureConfig;
-import net.minecraft.world.gen.feature.template.RuleTest;
-import net.minecraft.world.gen.placement.Placement;
-import net.minecraft.world.gen.placement.TopSolidRangeConfig;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import net.minecraft.world.level.levelgen.VerticalAnchor;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
+import net.minecraft.world.level.levelgen.feature.configurations.RangeDecoratorConfiguration;
+import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
+import net.minecraft.world.level.levelgen.placement.FeatureDecorator;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
@@ -88,16 +90,16 @@ public class Registry {
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Item> itemRegistryEvent;
     private final Event itemGroupCreationEvent = new Event();
-    private ItemGroup itemGroup = null;
+    private CreativeModeTab itemGroup = null;
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Fluid> fluidRegistryEvent;
     
     private final WorkQueue containerRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<ContainerType<?>> containerRegistryEvent;
+    private RegistryEvent.Register<MenuType<?>> containerRegistryEvent;
     
     private final WorkQueue tileRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<TileEntityType<?>> tileRegistryEvent;
+    private RegistryEvent.Register<BlockEntityType<?>> tileRegistryEvent;
     private final Map<Class<?>, LinkedList<Block>> tileBlocks = new HashMap<>();
     
     private final WorkQueue clientSetupQueue = new WorkQueue();
@@ -129,17 +131,17 @@ public class Registry {
         ModFileScanData modFileScanData = FMLLoader.getLoadingModList().getModFileById(modNamespace).getFile().getScanResult();
         
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
-            AnnotationHandler handler = annotationMap.get(annotation.getAnnotationType().getClassName());
+            AnnotationHandler handler = annotationMap.get(annotation.annotationType().getClassName());
             if (handler == null) {
                 // not an annotation i handle
                 continue;
             }
-            String className = annotation.getClassType().getClassName();
+            String className = annotation.clazz().getClassName();
             if (className.startsWith(callerPackage)) {
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
                     // class loaded, so, pass it off to the handler
-                    handler.run(modNamespace, clazz, annotation.getMemberName());
+                    handler.run(modNamespace, clazz, annotation.memberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
                 }
             }
@@ -153,8 +155,8 @@ public class Registry {
         ModBus.addGenericListener(Block.class, this::blockRegistration);
         ModBus.addGenericListener(Item.class, this::itemRegistration);
         ModBus.addGenericListener(Fluid.class, this::fluidRegistration);
-        ModBus.addGenericListener(ContainerType.class, this::containerRegistration);
-        ModBus.addGenericListener(TileEntityType.class, this::tileEntityRegistration);
+        ModBus.addGenericListener(MenuType.class, this::containerRegistration);
+        ModBus.addGenericListener(BlockEntityType.class, this::tileEntityRegistration);
         
         MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
@@ -187,13 +189,13 @@ public class Registry {
         fluidRegistryEvent = null;
     }
     
-    private void containerRegistration(RegistryEvent.Register<ContainerType<?>> containerTypeRegistryEvent) {
+    private void containerRegistration(RegistryEvent.Register<MenuType<?>> containerTypeRegistryEvent) {
         containerRegistryEvent = containerTypeRegistryEvent;
         containerRegistrationQueue.runAll();
         containerRegistryEvent = null;
     }
     
-    private void tileEntityRegistration(RegistryEvent.Register<TileEntityType<?>> tileEntityTypeRegister) {
+    private void tileEntityRegistration(RegistryEvent.Register<BlockEntityType<?>> tileEntityTypeRegister) {
         tileRegistryEvent = tileEntityTypeRegister;
         tileRegistrationQueue.runAll();
         tileRegistryEvent = null;
@@ -339,7 +341,7 @@ public class Registry {
                         e.printStackTrace();
                         continue;
                     }
-                    RenderTypeLookup.setRenderLayer(block, renderType);
+                    ItemBlockRenderTypes.setRenderLayer(block, renderType);
                 }
             }
         });
@@ -349,16 +351,16 @@ public class Registry {
             blockItemArray[0] = Blocks.STONE.asItem();
             
             if (blockClazz.isAnnotationPresent(CreativeTabBlock.class)) {
-                itemGroup = new ItemGroup(modNamespace) {
+                itemGroup = new CreativeModeTab(modNamespace) {
                     @Override
                     @Nonnull
-                    public ItemStack createIcon() {
+                    public ItemStack makeIcon() {
                         return new ItemStack(blockItemArray[0]);
                     }
                     
                     @Override
-                    public void fill(@Nonnull NonNullList<ItemStack> items) {
-                        super.fill(items);
+                    public void fillItemList(@Nonnull NonNullList<ItemStack> items) {
+                        super.fillItemList(items);
                         items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
                     }
                 };
@@ -374,7 +376,7 @@ public class Registry {
                     return;
                 }
                 //noinspection ConstantConditions
-                blockItemArray[0] = new BlockItem(block, new Item.Properties().group(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
+                blockItemArray[0] = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
                 itemRegistryEvent.getRegistry().register(blockItemArray[0]);
             });
         }
@@ -417,7 +419,7 @@ public class Registry {
             
             Item item;
             try {
-                item = (Item) constructor.newInstance(new Item.Properties().group(itemGroup));
+                item = (Item) constructor.newInstance(new Item.Properties().tab(itemGroup));
             } catch (InstantiationException | InvocationTargetException | IllegalAccessException | ClassCastException e) {
                 LOGGER.error("Exception caught when instantiating instance of " + itemClazz.getSimpleName());
                 e.printStackTrace();
@@ -481,7 +483,7 @@ public class Registry {
         
         PhosphophylliteFluid[] fluids = new PhosphophylliteFluid[2];
         Item[] bucketArray = new Item[1];
-        FlowingFluidBlock[] blockArray = new FlowingFluidBlock[1];
+        LiquidBlock[] blockArray = new LiquidBlock[1];
         
         final Event fluidCreationEvent = preEventWorkQueue.enqueue(() -> {
             
@@ -515,10 +517,8 @@ public class Registry {
                 e.printStackTrace();
                 return;
             }
-            
-            FlowingFluidBlock block = new FlowingFluidBlock(stillSupplier,
-                    Block.Properties.create(net.minecraft.block.material.Material.WATER).
-                            doesNotBlockMovement().hardnessAndResistance(100.0F).noDrops());
+    
+            LiquidBlock block = new LiquidBlock(stillSupplier, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noDrops());
             
             stillInstance.isSource = true;
             
@@ -583,7 +583,7 @@ public class Registry {
                 if (fluids[0] == null) {
                     return;
                 }
-                BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().containerItem(Items.BUCKET).maxStackSize(1).group(itemGroup));
+                BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
                 bucketArray[0] = bucket;
                 bucket.setRegistryName(baseRegistryName + "_bucket");
                 itemRegistryEvent.getRegistry().register(bucket);
@@ -607,14 +607,14 @@ public class Registry {
         }
         
         
-        if (!Container.class.isAssignableFrom(containerClazz)) {
+        if (!AbstractContainerMenu.class.isAssignableFrom(containerClazz)) {
             LOGGER.error("Attempt to register container from class not extended from Container");
             return;
         }
         
         final String registryName = modid + ":" + name;
         
-        ContainerType<?>[] containerTypeArray = new ContainerType[1];
+        MenuType<?>[] containerTypeArray = new MenuType[1];
         
         final Event containerTypeCreationEvent = preEventWorkQueue.enqueue(() -> {
             ContainerSupplier supplier = null;
@@ -658,7 +658,7 @@ public class Registry {
             
             for (Field declaredField : containerClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterContainer.Type.class)) {
-                    if (!declaredField.getType().isAssignableFrom(ContainerType.class)) {
+                    if (!declaredField.getType().isAssignableFrom(MenuType.class)) {
                         LOGGER.error("Unassignable type variable " + declaredField.getName() + " in " + containerClazz.getSimpleName());
                         continue;
                     }
@@ -680,7 +680,7 @@ public class Registry {
             if (!containerTypeCreationEvent.join(10000)) {
                 stalledWorker();
             }
-            ContainerType<?> type = containerTypeArray[0];
+            MenuType<?> type = containerTypeArray[0];
             if (type == null) {
                 return;
             }
@@ -692,7 +692,7 @@ public class Registry {
             if (!containerTypeCreationEvent.join(10000)) {
                 stalledWorker();
             }
-            ContainerType<?> type = containerTypeArray[0];
+            MenuType<?> type = containerTypeArray[0];
             if (type == null) {
                 return;
             }
@@ -714,14 +714,14 @@ public class Registry {
             return;
         }
         
-        if (!TileEntity.class.isAssignableFrom(tileClazz)) {
+        if (!BlockEntity.class.isAssignableFrom(tileClazz)) {
             LOGGER.error("Attempt to register tile type from class not extended from TileEntity");
             return;
         }
         
         final String registryName = modid + ":" + name;
         
-        final TileSupplier[] supplier = new TileSupplier[1];
+        final TileSupplier<?>[] supplier = new TileSupplier[1];
         
         final Event supplierLookupEvent = preEventWorkQueue.enqueue(() -> {
             for (Field declaredField : tileClazz.getDeclaredFields()) {
@@ -776,14 +776,14 @@ public class Registry {
             
             // fuck you java, its the correct size here
             @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
-            TileEntityType<?> type = TileEntityType.Builder.create(supplier[0], blocks.toArray(new Block[blocks.size()])).build(null);
+            BlockEntityType<?> type = BlockEntityType.Builder.of(supplier[0], blocks.toArray(new Block[blocks.size()])).build(null);
             
             type.setRegistryName(registryName);
             
             boolean typeSet = false;
             for (Field declaredField : tileClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterTileEntity.Type.class)) {
-                    if (!declaredField.getType().isAssignableFrom(TileEntityType.class)) {
+                    if (!declaredField.getType().isAssignableFrom(BlockEntityType.class)) {
                         LOGGER.error("Unassignable type variable " + declaredField.getName() + " in " + tileClazz.getSimpleName());
                         continue;
                     }
@@ -843,12 +843,13 @@ public class Registry {
             }
             IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstance;
             
-            RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatureConfig.FillerBlockType.BASE_STONE_NETHER : OreFeatureConfig.FillerBlockType.BASE_STONE_OVERWORLD;
+            RuleTest fillerBlock = oreInfo.isNetherOre() ? OreConfiguration.Predicates.NETHERRACK : OreConfiguration.Predicates.NATURAL_STONE;
+            
             
             ConfiguredFeature<?, ?> feature = Feature.ORE
-                    .withConfiguration(new OreFeatureConfig(fillerBlock, oreInstance.getDefaultState(), oreInfo.size()))
-                    .withPlacement(Placement.RANGE.configure(new TopSolidRangeConfig(oreInfo.minLevel(), 0, oreInfo.maxLevel())))
-                    .square()
+                    .configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()))
+                    .decorated(FeatureDecorator.RANGE.configured(new RangeDecoratorConfiguration(UniformHeight.of(VerticalAnchor.absolute(oreInfo.minLevel()), VerticalAnchor.absolute(oreInfo.maxLevel())))))
+                    .squared()
                     .count(oreInfo.count());
             
             boolean doSpawn = oreInfo.doSpawn();
@@ -858,13 +859,13 @@ public class Registry {
             wrapperArray[0] = wrapper;
             oreInstanceArray[0] = oreInstance;
             spawnBiomes.addAll(Arrays.asList(oreInfo.spawnBiomes()));
-            commonSetupEvent.enqueueWork(() -> net.minecraft.util.registry.Registry.register(WorldGenRegistries.CONFIGURED_FEATURE, resourceLocation, wrapper));
+            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(net.minecraft.core.RegistryAccess.builtin().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
         });
         biomeLoadingEventHandlers.add(() -> {
             
             IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstanceArray[0];
             
-            if ((biomeLoadingEvent.getCategory() == Biome.Category.NETHER) != oreInfo.isNetherOre()) {
+            if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
                 return;
             }
             if (spawnBiomes.size() > 0) {
@@ -873,7 +874,7 @@ public class Registry {
                 }
             }
             
-            biomeLoadingEvent.getGeneration().getFeatures(GenerationStage.Decoration.UNDERGROUND_ORES).add(() -> wrapperArray[0]);
+            biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> wrapperArray[0]);
         });
     }
     

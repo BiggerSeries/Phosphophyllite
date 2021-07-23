@@ -1,9 +1,8 @@
 package net.roguelogix.phosphophyllite.gui.client.elements;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
 import net.roguelogix.phosphophyllite.gui.client.api.ITooltip;
 
@@ -17,7 +16,7 @@ import java.util.stream.Collectors;
  *
  * @param <T> Elements must belong to a Container or ContainerScreen.
  */
-public class Tooltip<T extends Container> extends AbstractElement<T> implements ITooltip {
+public class Tooltip<T extends AbstractContainerMenu> extends AbstractElement<T> implements ITooltip {
 
     /**
      * Used to enable or disable the tooltip element.
@@ -27,7 +26,7 @@ public class Tooltip<T extends Container> extends AbstractElement<T> implements 
     /**
      * Tooltip for this element. If null, a tooltip will not render.
      */
-    public ITextComponent tooltip;
+    public Component tooltip;
 
     /**
      * Default constructor.
@@ -39,7 +38,7 @@ public class Tooltip<T extends Container> extends AbstractElement<T> implements 
      * @param height  The height of this element.
      * @param tooltip The tooltip for this element. If null, a tooltip will not render. If you set a tooltip later, use StringTextComponent.EMPTY.
      */
-    public Tooltip(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, @Nullable ITextComponent tooltip) {
+    public Tooltip(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, @Nullable Component tooltip) {
         super(parent, x, y, width, height);
         this.tooltipEnable = (tooltip != null);
         this.tooltip = tooltip;
@@ -53,10 +52,10 @@ public class Tooltip<T extends Container> extends AbstractElement<T> implements 
      * @param mouseY The y position of the mouse.
      */
     @Override
-    public void renderTooltip(@Nonnull MatrixStack mStack, int mouseX, int mouseY) {
+    public void renderTooltip(@Nonnull PoseStack mStack, int mouseX, int mouseY) {
         // Check conditions, and render tooltip.
         if (this.tooltipEnable && this.tooltip != null && this.isMouseOver(mouseX, mouseY)) {
-            this.parent.func_243308_b(mStack, Arrays.stream(tooltip.getString().split("\\n")).map(StringTextComponent::new).collect(Collectors.toList()), mouseX, mouseY);
+            this.parent.renderComponentTooltip(mStack, Arrays.stream(tooltip.getContents().split("\\n")).map(net.minecraft.network.chat.TextComponent::new).collect(Collectors.toList()), mouseX, mouseY);
         }
     }
 

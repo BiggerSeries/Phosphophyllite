@@ -1,21 +1,21 @@
 package net.roguelogix.phosphophyllite.gui;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.network.NetworkRegistry;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
 import net.roguelogix.phosphophyllite.PhosphophylliteConfig;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.robn.ROBN;
@@ -85,10 +85,10 @@ public class GuiSync {
         }
     }
     
-    private static final HashMap<PlayerEntity, IGUIPacketProvider> playerGUIs = new HashMap<>();
+    private static final HashMap<Player, IGUIPacketProvider> playerGUIs = new HashMap<>();
     
     public static synchronized void onContainerOpen(@Nonnull PlayerContainerEvent.Open e) {
-        Container container = e.getContainer();
+        AbstractContainerMenu container = e.getContainer();
         if (container instanceof IGUIPacketProvider) {
             playerGUIs.put(e.getPlayer(), (IGUIPacketProvider) container);
         }
@@ -103,8 +103,8 @@ public class GuiSync {
     public static synchronized void GuiOpenEvent(@Nonnull GuiOpenEvent e) {
         
         Screen gui = e.getGui();
-        if (gui instanceof ContainerScreen) {
-            Container container = ((ContainerScreen<?>) gui).getContainer();
+        if (gui instanceof AbstractContainerScreen) {
+            AbstractContainerMenu container = ((AbstractContainerScreen<?>) gui).getMenu();
             if (container instanceof IGUIPacketProvider) {
                 currentGUI = (IGUIPacketProvider) container;
             }
@@ -134,7 +134,7 @@ public class GuiSync {
                 synchronized (GuiSync.class) {
                     playerGUIs.forEach((player, gui) -> {
                         try {
-                            assert player instanceof ServerPlayerEntity;
+                            assert player instanceof ServerPlayer;
                             IGUIPacket packet = gui.getGuiPacket();
                             if (packet == null) {
                                 return;
@@ -155,7 +155,7 @@ public class GuiSync {
                             for (int i = 0; i < buf.size(); i++) {
                                 message.bytes[i] = buf.get(i);
                             }
-                            INSTANCE.sendTo(message, ((ServerPlayerEntity) player).connection.netManager, NetworkDirection.PLAY_TO_CLIENT);
+                            INSTANCE.sendTo(message, ((ServerPlayer) player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -174,11 +174,11 @@ public class GuiSync {
         updateThread.start();
     }
     
-    private static void encodePacket(@Nonnull GUIPacketMessage packet, @Nonnull PacketBuffer buf) {
+    private static void encodePacket(@Nonnull GUIPacketMessage packet, @Nonnull FriendlyByteBuf buf) {
         buf.writeBytes(packet.bytes);
     }
     
-    private static GUIPacketMessage decodePacket(@Nonnull PacketBuffer buf) {
+    private static GUIPacketMessage decodePacket(@Nonnull FriendlyByteBuf buf) {
         byte[] byteBuf = new byte[buf.readableBytes()];
         buf.readBytes(byteBuf);
         return new GUIPacketMessage(byteBuf);

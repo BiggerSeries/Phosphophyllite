@@ -1,10 +1,10 @@
 package net.roguelogix.phosphophyllite.tile;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 
@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 public interface ITileModule {
     
-    TileEntity getTile();
+    BlockEntity getTile();
     
     default void onAdded(){
     }
@@ -47,11 +47,11 @@ public interface ITileModule {
      *
      * @param nbt
      */
-    default void readNBT(CompoundNBT nbt){
+    default void readNBT(CompoundTag nbt){
     }
     
     @Nullable
-    default CompoundNBT writeNBT(){
+    default CompoundTag writeNBT(){
         return null;
     }
     
@@ -60,13 +60,13 @@ public interface ITileModule {
      *
      * @param nbt
      */
-    default void handleDataNBT(CompoundNBT nbt) {
+    default void handleDataNBT(CompoundTag nbt) {
         // mimmicks behavior of IForgeTileEntity
         readNBT(nbt);
     }
     
     @Nullable
-    default CompoundNBT getDataNBT() {
+    default CompoundTag getDataNBT() {
         // mimmicks behavior of IForgeTileEntity
         return writeNBT();
     }
@@ -76,11 +76,11 @@ public interface ITileModule {
      *
      * @param nbt
      */
-    default void handleUpdateNBT(CompoundNBT nbt) {
+    default void handleUpdateNBT(CompoundTag nbt) {
     }
     
     @Nullable
-    default CompoundNBT getUpdateNBT() {
+    default CompoundTag getUpdateNBT() {
         return null;
     }
     

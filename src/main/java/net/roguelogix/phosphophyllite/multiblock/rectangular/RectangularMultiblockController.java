@@ -1,11 +1,8 @@
 package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.roguelogix.phosphophyllite.multiblock.generic.*;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.BlockStates;
@@ -18,7 +15,7 @@ import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition
 
 public class RectangularMultiblockController<ControllerType extends RectangularMultiblockController<ControllerType, TileType, BlockType>, TileType extends RectangularMultiblockTile<ControllerType, TileType, BlockType>, BlockType extends RectangularMultiblockBlock<ControllerType, TileType, BlockType>> extends MultiblockController<ControllerType, TileType, BlockType> {
     
-    public RectangularMultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
+    public RectangularMultiblockController(@Nonnull Level world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
         super(world, tileTypeValidator, blockTypeValidator);
         setAssemblyValidator(null);
     }
@@ -91,8 +88,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
         }
         // dimension check failed in all orientations
         if (dimensions == null) {
-            // TODO: 6/29/20 dimensions error
-            throw new ValidationError(new TranslationTextComponent("multiblock.error.phosphophyllite.dimensions",
+            throw new ValidationError(new TranslatableComponent("multiblock.error.phosphophyllite.dimensions",
                     allowedOrientations[0].x, allowedOrientations[0].y, allowedOrientations[0].z,
                     controller.minSize.x, controller.minSize.y, controller.minSize.z,
                     controller.maxSize.x, controller.maxSize.y, controller.maxSize.z));
@@ -114,7 +110,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
             switch (extremes) {
                 case 3: {
                     if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
-                        if (!((BlockType) block).isGoodForCorner()) {
+                        if (!((RectangularMultiblockBlock<?, ?, ?>) block).isGoodForCorner()) {
                             throw new InvalidBlock(block, pos, "corner");
                         } else {
                             break;
@@ -130,7 +126,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                 }
                 case 2: {
                     if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
-                        if (!((BlockType) block).isGoodForFrame()) {
+                        if (!((RectangularMultiblockBlock<?, ?, ?>) block).isGoodForFrame()) {
                             throw new InvalidBlock(block, pos, "frame");
                         } else {
                             break;
@@ -146,7 +142,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                 }
                 case 1: {
                     if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
-                        if (!((BlockType) block).isGoodForExterior()) {
+                        if (!((RectangularMultiblockBlock<?, ?, ?>) block).isGoodForExterior()) {
                             throw new InvalidBlock(block, pos, "exterior");
                         } else {
                             break;
@@ -163,7 +159,7 @@ public class RectangularMultiblockController<ControllerType extends RectangularM
                 default: {
                     if (extremes == 0) {
                         if (block instanceof RectangularMultiblockBlock && blockTypeValidator.validate((RectangularMultiblockBlock<?, ?, ?>) block)) {
-                            if (!((BlockType) block).isGoodForInterior()) {
+                            if (!((RectangularMultiblockBlock<?, ?, ?>) block).isGoodForInterior()) {
                                 throw new InvalidBlock(block, pos, "interior");
                             } else {
                                 break;

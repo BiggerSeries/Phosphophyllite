@@ -1,6 +1,6 @@
 package net.roguelogix.phosphophyllite.gui.client.api;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -17,5 +17,5 @@ public interface IRender {
      * @param mouseX The x position of the mouse.
      * @param mouseY The y position of the mouse.
      */
-    void render(MatrixStack mStack, int mouseX, int mouseY);
+    void render(PoseStack mStack, int mouseX, int mouseY);
 }

@@ -1,9 +1,9 @@
 package net.roguelogix.phosphophyllite.data;
 
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.ResourceLocationException;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.repack.tnjson.ParseException;
 import net.roguelogix.phosphophyllite.repack.tnjson.TnJson;
@@ -204,8 +204,8 @@ public class DataLoader<T> {
         
         ArrayList<T> elements = new ArrayList<>();
         
-        IResourceManager resourceManager = Phosphophyllite.dataPackRegistries.getResourceManager();
-        Collection<ResourceLocation> resourceLocations = resourceManager.getAllResourceLocations(location.getPath(), s -> s.contains(".json"));
+        ResourceManager resourceManager = Phosphophyllite.dataPackRegistries.getResourceManager();
+        Collection<ResourceLocation> resourceLocations = resourceManager.listResources(location.getPath(), s -> s.contains(".json"));
         
         for (ResourceLocation resourceLocation : resourceLocations) {
             if (!resourceLocation.getNamespace().equals(location.getNamespace())) {
@@ -229,10 +229,10 @@ public class DataLoader<T> {
     }
     
     @Nullable
-    private T load(ResourceLocation location, IResourceManager resourceManager) {
+    private T load(ResourceLocation location, ResourceManager resourceManager) {
         String json;
         try {
-            IResource resource = resourceManager.getResource(location);
+            Resource resource = resourceManager.getResource(location);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
                 StringBuilder builder = new StringBuilder();
                 String line;

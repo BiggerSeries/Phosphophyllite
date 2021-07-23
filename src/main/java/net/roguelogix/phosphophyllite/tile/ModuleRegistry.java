@@ -1,6 +1,6 @@
 package net.roguelogix.phosphophyllite.tile;
 
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -8,8 +8,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ModuleRegistry {
-    private static final LinkedHashMap<Class<?>, Function<TileEntity, ITileModule>> moduleRegistry = new LinkedHashMap<>();
-    private static final ArrayList<BiConsumer<Class<?>, Function<TileEntity, ITileModule>>> externalRegistrars = new ArrayList<>();
+    private static final LinkedHashMap<Class<?>, Function<BlockEntity, ITileModule>> moduleRegistry = new LinkedHashMap<>();
+    private static final ArrayList<BiConsumer<Class<?>, Function<BlockEntity, ITileModule>>> externalRegistrars = new ArrayList<>();
     
     /**
      * Registers an ITileModule and the interface the tile class will implement to signal to create an instance at tile creation
@@ -19,7 +19,7 @@ public class ModuleRegistry {
      * @param moduleInterface: Interface class that will be implemented by the tile.
      * @param constructor:     Creates an instance of an ITileModule for the given tile with the interface implemented
      */
-    public synchronized static void registerModule(Class<?> moduleInterface, Function<TileEntity, ITileModule> constructor) {
+    public synchronized static void registerModule(Class<?> moduleInterface, Function<BlockEntity, ITileModule> constructor) {
         moduleRegistry.put(moduleInterface, constructor);
         externalRegistrars.forEach(c -> c.accept(moduleInterface, constructor));
     }
@@ -29,12 +29,12 @@ public class ModuleRegistry {
      *
      * @param registrar external ITileModuleRegistration function
      */
-    public synchronized static void registerExternalRegistrar(BiConsumer<Class<?>, Function<TileEntity, ITileModule>> registrar) {
+    public synchronized static void registerExternalRegistrar(BiConsumer<Class<?>, Function<BlockEntity, ITileModule>> registrar) {
         externalRegistrars.add(registrar);
         moduleRegistry.forEach(registrar);
     }
     
-    public static void forEach(BiConsumer<Class<?>, Function<TileEntity, ITileModule>> callback){
+    public static void forEach(BiConsumer<Class<?>, Function<BlockEntity, ITileModule>> callback){
         moduleRegistry.forEach(callback);
     }
 }

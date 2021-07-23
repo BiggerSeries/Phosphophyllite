@@ -1,8 +1,11 @@
 package net.roguelogix.phosphophyllite.blocks.blackholes;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -13,18 +16,23 @@ import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "fluid_black_hole")
-public class FluidBlackHoleTile extends TileEntity implements IFluidHandler {
+public class FluidBlackHoleTile extends BlockEntity implements IFluidHandler {
     
     @RegisterTileEntity.Type
-    public static TileEntityType<?> TYPE;
+    public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
     public static final TileSupplier SUPPLIER = FluidBlackHoleTile::new;
     
-    public FluidBlackHoleTile() {
-        super(TYPE);
+    public FluidBlackHoleTile(BlockPos pos, BlockState state) {
+        super(TYPE, pos, state);
     }
     
     @Nonnull

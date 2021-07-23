@@ -1,9 +1,9 @@
 package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.state.StateContainer;
-import net.minecraft.util.Direction;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockBlock;
 import net.roguelogix.phosphophyllite.util.BlockStates;
 
@@ -16,18 +16,19 @@ public abstract class RectangularMultiblockBlock<ControllerType extends Rectangu
     public RectangularMultiblockBlock(@Nonnull Properties properties) {
         super(properties);
         if (usesAxisPositions()) {
-            setDefaultState(getDefaultState().with(X_AXIS_POSITION, MIDDLE));
-            setDefaultState(getDefaultState().with(Y_AXIS_POSITION, MIDDLE));
-            setDefaultState(getDefaultState().with(Z_AXIS_POSITION, MIDDLE));
+            registerDefaultState(defaultBlockState().setValue(X_AXIS_POSITION, MIDDLE));
+            registerDefaultState(defaultBlockState().setValue(Y_AXIS_POSITION, MIDDLE));
+            registerDefaultState(defaultBlockState().setValue(Z_AXIS_POSITION, MIDDLE));
         }
         if (usesFaceDirection()){
-            setDefaultState(getDefaultState().with(BlockStates.FACING, Direction.UP));
+            registerDefaultState(defaultBlockState().setValue(BlockStates.FACING, Direction.UP));
         }
     }
     
+    
     @Override
-    protected void fillStateContainer(@Nonnull StateContainer.Builder<Block, BlockState> builder) {
-        super.fillStateContainer(builder);
+    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         if (usesAxisPositions()) {
             builder.add(X_AXIS_POSITION);
             builder.add(Y_AXIS_POSITION);

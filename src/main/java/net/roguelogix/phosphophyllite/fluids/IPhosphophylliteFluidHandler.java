@@ -1,9 +1,9 @@
 package net.roguelogix.phosphophyllite.fluids;
 
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -12,6 +12,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -93,13 +95,13 @@ public interface IPhosphophylliteFluidHandler extends IFluidHandler {
     Fluid fluidTypeInTank(int tank);
     
     @Nullable
-    CompoundNBT fluidTagInTank(int tank);
+    CompoundTag fluidTagInTank(int tank);
     
     long fluidAmountInTank(int tank);
     
     boolean fluidValidForTank(int tank, Fluid fluid);
     
-    long fill(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate);
+    long fill(Fluid fluid, @Nullable CompoundTag tag, long amount, boolean simulate);
     
-    long drain(Fluid fluid, @Nullable CompoundNBT tag, long amount, boolean simulate);
+    long drain(Fluid fluid, @Nullable CompoundTag tag, long amount, boolean simulate);
 }

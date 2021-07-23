@@ -1,8 +1,8 @@
 package net.roguelogix.phosphophyllite.gui.client.elements;
 
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.renderer.texture.ITickable;
-import net.minecraft.inventory.container.Container;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.renderer.texture.Tickable;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
 import net.roguelogix.phosphophyllite.gui.client.api.ICallback;
 
@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T> Elements must belong to a Container or ContainerScreen.
  */
-public abstract class AbstractElement<T extends Container> implements ITickable, IGuiEventListener {
+public abstract class AbstractElement<T extends AbstractContainerMenu> implements Tickable, GuiEventListener {
 
     /**
      * The parent screen of this element.

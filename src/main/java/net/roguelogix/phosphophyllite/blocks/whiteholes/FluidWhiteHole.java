@@ -1,55 +1,67 @@
 package net.roguelogix.phosphophyllite.blocks.whiteholes;
 
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.material.Material;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.Item;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.phys.BlockHitResult;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 @SuppressWarnings("unused")
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterBlock(name = "fluid_white_hole", tileEntityClass = FluidWhiteHoleTile.class)
-public class FluidWhiteHole extends Block {
+public class FluidWhiteHole extends Block implements EntityBlock {
     
     @RegisterBlock.Instance
     public static FluidWhiteHole INSTANCE;
     
     public FluidWhiteHole() {
-        super(Properties.create(Material.IRON));
-    }
-    
-    @Override
-    public boolean hasTileEntity(BlockState state) {
-        return true;
+        super(Properties.of(Material.METAL));
     }
     
     @Nullable
     @Override
-    public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return new FluidWhiteHoleTile();
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new FluidWhiteHoleTile(pos, state);
+    }
+    
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level p_153212_, BlockState p_153213_, BlockEntityType<T> p_153214_) {
+        return (level, pos, state, entity) -> {
+            assert entity instanceof FluidWhiteHoleTile;
+            ((FluidWhiteHoleTile) entity).tick();
+        };
     }
     
     @Override
-    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        Item item = player.getHeldItemMainhand().getItem();
+    public InteractionResult use(BlockState state, Level worldIn, BlockPos pos, Player player, InteractionHand handIn, BlockHitResult hit) {
+        Item item = player.getMainHandItem().getItem();
         if(item instanceof BucketItem){
-            TileEntity te = worldIn.getTileEntity(pos);
+            var te = worldIn.getBlockEntity(pos);
             if(te instanceof FluidWhiteHoleTile){
                 ((FluidWhiteHoleTile)te).setFluid(((BucketItem) item).getFluid());
-                return ActionResultType.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
         }
-        return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
+        return super.use(state, worldIn, pos, player, handIn, hit);
     }
 }

@@ -1,49 +1,46 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.StateHolder;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static net.roguelogix.phosphophyllite.multiblock.generic.ConnectedTextureStates.*;
 
-public class MultiblockBlock<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends Block {
+public abstract class MultiblockBlock<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> extends Block implements EntityBlock {
     
     public static final BooleanProperty ASSEMBLED = BooleanProperty.create("assembled");
     
     public MultiblockBlock(Properties properties) {
         super(properties);
-        BlockState defaultState = this.getDefaultState();
+        BlockState defaultState = this.defaultBlockState();
         if(usesAssemblyState()) {
-            defaultState = defaultState.with(ASSEMBLED, false);
+            defaultState = defaultState.setValue(ASSEMBLED, false);
         }
         if (connectedTexture()) {
-            defaultState = defaultState.with(TOP_CONNECTED_PROPERTY, false);
-            defaultState = defaultState.with(BOTTOM_CONNECTED_PROPERTY, false);
-            defaultState = defaultState.with(NORTH_CONNECTED_PROPERTY, false);
-            defaultState = defaultState.with(SOUTH_CONNECTED_PROPERTY, false);
-            defaultState = defaultState.with(EAST_CONNECTED_PROPERTY, false);
-            defaultState = defaultState.with(WEST_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(TOP_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(BOTTOM_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(NORTH_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(SOUTH_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(EAST_CONNECTED_PROPERTY, false);
+            defaultState = defaultState.setValue(WEST_CONNECTED_PROPERTY, false);
         }
-        this.setDefaultState(defaultState);
-    }
-    
-    @Override
-    public final boolean hasTileEntity(BlockState state) {
-        return true;
+        this.registerDefaultState(defaultState);
     }
     
     public boolean connectedTexture() {
@@ -57,20 +54,20 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     @SuppressWarnings("deprecation")
     @Nonnull
     @Override
-    public ActionResultType onBlockActivated(@Nonnull BlockState state, World worldIn, @Nonnull BlockPos pos, @Nonnull PlayerEntity player, @Nonnull Hand handIn, @Nonnull BlockRayTraceResult hit) {
-        TileEntity te = worldIn.getTileEntity(pos);
+    public InteractionResult use(@Nonnull BlockState state, Level worldIn, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand handIn, @Nonnull BlockHitResult hit) {
+        BlockEntity te = worldIn.getBlockEntity(pos);
         if (te instanceof MultiblockTile) {
-            ActionResultType tileResult = ((MultiblockTile) te).onBlockActivated(player, handIn);
-            if (tileResult != ActionResultType.PASS) {
+            InteractionResult tileResult = ((MultiblockTile) te).onBlockActivated(player, handIn);
+            if (tileResult != InteractionResult.PASS) {
                 return tileResult;
             }
         }
-        return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
+        return super.use(state, worldIn, pos, player, handIn, hit);
     }
     
     @Override
-    protected void fillStateContainer(@Nonnull StateContainer.Builder<Block, BlockState> builder) {
-        super.fillStateContainer(builder);
+    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         if(usesAssemblyState()) {
             builder.add(ASSEMBLED);
         }
@@ -85,7 +82,7 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     }
     
     @Override
-    public void neighborChanged(@Nonnull BlockState state, @Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos, boolean isMoving) {
+    public void neighborChanged(@Nonnull BlockState state, @Nonnull Level worldIn, @Nonnull BlockPos pos, @Nonnull Block blockIn, @Nonnull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
         if (connectedTexture()) {
             updateConnectedTextureState(worldIn, pos, state);
@@ -93,21 +90,21 @@ public class MultiblockBlock<ControllerType extends MultiblockController<Control
     }
     
     @Override
-    public void onBlockPlacedBy(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
-        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+    public void setPlacedBy(@Nonnull Level worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
+        super.setPlacedBy(worldIn, pos, state, placer, stack);
         if (connectedTexture()) {
-            updateConnectedTextureState(worldIn, pos, this.getDefaultState());
+            updateConnectedTextureState(worldIn, pos, this.defaultBlockState());
         }
     }
     
-    private void updateConnectedTextureState(@Nonnull World worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state) {
-        state = state.with(TOP_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.UP)).getBlock()));
-        state = state.with(BOTTOM_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.DOWN)).getBlock()));
-        state = state.with(NORTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.NORTH)).getBlock()));
-        state = state.with(SOUTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.SOUTH)).getBlock()));
-        state = state.with(EAST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.EAST)).getBlock()));
-        state = state.with(WEST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.offset(Direction.WEST)).getBlock()));
-        worldIn.setBlockState(pos, state, 2);
+    private void updateConnectedTextureState(@Nonnull Level worldIn, @Nonnull BlockPos pos, @Nonnull BlockState state) {
+        state = state.setValue(TOP_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.UP)).getBlock()));
+        state = state.setValue(BOTTOM_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.DOWN)).getBlock()));
+        state = state.setValue(NORTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.NORTH)).getBlock()));
+        state = state.setValue(SOUTH_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.SOUTH)).getBlock()));
+        state = state.setValue(EAST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.EAST)).getBlock()));
+        state = state.setValue(WEST_CONNECTED_PROPERTY, connectToBlock(worldIn.getBlockState(pos.relative(Direction.WEST)).getBlock()));
+        worldIn.setBlock(pos, state, 2);
     }
     
     protected boolean connectToBlock(Block block){

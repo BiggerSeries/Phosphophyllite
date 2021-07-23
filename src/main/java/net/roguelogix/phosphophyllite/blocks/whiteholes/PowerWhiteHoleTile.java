@@ -1,9 +1,11 @@
 package net.roguelogix.phosphophyllite.blocks.whiteholes;
 
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
@@ -15,18 +17,21 @@ import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "power_white_hole")
-public class PowerWhiteHoleTile extends TileEntity implements IEnergyStorage, ITickableTileEntity {
+public class PowerWhiteHoleTile extends BlockEntity implements IEnergyStorage {
     
     @RegisterTileEntity.Type
-    public static TileEntityType<?> TYPE;
+    public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
     public static final TileSupplier SUPPLIER = PowerWhiteHoleTile::new;
     
-    public PowerWhiteHoleTile() {
-        super(TYPE);
+    public PowerWhiteHoleTile(BlockPos pos, BlockState state) {
+        super(TYPE, pos, state);
     }
     
     @Nonnull
@@ -71,14 +76,13 @@ public class PowerWhiteHoleTile extends TileEntity implements IEnergyStorage, IT
     private final IEnergyStorage[] lastCapability = new IEnergyStorage[6];
     private final IPhosphophylliteEnergyStorage[] wrapped = new IPhosphophylliteEnergyStorage[6];
     
-    @Override
     public void tick() {
-        assert world != null;
+        assert level != null;
         for (Direction direction : Direction.values()) {
-            TileEntity te = world.getTileEntity(pos.offset(direction));
+            BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
             if (te != null) {
                 te.getCapability(CapabilityEnergy.ENERGY, direction.getOpposite()).ifPresent(c -> {
-                    final int directionIndex = direction.getIndex();
+                    final int directionIndex = direction.get3DDataValue();
                     if (c != lastCapability[directionIndex]) {
                         lastCapability[directionIndex] = c;
                         wrapped[directionIndex] = EnergyStorageWrapper.wrap(c);

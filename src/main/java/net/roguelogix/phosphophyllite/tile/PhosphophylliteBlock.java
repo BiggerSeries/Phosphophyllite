@@ -1,46 +1,41 @@
 package net.roguelogix.phosphophyllite.tile;
 
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.World;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.function.Function;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class PhosphophylliteBlock extends Block {
+public class PhosphophylliteBlock extends Block implements EntityBlock {
     
-    private final Function<BlockState, PhosphophylliteTile> tileConstructor;
+    private final TileSupplier<PhosphophylliteTile> tileConstructor;
     
-    public PhosphophylliteBlock(Function<BlockState, PhosphophylliteTile> tileConstructor, Properties properties) {
+    public PhosphophylliteBlock(TileSupplier<PhosphophylliteTile> tileConstructor, Properties properties) {
         super(properties);
         this.tileConstructor = tileConstructor;
     }
     
     @Override
-    public void neighborChanged(BlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+    public void neighborChanged(BlockState state, Level worldIn, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, worldIn, pos, blockIn, fromPos, isMoving);
-        TileEntity tile = worldIn.getTileEntity(pos);
+        BlockEntity tile = worldIn.getBlockEntity(pos);
         if (!(tile instanceof PhosphophylliteTile)) {
             throw new IllegalStateException("PhosphophylliteBlock must have a PhosphophylliteTile");
         }
         ((PhosphophylliteTile) tile).onBlockUpdate(fromPos);
     }
     
-    @Override
-    public final boolean hasTileEntity(BlockState state) {
-        return true;
-    }
-    
     @Nullable
     @Override
-    public final TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return tileConstructor.apply(state);
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return tileConstructor.create(pos, state);
     }
 }

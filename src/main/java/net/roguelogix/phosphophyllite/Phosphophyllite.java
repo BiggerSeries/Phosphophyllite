@@ -1,16 +1,16 @@
 package net.roguelogix.phosphophyllite;
 
-import net.minecraft.resources.DataPackRegistries;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.server.ServerWorld;
+import net.minecraft.server.ServerResources;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fmlserverevents.FMLServerStoppedEvent;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
 import net.roguelogix.phosphophyllite.registry.Registry;
@@ -55,7 +55,7 @@ public class Phosphophyllite {
     }
     
     
-    public static DataPackRegistries dataPackRegistries;
+    public static ServerResources dataPackRegistries;
     
     @SubscribeEvent
     public void onAddReloadListenerEvent(AddReloadListenerEvent reloadListenerEvent) {
@@ -73,8 +73,8 @@ public class Phosphophyllite {
     
     public static final WorkQueue serverQueue = Queues.serverThread;
     
-    private static final HashMap<ServerWorld, ArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new HashMap<>();
-    private static final HashMap<ServerWorld, ArrayList<MultiblockTile<?, ?, ?>>> tilesToAttach = new HashMap<>();
+    private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new HashMap<>();
+    private static final HashMap<ServerLevel, ArrayList<MultiblockTile<?, ?, ?>>> tilesToAttach = new HashMap<>();
     private static final ArrayList<MultiblockController<?, ?, ?>> newControllers = new ArrayList<>();
     private static final ArrayList<MultiblockController<?, ?, ?>> oldControllers = new ArrayList<>();
     private static final ArrayList<MultiblockTile<?, ?, ?>> newTiles = new ArrayList<>();
@@ -93,7 +93,7 @@ public class Phosphophyllite {
     
     @SubscribeEvent
     void onWorldUnload(final WorldEvent.Unload worldUnloadEvent) {
-        if (!worldUnloadEvent.getWorld().isRemote()) {
+        if (!worldUnloadEvent.getWorld().isClientSide()) {
             //noinspection SuspiciousMethodCalls
             ArrayList<MultiblockController<?, ?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getWorld());
             if (controllersToTick != null) {
@@ -106,7 +106,7 @@ public class Phosphophyllite {
             tilesToAttach.remove(worldUnloadEvent.getWorld());
             newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
             oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
-            newTiles.removeIf(multiblockTile -> multiblockTile.getWorld() == worldUnloadEvent.getWorld());
+            newTiles.removeIf(multiblockTile -> multiblockTile.getLevel() == worldUnloadEvent.getWorld());
         }
     }
     
@@ -123,7 +123,7 @@ public class Phosphophyllite {
         Queues.serverThread.runAll();
 
         for (MultiblockController<?, ?, ?> newController : newControllers) {
-            controllersToTick.computeIfAbsent((ServerWorld) newController.getWorld(), k -> new ArrayList<>()).add(newController);
+            controllersToTick.computeIfAbsent((ServerLevel) newController.getWorld(), k -> new ArrayList<>()).add(newController);
         }
         newControllers.clear();
         for (MultiblockController<?, ?, ?> oldController : oldControllers) {
@@ -133,14 +133,14 @@ public class Phosphophyllite {
         }
         oldControllers.clear();
         for (MultiblockTile<?, ?, ?> newTile : newTiles) {
-            tilesToAttach.computeIfAbsent((ServerWorld) newTile.getWorld(), k -> new ArrayList<>()).add(newTile);
+            tilesToAttach.computeIfAbsent((ServerLevel) newTile.getLevel(), k -> new ArrayList<>()).add(newTile);
         }
         newTiles.clear();
     }
     
     @SubscribeEvent
     public void tickWorld(TickEvent.WorldTickEvent e) {
-        if (!(e.world instanceof ServerWorld)) {
+        if (!(e.world instanceof ServerLevel)) {
             return;
         }
         if (e.phase != TickEvent.Phase.END) {
@@ -158,7 +158,7 @@ public class Phosphophyllite {
         
         ArrayList<MultiblockTile<?, ?, ?>> tilesToAttach = Phosphophyllite.tilesToAttach.get(e.world);
         if (tilesToAttach != null) {
-            tilesToAttach.sort(Comparator.comparing(TileEntity::getPos));
+            tilesToAttach.sort(Comparator.comparing(BlockEntity::getBlockPos));
             for (MultiblockTile<?, ?, ?> toAttach : tilesToAttach) {
                 if (toAttach != null) {
                     toAttach.attachToNeighbors();

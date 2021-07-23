@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 
 public class ValidationError extends IllegalStateException {
     
@@ -21,17 +21,17 @@ public class ValidationError extends IllegalStateException {
         super(cause);
     }
     
-    ITextComponent cause;
+    Component cause;
     
-    public ValidationError(ITextComponent cause) {
+    public ValidationError(Component cause) {
         super();
         this.cause = cause;
     }
     
-    public ITextComponent getTextComponent() {
+    public Component getTextComponent() {
         if (cause != null) {
             return cause;
         }
-        return new TranslationTextComponent(getMessage());
+        return new TranslatableComponent(getMessage());
     }
 }

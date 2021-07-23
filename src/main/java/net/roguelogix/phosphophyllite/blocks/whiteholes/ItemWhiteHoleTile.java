@@ -1,14 +1,15 @@
 package net.roguelogix.phosphophyllite.blocks.whiteholes;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -19,19 +20,22 @@ import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "item_white_hole")
-public class ItemWhiteHoleTile extends TileEntity implements IItemHandler, ITickableTileEntity {
+public class ItemWhiteHoleTile extends BlockEntity implements IItemHandler {
     
     @RegisterTileEntity.Type
-    public static TileEntityType<?> TYPE;
+    public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
     public static final TileSupplier SUPPLIER = ItemWhiteHoleTile::new;
     
-    public ItemWhiteHoleTile() {
-        super(TYPE);
+    public ItemWhiteHoleTile(BlockPos pos, BlockState state) {
+        super(TYPE, pos, state);
     }
     
     @Nonnull
@@ -50,28 +54,27 @@ public class ItemWhiteHoleTile extends TileEntity implements IItemHandler, ITick
     }
     
     @Override
-    public void read(@Nonnull BlockState state, CompoundNBT compound) {
+    public void load(CompoundTag compound) {
         if (compound.contains("item")) {
             item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(compound.getString("item")));
         }
-        super.read(state, compound);
+        super.load(compound);
     }
     
     @Nonnull
     @Override
-    public CompoundNBT write(@Nonnull CompoundNBT compound) {
+    public CompoundTag save(@Nonnull CompoundTag compound) {
         if (item != null) {
             compound.putString("item", Objects.requireNonNull(item.getRegistryName()).toString());
         }
-        return super.write(compound);
+        return super.save(compound);
     }
     
-    @Override
     public void tick() {
         if (item != null) {
-            assert world != null;
+            assert level != null;
             for (Direction direction : Direction.values()) {
-                TileEntity te = world.getTileEntity(pos.offset(direction));
+                BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
                 if (te != null) {
                     te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, direction.getOpposite()).ifPresent(c -> {
                         for (int i = 0; i < c.getSlots(); i++) {

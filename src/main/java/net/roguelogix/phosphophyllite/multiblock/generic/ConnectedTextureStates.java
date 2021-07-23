@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.util.IStringSerializable;
+
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 public class ConnectedTextureStates {
     public static final BooleanProperty TOP_CONNECTED_PROPERTY = BooleanProperty.create("top_connected");

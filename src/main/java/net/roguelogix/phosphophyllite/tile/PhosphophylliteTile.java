@@ -1,14 +1,14 @@
 package net.roguelogix.phosphophyllite.tile;
 
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.apache.logging.log4j.LogManager;
@@ -22,16 +22,16 @@ import java.util.LinkedHashMap;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class PhosphophylliteTile extends TileEntity implements IModularTile {
+public class PhosphophylliteTile extends BlockEntity implements IModularTile {
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
     
     private final LinkedHashMap<Class<?>, ITileModule> modules = new LinkedHashMap<>();
     private final ArrayList<ITileModule> moduleList = new ArrayList<>();
     
-    public PhosphophylliteTile(TileEntityType<?> tileEntityTypeIn, BlockState blockState) {
-        super(tileEntityTypeIn);
-        if (!(blockState.getBlock() instanceof PhosphophylliteBlock)) {
+    public PhosphophylliteTile(BlockEntityType<?> tileEntityTypeIn, BlockPos pos, BlockState state) {
+        super(tileEntityTypeIn, pos, state);
+        if (!(state.getBlock() instanceof PhosphophylliteBlock)) {
             throw new IllegalStateException("PhosphophylliteTiles must only be on a PhosphophylliteBlock");
         }
         Class<?> thisClazz = this.getClass();
@@ -59,8 +59,8 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     }
     
     @Override
-    public final void remove() {
-        super.remove();
+    public final void setRemoved() {
+        super.setRemoved();
         moduleList.forEach(module -> module.onRemoved(false));
         onRemoved(false);
     }
@@ -76,122 +76,122 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     }
     
     @Override
-    public final void read(BlockState state, CompoundNBT compound) {
-        super.read(state, compound.getCompound("super"));
+    public final void load(CompoundTag compound) {
+        super.load(compound.getCompound("super"));
         if (compound.contains("local")) {
-            CompoundNBT local = compound.getCompound("local");
+            CompoundTag local = compound.getCompound("local");
             readNBT(local);
         }
-        CompoundNBT subNBTs = compound.getCompound("sub");
+        CompoundTag subNBTs = compound.getCompound("sub");
         for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
-                CompoundNBT nbt = subNBTs.getCompound(key);
+                CompoundTag nbt = subNBTs.getCompound(key);
                 module.readNBT(nbt);
             }
         }
     }
     
     @Override
-    public final CompoundNBT write(CompoundNBT compound) {
-        CompoundNBT superNBT = super.write(compound);
-        CompoundNBT subNBTs = new CompoundNBT();
+    public final CompoundTag save(CompoundTag compound) {
+        CompoundTag superNBT = super.save(compound);
+        CompoundTag subNBTs = new CompoundTag();
         for (ITileModule module : moduleList) {
-            CompoundNBT nbt = module.writeNBT();
+            CompoundTag nbt = module.writeNBT();
             if (nbt != null) {
                 String key = module.saveKey();
                 if (subNBTs.contains(key)) {
-                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getPos());
+                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                 }
                 subNBTs.put(key, nbt);
             }
         }
-        CompoundNBT nbt = new CompoundNBT();
+        CompoundTag nbt = new CompoundTag();
         nbt.put("super", superNBT);
         nbt.put("sub", subNBTs);
-        CompoundNBT localNBT = writeNBT();
+        CompoundTag localNBT = writeNBT();
         if (localNBT != null) {
             nbt.put("local", localNBT);
         }
         return nbt;
     }
     
-    protected void readNBT(CompoundNBT compound) {
+    protected void readNBT(CompoundTag compound) {
     }
     
     @Nullable
-    protected CompoundNBT writeNBT() {
+    protected CompoundTag writeNBT() {
         return null;
     }
     
     @Override
-    public final void handleUpdateTag(BlockState state, CompoundNBT compound) {
-        super.handleUpdateTag(state, compound.getCompound("super"));
+    public final void handleUpdateTag(CompoundTag compound) {
+        super.handleUpdateTag(compound.getCompound("super"));
         if (compound.contains("local")) {
-            CompoundNBT local = compound.getCompound("local");
+            CompoundTag local = compound.getCompound("local");
             handleDataNBT(local);
         }
-        CompoundNBT subNBTs = compound.getCompound("sub");
+        CompoundTag subNBTs = compound.getCompound("sub");
         for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
-                CompoundNBT nbt = subNBTs.getCompound(key);
+                CompoundTag nbt = subNBTs.getCompound(key);
                 module.handleDataNBT(nbt);
             }
         }
     }
     
     @Override
-    public final CompoundNBT getUpdateTag() {
-        CompoundNBT superNBT = super.getUpdateTag();
-        CompoundNBT subNBTs = new CompoundNBT();
+    public final CompoundTag getUpdateTag() {
+        CompoundTag superNBT = super.getUpdateTag();
+        CompoundTag subNBTs = new CompoundTag();
         for (ITileModule module : moduleList) {
-            CompoundNBT nbt = module.getDataNBT();
+            CompoundTag nbt = module.getDataNBT();
             if (nbt != null) {
                 String key = module.saveKey();
                 if (subNBTs.contains(key)) {
-                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getPos());
+                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                 }
                 subNBTs.put(key, nbt);
             }
         }
-        CompoundNBT nbt = new CompoundNBT();
+        CompoundTag nbt = new CompoundTag();
         nbt.put("super", superNBT);
         nbt.put("sub", subNBTs);
-        CompoundNBT localNBT = getDataNBT();
+        CompoundTag localNBT = getDataNBT();
         if (localNBT != null) {
             nbt.put("local", localNBT);
         }
         return nbt;
     }
     
-    protected void handleDataNBT(CompoundNBT nbt) {
+    protected void handleDataNBT(CompoundTag nbt) {
         // mimmicks behavior of IForgeTileEntity
         readNBT(nbt);
     }
     
     @Nullable
-    protected CompoundNBT getDataNBT() {
+    protected CompoundTag getDataNBT() {
         return writeNBT();
     }
     
     @Override
-    public final void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-        assert world != null;
+    public final void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        assert level != null;
         // getters are client only, so, cant grab it on the server even if i want to
-        if (!world.isRemote) {
+        if (!level.isClientSide) {
             return;
         }
-        CompoundNBT compound = pkt.getNbtCompound();
+        CompoundTag compound = pkt.getTag();
         if (compound.contains("local")) {
-            CompoundNBT local = compound.getCompound("local");
+            CompoundTag local = compound.getCompound("local");
             handleUpdateNBT(local);
         }
-        CompoundNBT subNBTs = compound.getCompound("sub");
+        CompoundTag subNBTs = compound.getCompound("sub");
         for (ITileModule module : moduleList) {
             String key = module.saveKey();
             if (subNBTs.contains(key)) {
-                CompoundNBT nbt = subNBTs.getCompound(key);
+                CompoundTag nbt = subNBTs.getCompound(key);
                 module.handleUpdateNBT(nbt);
             }
         }
@@ -199,23 +199,23 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     
     @Nullable
     @Override
-    public final SUpdateTileEntityPacket getUpdatePacket() {
+    public final ClientboundBlockEntityDataPacket getUpdatePacket() {
         boolean sendPacket = false;
-        CompoundNBT subNBTs = new CompoundNBT();
+        CompoundTag subNBTs = new CompoundTag();
         for (ITileModule module : moduleList) {
-            CompoundNBT nbt = module.getUpdateNBT();
+            CompoundTag nbt = module.getUpdateNBT();
             if (nbt != null) {
                 sendPacket = true;
                 String key = module.saveKey();
                 if (subNBTs.contains(key)) {
-                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getPos());
+                    LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                 }
                 subNBTs.put(key, nbt);
             }
         }
-        CompoundNBT nbt = new CompoundNBT();
+        CompoundTag nbt = new CompoundTag();
         nbt.put("sub", subNBTs);
-        CompoundNBT localNBT = getUpdateNBT();
+        CompoundTag localNBT = getUpdateNBT();
         if (localNBT != null) {
             sendPacket = true;
             nbt.put("local", localNBT);
@@ -223,14 +223,14 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
         if (!sendPacket) {
             return null;
         }
-        return new SUpdateTileEntityPacket(this.getPos(), 0, nbt);
+        return new ClientboundBlockEntityDataPacket(this.getBlockPos(), 0, nbt);
     }
     
-    void handleUpdateNBT(CompoundNBT nbt) {
+    void handleUpdateNBT(CompoundTag nbt) {
     }
     
     @Nullable
-    CompoundNBT getUpdateNBT() {
+    CompoundTag getUpdateNBT() {
         return null;
     }
     
@@ -241,7 +241,7 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
             LazyOptional<T> moduleOptional = module.capability(cap, side);
             if (moduleOptional.isPresent()) {
                 if (optional.isPresent()) {
-                    LOGGER.warn("Multiple implementations of same capability \"" + cap.getName() + "\" on " + side + " side for tile type \"" + getClass().getSimpleName() + "\" at " + getPos());
+                    LOGGER.warn("Multiple implementations of same capability \"" + cap.getName() + "\" on " + side + " side for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                     continue;
                 }
                 optional = moduleOptional;
@@ -268,8 +268,8 @@ public class PhosphophylliteTile extends TileEntity implements IModularTile {
     }
     
     void onBlockUpdate(BlockPos neighborPos) {
-        assert world != null;
-        BlockState neighborBlockState = world.getBlockState(neighborPos);
+        assert level != null;
+        BlockState neighborBlockState = level.getBlockState(neighborPos);
         for (ITileModule module : moduleList) {
             module.onBlockUpdate(neighborBlockState, neighborPos);
         }

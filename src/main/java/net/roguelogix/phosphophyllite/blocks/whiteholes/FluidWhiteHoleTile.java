@@ -1,12 +1,13 @@
 package net.roguelogix.phosphophyllite.blocks.whiteholes;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.Direction;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
@@ -17,20 +18,25 @@ import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import static net.minecraftforge.fluids.FluidStack.loadFluidStackFromNBT;
 
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "fluid_white_hole")
-public class FluidWhiteHoleTile extends TileEntity implements IFluidHandler, ITickableTileEntity {
+public class FluidWhiteHoleTile extends BlockEntity implements IFluidHandler {
     
     @RegisterTileEntity.Type
-    public static TileEntityType<?> TYPE;
+    public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
     public static final TileSupplier SUPPLIER = FluidWhiteHoleTile::new;
     
-    public FluidWhiteHoleTile() {
-        super(TYPE);
+    public FluidWhiteHoleTile(BlockPos pos, BlockState state) {
+        super(TYPE, pos, state);
     }
     
     @Nonnull
@@ -90,25 +96,21 @@ public class FluidWhiteHoleTile extends TileEntity implements IFluidHandler, ITi
     }
     
     @Override
-    public void read(@Nonnull BlockState state, CompoundNBT compound) {
-        //noinspection SpellCheckingInspection
+    public CompoundTag save(CompoundTag compound) {
+        compound.put("fluidstack", fluidStack.writeToNBT(new CompoundTag()));
+        return super.save(compound);
+    }
+    
+    @Override
+    public void load(CompoundTag compound) {
         fluidStack = loadFluidStackFromNBT(compound.getCompound("fluidstack"));
-        super.read(state, compound);
+        super.load(compound);
     }
     
-    @Nonnull
-    @Override
-    public CompoundNBT write(CompoundNBT compound) {
-        //noinspection SpellCheckingInspection
-        compound.put("fluidstack", fluidStack.writeToNBT(new CompoundNBT()));
-        return super.write(compound);
-    }
-    
-    @Override
     public void tick() {
-        assert world != null;
+        assert level != null;
         for (Direction direction : Direction.values()) {
-            TileEntity te = world.getTileEntity(pos.offset(direction));
+            BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
             if (te != null) {
                 te.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, direction.getOpposite()).ifPresent(c -> c.fill(fluidStack.copy(), FluidAction.EXECUTE));
             }

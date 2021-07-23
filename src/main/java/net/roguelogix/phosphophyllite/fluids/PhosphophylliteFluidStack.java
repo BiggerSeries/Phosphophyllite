@@ -1,10 +1,10 @@
 package net.roguelogix.phosphophyllite.fluids;
 
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -54,14 +54,14 @@ public class PhosphophylliteFluidStack extends FluidStack {
         setAmount(amount);
     }
     
-    public PhosphophylliteFluidStack(Fluid fluid, int amount, CompoundNBT nbt) {
+    public PhosphophylliteFluidStack(Fluid fluid, int amount, CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
         setDelegate(delegateWrapper);
         setFluid(fluid);
         setAmount(amount);
     }
     
-    public PhosphophylliteFluidStack(Fluid fluid, long amount, CompoundNBT nbt) {
+    public PhosphophylliteFluidStack(Fluid fluid, long amount, CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
         setDelegate(delegateWrapper);
         setFluid(fluid);
@@ -111,7 +111,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         this.fluid = fluid;
     }
     
-    public static FluidStack loadFromNBT(CompoundNBT nbt) {
+    public static FluidStack loadFromNBT(CompoundTag nbt) {
         if (nbt == null) {
             return EMPTY;
         }
@@ -136,7 +136,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         return stack;
     }
     
-    public CompoundNBT writeToNBT(CompoundNBT nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         nbt.putString("FluidName", getFluid().getRegistryName().toString());
         nbt.putInt("Amount", (int) Math.min(amount, Integer.MAX_VALUE));
         nbt.putLong("LongAmount", amount);
@@ -147,22 +147,22 @@ public class PhosphophylliteFluidStack extends FluidStack {
         return nbt;
     }
     
-    public void writeToPacket(PacketBuffer buf) {
+    public void writeToPacket(FriendlyByteBuf buf) {
         buf.writeRegistryId(getFluid());
         buf.writeVarInt(getAmount());
-        buf.writeCompoundTag(getTag());
+        buf.writeNbt(getTag());
     }
     
-    public void writeToLongPacket(PacketBuffer buf) {
+    public void writeToLongPacket(FriendlyByteBuf buf) {
         buf.writeRegistryId(getFluid());
         buf.writeVarLong(getAmount());
-        buf.writeCompoundTag(getTag());
+        buf.writeNbt(getTag());
     }
     
-    public static FluidStack readFromPacket(PacketBuffer buf) {
+    public static FluidStack readFromPacket(FriendlyByteBuf buf) {
         Fluid fluid = buf.readRegistryId();
         long amount = buf.readVarLong();
-        CompoundNBT tag = buf.readCompoundTag();
+        CompoundTag tag = buf.readNbt();
         if (fluid == Fluids.EMPTY) {
             return EMPTY;
         }
@@ -190,37 +190,37 @@ public class PhosphophylliteFluidStack extends FluidStack {
         super.setAmount((int) amount);
     }
     
-    private CompoundNBT tag;
+    private CompoundTag tag;
     
     public boolean hasTag() {
         return tag != null;
     }
     
-    public CompoundNBT getTag() {
+    public CompoundTag getTag() {
         return tag;
     }
     
-    public void setTag(CompoundNBT tag) {
+    public void setTag(CompoundTag tag) {
         this.tag = tag;
     }
     
-    public CompoundNBT getOrCreateTag() {
+    public CompoundTag getOrCreateTag() {
         if (tag == null) {
-            setTag(new CompoundNBT());
+            setTag(new CompoundTag());
         }
         return tag;
     }
     
-    public CompoundNBT getChildTag(String childName) {
+    public CompoundTag getChildTag(String childName) {
         if (tag == null) {
             return null;
         }
         return tag.getCompound(childName);
     }
     
-    public CompoundNBT getOrCreateChildTag(String childName) {
+    public CompoundTag getOrCreateChildTag(String childName) {
         getOrCreateTag();
-        CompoundNBT child = tag.getCompound(childName);
+        CompoundTag child = tag.getCompound(childName);
         if (!tag.contains(childName, Constants.NBT.TAG_COMPOUND)) {
             tag.put(childName, child);
         }

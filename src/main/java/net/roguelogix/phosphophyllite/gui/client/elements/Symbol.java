@@ -1,9 +1,11 @@
 package net.roguelogix.phosphophyllite.gui.client.elements;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.text.ITextComponent;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.roguelogix.phosphophyllite.gui.client.RenderHelper;
 import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
 import net.roguelogix.phosphophyllite.gui.client.api.ICallback;
@@ -17,7 +19,7 @@ import javax.annotation.Nullable;
  *
  * @param <T> Elements must belong to a Container or ContainerScreen.
  */
-public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
+public class Symbol<T extends AbstractContainerMenu> extends Tooltip<T> implements IRender {
 
     /**
      * Used to enable or disable the rendering of this element.
@@ -46,7 +48,7 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * @param v       The v offset to use when rendering this element (starting from the top, and moving down).
      * @param tooltip The tooltip for this element. If null, a tooltip will not render. If you set a tooltip later, use StringTextComponent.EMPTY.
      */
-    public Symbol(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, int u, int v, @Nullable ITextComponent tooltip) {
+    public Symbol(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, int u, int v, @Nullable Component tooltip) {
         super(parent, x, y, width, height, tooltip);
         this.u = u;
         this.v = v;
@@ -70,7 +72,7 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * @param mouseY The y position of the mouse.
      */
     @Override
-    public void render(@Nonnull MatrixStack mStack, int mouseX, int mouseY) {
+    public void render(@Nonnull PoseStack mStack, int mouseX, int mouseY) {
         // Check conditions, and render.
         if (this.renderEnable) {
             if (this.onRender != null) {
@@ -87,10 +89,10 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * Blit/draw a part of this element.
      *
      * @param mStack The current matrix stack.
-     * @see AbstractGui#blit(MatrixStack, int, int, int, int, int, int)
+     * @see AbstractGui#blit(PoseStack, int, int, int, int, int, int)
      */
-    public void blit(@Nonnull MatrixStack mStack) {
-        AbstractGui.blit(mStack, this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
+    public void blit(@Nonnull PoseStack mStack) {
+        GuiComponent.blit(mStack, this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
     }
 
     /**
@@ -99,10 +101,10 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * @param mStack The current matrix stack.
      * @param u      The u offset in the current texture to draw.
      * @param v      The v offset in the current texture to draw.
-     * @see AbstractGui#blit(MatrixStack, int, int, int, int, int, int)
+     * @see AbstractGui#blit(PoseStack, int, int, int, int, int, int)
      */
-    public void blit(@Nonnull MatrixStack mStack, int u, int v) {
-        AbstractGui.blit(mStack, this.x, this.y, u, v, this.width, this.height, 256, 256);
+    public void blit(@Nonnull PoseStack mStack, int u, int v) {
+        GuiComponent.blit(mStack, this.x, this.y, u, v, this.width, this.height, 256, 256);
     }
 
     /**
@@ -113,10 +115,10 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * @param height How tall to draw the element.
      * @param u      The u offset in the current texture to draw.
      * @param v      The v offset in the current texture to draw.
-     * @see AbstractGui#blit(MatrixStack, int, int, int, int, int, int)
+     * @see AbstractGui#blit(PoseStack, int, int, int, int, int, int)
      */
-    public void blit(@Nonnull MatrixStack mStack, int width, int height, int u, int v) {
-        AbstractGui.blit(mStack, this.x, this.y, u, v, width, height, 256, 256);
+    public void blit(@Nonnull PoseStack mStack, int width, int height, int u, int v) {
+        GuiComponent.blit(mStack, this.x, this.y, u, v, width, height, 256, 256);
     }
 
     /**
@@ -129,10 +131,10 @@ public class Symbol<T extends Container> extends Tooltip<T> implements IRender {
      * @param v      The v offset in the current texture to draw.
      * @param width  How wide to draw the element.
      * @param height How tall to draw the element.
-     * @see AbstractGui#blit(MatrixStack, int, int, int, int, int, int)
+     * @see AbstractGui#blit(PoseStack, int, int, int, int, int, int)
      */
-    public void blit(@Nonnull MatrixStack mStack, int x, int y, int u, int v, int width, int height) {
-        AbstractGui.blit(mStack, x, y, u, v, width, height, 256, 256);
+    public void blit(@Nonnull PoseStack mStack, int x, int y, int u, int v, int width, int height) {
+        GuiComponent.blit(mStack, x, y, u, v, width, height, 256, 256);
     }
 
     /**

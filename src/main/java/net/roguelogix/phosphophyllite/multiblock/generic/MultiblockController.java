@@ -1,10 +1,10 @@
 package net.roguelogix.phosphophyllite.multiblock.generic;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -19,7 +19,7 @@ import java.util.*;
 
 public class MultiblockController<ControllerType extends MultiblockController<ControllerType, TileType, BlockType>, TileType extends MultiblockTile<ControllerType, TileType, BlockType>, BlockType extends MultiblockBlock<ControllerType, TileType, BlockType>> {
     
-    protected final World world;
+    protected final Level world;
     
     private boolean hasSaveDelegate = false;
     protected final TileMap<TileType> blocks = new TileMap<>();
@@ -48,7 +48,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     protected AssemblyState state = AssemblyState.DISASSEMBLED;
     
     private boolean shouldUpdateNBT = false;
-    private CompoundNBT cachedNBT = null;
+    private CompoundTag cachedNBT = null;
     
     protected final Validator<MultiblockTile<?, ?, ?>> tileTypeValidator;
     protected final Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator;
@@ -59,7 +59,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     long lastTick = -1;
     
     
-    public MultiblockController(@Nonnull World world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
+    public MultiblockController(@Nonnull Level world, @Nonnull Validator<MultiblockTile<?, ?, ?>> tileTypeValidator, @Nonnull Validator<MultiblockBlock<?, ?, ?>> blockTypeValidator) {
         this.tileTypeValidator = tileTypeValidator;
         this.blockTypeValidator = blockTypeValidator;
         this.world = world;
@@ -71,7 +71,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         return (ControllerType) this;
     }
     
-    public World getWorld() {
+    public Level getWorld() {
         return world;
     }
     
@@ -179,7 +179,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         // ok, its a valid tile to attach, so ima attach it
         blocks.addTile(toAttach);
         
-        BlockPos toAttachPos = toAttach.getPos();
+        BlockPos toAttachPos = toAttach.getBlockPos();
         // update minmax
         if (toAttachPos.getX() < minCoord.x) {
             minCoord.x = toAttachPos.getX();
@@ -294,10 +294,10 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         
         this.checkForDetachments = this.checkForDetachments || checkForDetachments;
         if (checkForDetachments) {
-            removedBlocks.add(toDetach.getPos());
+            removedBlocks.add(toDetach.getBlockPos());
         }
         
-        BlockPos toDetachPos = toDetach.getPos();
+        BlockPos toDetachPos = toDetach.getBlockPos();
         if (toDetachPos.getX() == minCoord.x) {
             minExtremeBlocks.x--;
             if (minExtremeBlocks.x == 0) {
@@ -351,17 +351,17 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         }
         
         if (checkForDetachments) {
-            BlockPos.Mutable mutableBlockPos = new BlockPos.Mutable();
+            BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
             
             AStarList aStarList = new AStarList();
             
             for (BlockPos removedBlock : removedBlocks) {
                 for (Direction value : Direction.values()) {
-                    mutableBlockPos.setPos(removedBlock);
+                    mutableBlockPos.set(removedBlock);
                     mutableBlockPos.move(value);
                     TileType tile = blocks.getTile(mutableBlockPos);
                     if (tile != null && tile.controller == this) {
-                        aStarList.addTarget(tile.getPos());
+                        aStarList.addTarget(tile.getBlockPos());
                     }
                 }
             }
@@ -370,12 +370,12 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             while (!aStarList.done()) {
                 BlockPos node = aStarList.nextNode();
                 for (Direction value : Direction.values()) {
-                    mutableBlockPos.setPos(node);
+                    mutableBlockPos.set(node);
                     mutableBlockPos.move(value);
                     TileType tile = blocks.getTile(mutableBlockPos);
                     if (tile != null && tile.controller == this && tile.lastSavedTick != this.lastTick) {
                         tile.lastSavedTick = this.lastTick;
-                        aStarList.addNode(tile.getPos());
+                        aStarList.addNode(tile.getBlockPos());
                     }
                 }
             }
@@ -481,7 +481,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
     }
     
     
-    private void onBlockWithNBTAttached(CompoundNBT nbt) {
+    private void onBlockWithNBTAttached(CompoundTag nbt) {
         if (cachedNBT == null) {
             readNBT(nbt);
         }
@@ -493,7 +493,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
             BlockState state = tile.assembledBlockState();
             if (state != tile.getBlockState()) {
                 newStates.put(pos, state);
-                tile.updateContainingBlockInfo();
+                tile.setBlockState(state);
             }
         });
         Util.setBlockStates(newStates, world);
@@ -504,8 +504,9 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
         blocks.forEach((pos, tile) -> {
             BlockState state = tile.disassembledBlockState();
             if (state != tile.getBlockState()) {
-                newStates.put(tile.getPos(), state);
-                tile.updateContainingBlockInfo();
+                newStates.put(pos, state);
+                tile.setBlockState(state);
+                ;
             }
         });
         Util.setBlockStates(newStates, world);
@@ -516,10 +517,10 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      *
      * @param nbt previously returned by getNBT that represents this multiblock
      */
-    final void readNBT(CompoundNBT nbt) {
+    final void readNBT(CompoundTag nbt) {
         if (!nbt.isEmpty()) {
             cachedNBT = nbt.copy();
-            CompoundNBT multiblockData = cachedNBT.getCompound("multiblockData");
+            CompoundTag multiblockData = cachedNBT.getCompound("multiblockData");
             if (multiblockData.contains("assemblyState")) {
                 // dont just shove this into this.state
                 // if you do onDisassembled will be called incorrectly
@@ -541,18 +542,18 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      * @return NBT that represents this multiblock
      */
     @Nonnull
-    final CompoundNBT getNBT() {
+    final CompoundTag getNBT() {
         if (shouldUpdateNBT) {
             shouldUpdateNBT = false;
             updateCachedNBT();
         }
-        return cachedNBT == null ? new CompoundNBT() : cachedNBT;
+        return cachedNBT == null ? new CompoundTag() : cachedNBT;
     }
     
     private void updateCachedNBT() {
-        cachedNBT = new CompoundNBT();
+        cachedNBT = new CompoundTag();
         cachedNBT.put("userdata", write());
-        CompoundNBT multiblockData = new CompoundNBT();
+        CompoundTag multiblockData = new CompoundTag();
         cachedNBT.put("multiblockData", multiblockData);
         {
             // instead of storing an exhaustive list of all the blocks we had
@@ -710,7 +711,7 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      *
      * @param compound the NBT that was written to in the last write call
      */
-    protected void read(@Nonnull CompoundNBT compound) {
+    protected void read(@Nonnull CompoundTag compound) {
     }
     
     /**
@@ -721,8 +722,8 @@ public class MultiblockController<ControllerType extends MultiblockController<Co
      * @return the NBT to save
      */
     @Nonnull
-    protected CompoundNBT write() {
-        return new CompoundNBT();
+    protected CompoundTag write() {
+        return new CompoundTag();
     }
     
 }

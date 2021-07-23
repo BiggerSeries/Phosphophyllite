@@ -1,6 +1,6 @@
 package net.roguelogix.phosphophyllite.config;
 
-import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.parsers.Element;
 

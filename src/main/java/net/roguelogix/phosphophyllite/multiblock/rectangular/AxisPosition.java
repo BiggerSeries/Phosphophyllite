@@ -1,11 +1,11 @@
 package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
-import net.minecraft.state.EnumProperty;
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import javax.annotation.Nonnull;
 
-public enum AxisPosition implements IStringSerializable {
+public enum AxisPosition implements StringRepresentable {
     LOWER("lower"),
     MIDDLE("middle"),
     UPPER("upper");
@@ -18,7 +18,7 @@ public enum AxisPosition implements IStringSerializable {
     
     @Override
     @Nonnull
-    public String getString() {
+    public String getSerializedName() {
         return toString().toLowerCase();
     }
     

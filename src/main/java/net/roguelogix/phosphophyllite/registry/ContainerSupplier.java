@@ -1,12 +1,12 @@
 package net.roguelogix.phosphophyllite.registry;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import javax.annotation.Nonnull;
 
 public interface ContainerSupplier {
     @Nonnull
-    Container create(int windowId, BlockPos blockPos, PlayerEntity player);
+    AbstractContainerMenu create(int windowId, BlockPos blockPos, Player player);
 }

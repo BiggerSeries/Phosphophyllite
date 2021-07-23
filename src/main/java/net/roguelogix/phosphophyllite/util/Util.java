@@ -3,16 +3,16 @@ package net.roguelogix.phosphophyllite.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -54,20 +54,22 @@ public class Util {
         return null;
     }
     
-    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, World world, BiConsumer<BlockState, Vector3i> func) {
+    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func) {
         chunkCachedBlockStateIteration(start, end, world, func, new Vector3i());
     }
     
-    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, World world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
+    // TODO: 7/22/21 ZYX order
+    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
         for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
             for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
-                Chunk chunk = (Chunk) world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
-                ChunkSection[] chunkSections = chunk != null ? chunk.getSections() : null;
+                LevelChunk chunk = (LevelChunk) world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
+                LevelChunkSection[] chunkSections = chunk != null ? chunk.getSections() : null;
+                int chunkMinSection = chunk != null ? chunk.getMinSection() : 0;
                 for (int Y = start.y(); Y < ((end.y() + 16) & 0xFFFFFFF0); Y += 16) {
-                    int chunkSectionIndex = Y >> 4;
-                    ChunkSection chunkSection = chunkSections != null ? chunkSections[chunkSectionIndex] : null;
+                    int chunkSectionIndex = Y >> 4 - chunkMinSection;
+                    LevelChunkSection chunkSection = chunkSections != null ? chunkSections[chunkSectionIndex] : null;
                     int sectionMinX = Math.max((X) & 0xFFFFFFF0, start.x());
                     int sectionMinY = Math.max((Y) & 0xFFFFFFF0, start.y());
                     int sectionMinZ = Math.max((Z) & 0xFFFFFFF0, start.z());
@@ -78,7 +80,7 @@ public class Util {
                         for (int y = sectionMinY; y < sectionMaxY; y++) {
                             for (int z = sectionMinZ; z < sectionMaxZ; z++) {
                                 scratchVector.set(x, y, z);
-                                BlockState state = Blocks.AIR.getDefaultState();
+                                BlockState state = Blocks.AIR.defaultBlockState();
                                 if (chunkSection != null) {
                                     state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
                                 }
@@ -91,40 +93,40 @@ public class Util {
         }
     }
     
-    public static void markRangeDirty(World world, Vector2i start, Vector2i end) {
+    public static void markRangeDirty(Level world, Vector2i start, Vector2i end) {
         for (int X = start.x; X < ((end.x + 16) & 0xFFFFFFF0); X += 16) {
             for (int Z = start.y; Z < ((end.y + 16) & 0xFFFFFFF0); Z += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
-                Chunk chunk = world.getChunk(chunkX, chunkZ);
-                chunk.markDirty();
+                LevelChunk chunk = world.getChunk(chunkX, chunkZ);
+                chunk.markUnsaved();
             }
         }
     }
     
-    public static void setBlockStates(Map<BlockPos, BlockState> newStates, World world) {
+    public static void setBlockStates(Map<BlockPos, BlockState> newStates, Level world) {
         HashMap<BlockPos, HashMap<BlockPos, BlockState>> stateChunks = new HashMap<>();
-        BlockPos.Mutable chunkPos = new BlockPos.Mutable();
+        BlockPos.MutableBlockPos chunkPos = new BlockPos.MutableBlockPos();
         newStates.forEach((pos, state) -> {
-            chunkPos.setPos(pos.getX() >> 4, 0, pos.getZ() >> 4);
+            chunkPos.set(pos.getX() >> 4, 0, pos.getZ() >> 4);
             HashMap<BlockPos, BlockState> chunksNewStates = stateChunks.get(chunkPos);
             if (chunksNewStates == null) {
                 chunksNewStates = new HashMap<>();
-                stateChunks.put(chunkPos.toImmutable(), chunksNewStates);
+                stateChunks.put(chunkPos.immutable(), chunksNewStates);
             }
             chunksNewStates.put(pos, state);
         });
         stateChunks.forEach((cPos, states) -> {
-            Chunk chunk = world.getChunk(cPos.getX(), cPos.getZ());
-            ChunkSection[] chunkSections = chunk.getSections();
+            LevelChunk chunk = world.getChunk(cPos.getX(), cPos.getZ());
+            LevelChunkSection[] chunkSections = chunk.getSections();
             states.forEach((bPos, state) -> {
-                ChunkSection section = chunkSections[bPos.getY() >> 4];
+                LevelChunkSection section = chunkSections[bPos.getY() >> 4];
                 if (section != null) {
                     BlockState oldState = section.setBlockState(bPos.getX() & 15, bPos.getY() & 15, bPos.getZ() & 15, state);
-                    world.notifyBlockUpdate(bPos, oldState, state, 0);
+                    world.sendBlockUpdated(bPos, oldState, state, 0);
                 }
             });
-            chunk.markDirty();
+            chunk.markUnsaved();
         });
     }
     

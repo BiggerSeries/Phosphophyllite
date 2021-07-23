@@ -1,16 +1,16 @@
 package net.roguelogix.phosphophyllite.gui.client;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.gui.IHasContainer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.texture.ITickable;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.client.renderer.texture.Tickable;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.roguelogix.phosphophyllite.gui.client.api.IRender;
@@ -27,7 +27,7 @@ import java.util.List;
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("rawtypes")
-public class ScreenBase<T extends Container> extends ContainerScreen<T> implements IHasContainer<T> {
+public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MenuAccess<T> {
 
     /**
      * The list of elements that are a part of this screen.
@@ -38,15 +38,21 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * The texture map this screen accesses.
      */
     protected ResourceLocation textureAtlas;
+    
+    /**
+     * Player inventory
+     */
+    protected Inventory inventory;
 
     /**
      * This constructor makes no assumptions.
      */
-    public ScreenBase(T screenContainer, PlayerInventory playerInventory, ITextComponent title, ResourceLocation textureAtlas, int width, int height) {
+    public ScreenBase(T screenContainer, Inventory playerInventory, Component title, ResourceLocation textureAtlas, int width, int height) {
         super(screenContainer, playerInventory, title);
+        this.inventory = playerInventory;
         this.textureAtlas = textureAtlas;
-        this.xSize = width;
-        this.ySize = height;
+        this.width = width;
+        this.height = height;
         this.screenElements = Lists.newArrayList();
     }
 
@@ -68,7 +74,7 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * @return The width.
      */
     public int getWidth() {
-        return this.xSize;
+        return this.width;
     }
 
     /**
@@ -77,7 +83,7 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * @return The height.
      */
     public int getHeight() {
-        return this.ySize;
+        return this.height;
     }
 
     /**
@@ -85,7 +91,7 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      *
      * @return The font renderer.
      */
-    public FontRenderer getFont() {
+    public Font getFont() {
         return this.font;
     }
 
@@ -107,13 +113,13 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * @param partialTicks Partial ticks.
      */
     @Override
-    public void render(@Nonnull MatrixStack mStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
         // Render background.
         this.renderBackground(mStack);
         super.render(mStack, mouseX, mouseY, partialTicks);
 
         // Draw tooltips for all of the elements that belong to this screen.
-        this.renderHoveredTooltip(mStack, mouseX, mouseY);
+        this.renderTooltip(mStack, mouseX, mouseY);
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and render.
             if (element instanceof ITooltip) {
@@ -130,7 +136,7 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * @param mouseY The y position of the mouse.
      */
     @Override
-    protected void drawGuiContainerForegroundLayer(@Nonnull MatrixStack mStack, int mouseX, int mouseY) {
+    protected void renderLabels(@Nonnull PoseStack mStack, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -144,7 +150,7 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         }
 
         // Draw title.
-        this.font.drawString(mStack, this.title.getString(), this.titleX, this.titleY, 4210752);
+        this.font.draw(mStack, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
     }
 
     /**
@@ -156,15 +162,15 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * @param mouseY       The y position of the mouse.
      */
     @Override
-    protected void drawGuiContainerBackgroundLayer(@Nonnull MatrixStack mStack, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(@Nonnull PoseStack mStack, float partialTicks, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         // Draw background.
-        this.blit(mStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.xSize, this.ySize);
+        this.blit(mStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.width, this.height);
     }
-
+    
     /**
      * Returns whether the mouse is over the desired area.
      *
@@ -189,11 +195,11 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
      * Tick/update this screen.
      */
     @Override
-    public void tick() {
+    public void containerTick() {
         // Iterate through this screen's elements.
         for (AbstractElement element : this.screenElements) {
             // Trigger.
-            ((ITickable) element).tick();
+            ((Tickable) element).tick();
         }
     }
 
@@ -208,8 +214,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         // Iterate through this screen's elements.
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                ((IGuiEventListener) element).mouseMoved(mouseX, mouseY);
+            if (element != null) {
+                element.mouseMoved(mouseX, mouseY);
             }
         }
     }
@@ -229,8 +235,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).mouseClicked(mouseX, mouseY, button));
+            if (element != null) {
+                handled = (handled || element.mouseClicked(mouseX, mouseY, button));
             }
         }
         return (handled || super.mouseClicked(mouseX, mouseY, button));
@@ -250,8 +256,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).mouseReleased(mouseX, mouseY, button));
+            if (element != null) {
+                handled = (handled || element.mouseReleased(mouseX, mouseY, button));
             }
         }
         return (handled || super.mouseReleased(mouseX, mouseY, button));
@@ -273,8 +279,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).mouseDragged(mouseX, mouseY, button, dragX, dragY));
+            if (element != null) {
+                handled = (handled || element.mouseDragged(mouseX, mouseY, button, dragX, dragY));
             }
         }
         return (handled || super.mouseDragged(mouseX, mouseY, button, dragX, dragY));
@@ -294,8 +300,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).mouseScrolled(mouseX, mouseY, delta));
+            if (element != null) {
+                handled = (handled || element.mouseScrolled(mouseX, mouseY, delta));
             }
         }
         return (handled || super.mouseScrolled(mouseX, mouseY, delta));
@@ -315,8 +321,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).keyPressed(keyCode, scanCode, modifiers));
+            if (element != null) {
+                handled = (handled || element.keyPressed(keyCode, scanCode, modifiers));
             }
         }
         // Return either the handle status, or the parent's return.
@@ -337,8 +343,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).keyReleased(keyCode, scanCode, modifiers));
+            if (element != null) {
+                handled = (handled || element.keyReleased(keyCode, scanCode, modifiers));
             }
         }
         return (handled || super.keyReleased(keyCode, scanCode, modifiers));
@@ -357,8 +363,8 @@ public class ScreenBase<T extends Container> extends ContainerScreen<T> implemen
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
-            if (element instanceof IGuiEventListener) {
-                handled = (handled || ((IGuiEventListener) element).charTyped(codePoint, modifiers));
+            if (element != null) {
+                handled = (handled || element.charTyped(codePoint, modifiers));
             }
         }
         return (handled || super.charTyped(codePoint, modifiers));

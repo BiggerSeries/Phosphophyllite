@@ -1,11 +1,11 @@
 package net.roguelogix.phosphophyllite.tile;
 
-import mcp.MethodsReturnNonnullByDefault;
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
@@ -31,10 +31,10 @@ public interface ISidedMultipart {
         ITileModule coreModule;
         final ITileModule[] sidedModules = new ITileModule[6];
         
-        final TileEntity tile;
+        final BlockEntity tile;
         final ISidedMultipart multipartTile;
         
-        SidedMultipartModule(TileEntity tile) {
+        SidedMultipartModule(BlockEntity tile) {
             assert tile instanceof ISidedMultipart;
             this.tile = tile;
             this.multipartTile = (ISidedMultipart) tile;
@@ -42,7 +42,7 @@ public interface ISidedMultipart {
         }
         
         @Override
-        public TileEntity getTile() {
+        public BlockEntity getTile() {
             return tile;
         }
         
@@ -50,7 +50,7 @@ public interface ISidedMultipart {
             if (side == null) {
                 return coreModule;
             }
-            ITileModule module = sidedModules[side.getIndex()];
+            ITileModule module = sidedModules[side.get3DDataValue()];
             if (module == null) {
                 return coreModule;
             }
@@ -69,7 +69,7 @@ public interface ISidedMultipart {
                 }
                 return;
             }
-            sidedModules[side.getIndex()] = module;
+            sidedModules[side.get3DDataValue()] = module;
         }
         
         @Override
@@ -98,17 +98,17 @@ public interface ISidedMultipart {
         }
         
         @Override
-        public void readNBT(CompoundNBT nbt) {
+        public void readNBT(CompoundTag nbt) {
             if (nbt.contains("core")) {
-                CompoundNBT subNBT = nbt.getCompound("core");
+                CompoundTag subNBT = nbt.getCompound("core");
                 coreModule.readNBT(subNBT);
             }
             for (Direction value : Direction.values()) {
                 if (nbt.contains(value.toString())) {
-                    CompoundNBT subNBT = nbt.getCompound(value.toString());
-                    ITileModule module = sidedModules[value.getIndex()];
+                    CompoundTag subNBT = nbt.getCompound(value.toString());
+                    ITileModule module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getPos());
+                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getBlockState());
                         continue;
                     }
                     module.readNBT(subNBT);
@@ -118,20 +118,20 @@ public interface ISidedMultipart {
         
         @Nullable
         @Override
-        public CompoundNBT writeNBT() {
-            CompoundNBT nbt = null;
-            CompoundNBT subNBT = coreModule.writeNBT();
+        public CompoundTag writeNBT() {
+            CompoundTag nbt = null;
+            CompoundTag subNBT = coreModule.writeNBT();
             if (subNBT != null) {
-                nbt = new CompoundNBT();
+                nbt = new CompoundTag();
                 nbt.put("core", subNBT);
             }
             for (Direction value : Direction.values()) {
-                ITileModule module = sidedModules[value.getIndex()];
+                ITileModule module = sidedModules[value.get3DDataValue()];
                 if (module != null) {
                     subNBT = module.writeNBT();
                     if (subNBT != null) {
                         if (nbt == null) {
-                            nbt = new CompoundNBT();
+                            nbt = new CompoundTag();
                         }
                         nbt.put(value.toString(), subNBT);
                     }
@@ -141,17 +141,17 @@ public interface ISidedMultipart {
         }
         
         @Override
-        public void handleDataNBT(CompoundNBT nbt) {
+        public void handleDataNBT(CompoundTag nbt) {
             if (nbt.contains("core")) {
-                CompoundNBT subNBT = nbt.getCompound("core");
+                CompoundTag subNBT = nbt.getCompound("core");
                 coreModule.handleDataNBT(subNBT);
             }
             for (Direction value : Direction.values()) {
                 if (nbt.contains(value.toString())) {
-                    CompoundNBT subNBT = nbt.getCompound(value.toString());
-                    ITileModule module = sidedModules[value.getIndex()];
+                    CompoundTag subNBT = nbt.getCompound(value.toString());
+                    ITileModule module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getPos());
+                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getBlockState());
                         continue;
                     }
                     module.handleDataNBT(subNBT);
@@ -161,20 +161,20 @@ public interface ISidedMultipart {
         
         @Nullable
         @Override
-        public CompoundNBT getDataNBT() {
-            CompoundNBT nbt = null;
-            CompoundNBT subNBT = coreModule.getDataNBT();
+        public CompoundTag getDataNBT() {
+            CompoundTag nbt = null;
+            CompoundTag subNBT = coreModule.getDataNBT();
             if (subNBT != null) {
-                nbt = new CompoundNBT();
+                nbt = new CompoundTag();
                 nbt.put("core", subNBT);
             }
             for (Direction value : Direction.values()) {
-                ITileModule module = sidedModules[value.getIndex()];
+                ITileModule module = sidedModules[value.get3DDataValue()];
                 if (module != null) {
                     subNBT = module.getDataNBT();
                     if (subNBT != null) {
                         if (nbt == null) {
-                            nbt = new CompoundNBT();
+                            nbt = new CompoundTag();
                         }
                         nbt.put(value.toString(), subNBT);
                     }
@@ -184,17 +184,17 @@ public interface ISidedMultipart {
         }
         
         @Override
-        public void handleUpdateNBT(CompoundNBT nbt) {
+        public void handleUpdateNBT(CompoundTag nbt) {
             if (nbt.contains("core")) {
-                CompoundNBT subNBT = nbt.getCompound("core");
+                CompoundTag subNBT = nbt.getCompound("core");
                 coreModule.handleUpdateNBT(subNBT);
             }
             for (Direction value : Direction.values()) {
                 if (nbt.contains(value.toString())) {
-                    CompoundNBT subNBT = nbt.getCompound(value.toString());
-                    ITileModule module = sidedModules[value.getIndex()];
+                    CompoundTag subNBT = nbt.getCompound(value.toString());
+                    ITileModule module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getPos());
+                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + tile + " : " + tile.getBlockState());
                         continue;
                     }
                     module.handleUpdateNBT(subNBT);
@@ -204,20 +204,20 @@ public interface ISidedMultipart {
         
         @Nullable
         @Override
-        public CompoundNBT getUpdateNBT() {
-            CompoundNBT nbt = null;
-            CompoundNBT subNBT = coreModule.getUpdateNBT();
+        public CompoundTag getUpdateNBT() {
+            CompoundTag nbt = null;
+            CompoundTag subNBT = coreModule.getUpdateNBT();
             if (subNBT != null) {
-                nbt = new CompoundNBT();
+                nbt = new CompoundTag();
                 nbt.put("core", subNBT);
             }
             for (Direction value : Direction.values()) {
-                ITileModule module = sidedModules[value.getIndex()];
+                ITileModule module = sidedModules[value.get3DDataValue()];
                 if (module != null) {
                     subNBT = module.getUpdateNBT();
                     if (subNBT != null) {
                         if (nbt == null) {
-                            nbt = new CompoundNBT();
+                            nbt = new CompoundTag();
                         }
                         nbt.put(value.toString(), subNBT);
                     }
@@ -233,7 +233,7 @@ public interface ISidedMultipart {
             builder.append("Core:\n");
             builder.append(coreModule.getDebugInfo());
             for (Direction value : Direction.values()) {
-                ITileModule module = sidedModules[value.getIndex()];
+                ITileModule module = sidedModules[value.get3DDataValue()];
                 if (module != null) {
                     builder.append("\n");
                     builder.append(value);

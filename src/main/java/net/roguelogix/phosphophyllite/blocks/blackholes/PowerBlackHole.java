@@ -1,34 +1,36 @@
 package net.roguelogix.phosphophyllite.blocks.blackholes;
 
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.material.Material;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.IBlockReader;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Material;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 @SuppressWarnings("unused")
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 @RegisterBlock(name = "power_black_hole", tileEntityClass = PowerBlackHoleTile.class)
-public class PowerBlackHole extends Block {
+public class PowerBlackHole extends Block implements EntityBlock {
     
     @RegisterBlock.Instance
     public static PowerBlackHole INSTANCE;
     
     public PowerBlackHole() {
-        super(Properties.create(Material.IRON));
-    }
-    
-    @Override
-    public boolean hasTileEntity(BlockState state) {
-        return true;
+        super(Properties.of(Material.METAL));
     }
     
     @Nullable
     @Override
-    public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return new PowerBlackHoleTile();
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new PowerBlackHoleTile(pos, state);
     }
 }

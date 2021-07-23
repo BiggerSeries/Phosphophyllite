@@ -1,11 +1,12 @@
 package net.roguelogix.phosphophyllite.gui.client.elements;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
 import net.roguelogix.phosphophyllite.gui.client.api.ICallback;
 
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
  *
  * @param <T> Elements must belong to a Container or ContainerScreen.
  */
-public class Button<T extends Container> extends Symbol<T> implements IGuiEventListener {
+public class Button<T extends AbstractContainerMenu> extends Symbol<T> implements GuiEventListener {
 
     /**
      * Used to enable or disable interaction with this element.
@@ -76,7 +77,7 @@ public class Button<T extends Container> extends Symbol<T> implements IGuiEventL
      * @param v       The v offset to use when rendering this element (starting from the top, and moving down).
      * @param tooltip The tooltip for this element. If null, a tooltip will not render. If you set a tooltip later, use StringTextComponent.EMPTY.
      */
-    public Button(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, int u, int v, @Nullable ITextComponent tooltip) {
+    public Button(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, int u, int v, @Nullable Component tooltip) {
         super(parent, x, y, width, height, u, v, tooltip);
         this.actionEnable = true;
     }
@@ -87,7 +88,7 @@ public class Button<T extends Container> extends Symbol<T> implements IGuiEventL
      * @param sound The sound to play.
      */
     public void playSound(SoundEvent sound) {
-        Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(sound, 1.0F));
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
     }
 
     /**
@@ -97,7 +98,7 @@ public class Button<T extends Container> extends Symbol<T> implements IGuiEventL
      * @param volume How loud to play the sound.
      */
     public void playSound(SoundEvent sound, float volume) {
-        Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(sound, 1.0F, volume));
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F, volume));
     }
 
 

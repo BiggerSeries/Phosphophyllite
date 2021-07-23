@@ -1,8 +1,7 @@
 package net.roguelogix.phosphophyllite.registry;
 
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import java.util.function.Supplier;
-
-public interface TileSupplier extends Supplier<TileEntity> {
+public interface TileSupplier<T extends BlockEntity> extends BlockEntityType.BlockEntitySupplier<T> {
 }
