@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.registry;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -13,6 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -149,7 +151,7 @@ public class Registry {
         
         // in case you didnt register one, this will make sure the items still get registered
         itemGroupCreationEvent.trigger();
-    
+        
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
         ModBus.addGenericListener(Block.class, this::blockRegistration);
@@ -517,7 +519,7 @@ public class Registry {
                 e.printStackTrace();
                 return;
             }
-    
+            
             LiquidBlock block = new LiquidBlock(stillSupplier, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noDrops());
             
             stillInstance.isSource = true;
@@ -723,6 +725,7 @@ public class Registry {
         
         final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
         
+        
         final Event supplierLookupEvent = preEventWorkQueue.enqueue(() -> {
             for (Field declaredField : tileClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterTileEntity.Supplier.class)) {
@@ -752,6 +755,24 @@ public class Registry {
                     if (supplier[0] == null) {
                         LOGGER.error("Tile supplier field " + declaredField.getName() + " null in " + tileClazz.getSimpleName());
                     }
+                }
+            }
+            if (supplier[0] == null) {
+                // fall back to using the constructor via refletion, if the correct one exists
+                // its not quite as fast, but its easier, and *meh*
+                try {
+                    Constructor<?> constructor = tileClazz.getDeclaredConstructor(BlockPos.class, BlockState.class);
+                    constructor.setAccessible(true);
+                    supplier[0] = (pos, state) -> {
+                        try {
+                            return (BlockEntity) constructor.newInstance(pos, state);
+                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                            e.printStackTrace();
+                            throw new IllegalStateException("Unable to instantiate instance of " + tileClazz.getSimpleName());
+                        }
+                    };
+                } catch (NoSuchMethodException ignored) {
+                    // if it doesn't exist, that's handled below
                 }
             }
             if (supplier[0] == null) {
@@ -885,12 +906,12 @@ public class Registry {
     private void onModLoadAnnotation(String modNamespace, Class<?> modLoadClazz, final String memberName) {
         try {
             Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
-            if(!Modifier.isStatic(method.getModifiers())){
+            if (!Modifier.isStatic(method.getModifiers())) {
                 LOGGER.error("Cannot call non-static @OnModLoad method " + method.getName() + " in " + modLoadClazz.getSimpleName());
                 return;
             }
             
-            if(method.getParameterCount() != 0){
+            if (method.getParameterCount() != 0) {
                 LOGGER.error("Cannot call @OnModLoad method with parameters " + method.getName() + " in " + modLoadClazz.getSimpleName());
                 return;
             }
