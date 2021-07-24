@@ -6,8 +6,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -16,9 +16,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class PhosphophylliteBlock extends Block implements EntityBlock {
     
-    private final TileSupplier<PhosphophylliteTile> tileConstructor;
+    private final BlockEntityType.BlockEntitySupplier<PhosphophylliteTile> tileConstructor;
     
-    public PhosphophylliteBlock(TileSupplier<PhosphophylliteTile> tileConstructor, Properties properties) {
+    public PhosphophylliteBlock(BlockEntityType.BlockEntitySupplier<PhosphophylliteTile> tileConstructor, Properties properties) {
         super(properties);
         this.tileConstructor = tileConstructor;
     }

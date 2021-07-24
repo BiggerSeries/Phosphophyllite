@@ -14,15 +14,12 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
-import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import static net.minecraftforge.fluids.FluidStack.loadFluidStackFromNBT;
-
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -33,7 +30,7 @@ public class FluidWhiteHoleTile extends BlockEntity implements IFluidHandler {
     public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
-    public static final TileSupplier SUPPLIER = FluidWhiteHoleTile::new;
+    public static final BlockEntityType.BlockEntitySupplier<FluidWhiteHoleTile> SUPPLIER = FluidWhiteHoleTile::new;
     
     public FluidWhiteHoleTile(BlockPos pos, BlockState state) {
         super(TYPE, pos, state);

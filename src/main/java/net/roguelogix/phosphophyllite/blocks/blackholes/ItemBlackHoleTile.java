@@ -12,7 +12,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
-import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,7 +26,7 @@ public class ItemBlackHoleTile extends BlockEntity implements IItemHandler {
     public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
-    public static final TileSupplier SUPPLIER = ItemBlackHoleTile::new;
+    public static final BlockEntityType.BlockEntitySupplier<ItemBlackHoleTile> SUPPLIER = ItemBlackHoleTile::new;
     
     public ItemBlackHoleTile(BlockPos pos, BlockState state) {
         super(TYPE, pos, state);

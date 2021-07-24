@@ -721,7 +721,7 @@ public class Registry {
         
         final String registryName = modid + ":" + name;
         
-        final TileSupplier<?>[] supplier = new TileSupplier[1];
+        final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
         
         final Event supplierLookupEvent = preEventWorkQueue.enqueue(() -> {
             for (Field declaredField : tileClazz.getDeclaredFields()) {
@@ -734,7 +734,7 @@ public class Registry {
                     if (!Modifier.isFinal(modifiers)) {
                         LOGGER.warn("Tile supplier " + declaredField.getName() + " not final in" + tileClazz.getSimpleName());
                     }
-                    if (!TileSupplier.class.isAssignableFrom(declaredField.getType())) {
+                    if (!BlockEntityType.BlockEntitySupplier.class.isAssignableFrom(declaredField.getType())) {
                         LOGGER.error("Supplier annotation found on non-TileSupplier field " + declaredField.getName() + " in " + tileClazz.getSimpleName());
                         continue;
                     }
@@ -744,7 +744,7 @@ public class Registry {
                     }
                     declaredField.setAccessible(true);
                     try {
-                        supplier[0] = (TileSupplier) declaredField.get(null);
+                        supplier[0] = (BlockEntityType.BlockEntitySupplier<?>) declaredField.get(null);
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
                         continue;

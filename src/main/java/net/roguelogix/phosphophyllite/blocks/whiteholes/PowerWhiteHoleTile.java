@@ -13,7 +13,6 @@ import net.minecraftforge.energy.IEnergyStorage;
 import net.roguelogix.phosphophyllite.energy.EnergyStorageWrapper;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyStorage;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
-import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,7 +27,7 @@ public class PowerWhiteHoleTile extends BlockEntity implements IEnergyStorage {
     public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
-    public static final TileSupplier SUPPLIER = PowerWhiteHoleTile::new;
+    public static final BlockEntityType.BlockEntitySupplier<PowerWhiteHoleTile> SUPPLIER = PowerWhiteHoleTile::new;
     
     public PowerWhiteHoleTile(BlockPos pos, BlockState state) {
         super(TYPE, pos, state);

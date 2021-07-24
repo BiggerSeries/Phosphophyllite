@@ -16,7 +16,6 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
-import net.roguelogix.phosphophyllite.registry.TileSupplier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,7 +31,7 @@ public class ItemWhiteHoleTile extends BlockEntity implements IItemHandler {
     public static BlockEntityType<?> TYPE;
     
     @RegisterTileEntity.Supplier
-    public static final TileSupplier SUPPLIER = ItemWhiteHoleTile::new;
+    public static final BlockEntityType.BlockEntitySupplier<ItemWhiteHoleTile> SUPPLIER = ItemWhiteHoleTile::new;
     
     public ItemWhiteHoleTile(BlockPos pos, BlockState state) {
         super(TYPE, pos, state);
