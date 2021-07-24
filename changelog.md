@@ -1,3 +1,6 @@
+# 1.17.1-0.6.0-alpha
+ - 1.17.1
+ 
 # 1.16.5-0.5.1
  - use save delegate, massively reduces save/load time, and save size
  - fix config enum reading, it was still broken
