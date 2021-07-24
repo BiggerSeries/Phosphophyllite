@@ -85,7 +85,7 @@ public class RenderHelper {
      * @param resourceLocation The texture/resource to draw.
      */
     public static void bindTexture(ResourceLocation resourceLocation) {
-        Minecraft.getInstance().getTextureManager().bindForSetup(resourceLocation);
+        RenderSystem.setShaderTexture(0, resourceLocation);
         RenderHelper.currentResource = resourceLocation;
     }
 

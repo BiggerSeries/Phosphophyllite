@@ -1,11 +1,13 @@
 package net.roguelogix.phosphophyllite.gui.client;
 
 import com.google.common.collect.Lists;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -51,8 +53,8 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
         super(screenContainer, playerInventory, title);
         this.inventory = playerInventory;
         this.textureAtlas = textureAtlas;
-        this.width = width;
-        this.height = height;
+        this.imageWidth = width;
+        this.imageHeight = height;
         this.screenElements = Lists.newArrayList();
     }
 
@@ -114,7 +116,6 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
      */
     @Override
     public void render(@Nonnull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
-        // Render background.
         this.renderBackground(mStack);
         super.render(mStack, mouseX, mouseY, partialTicks);
 
@@ -168,7 +169,7 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         // Draw background.
-        this.blit(mStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.width, this.height);
+        this.blit(mStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.getXSize(), this.getYSize());
     }
     
     /**
