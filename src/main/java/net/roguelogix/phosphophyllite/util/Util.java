@@ -58,17 +58,17 @@ public class Util {
         chunkCachedBlockStateIteration(start, end, world, func, new Vector3i());
     }
     
-    // TODO: 7/22/21 ZYX order
     public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
-        for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
-            for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
+        // ChunkSource implementations are indexed [z][x]
+        for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
+            for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
                 LevelChunk chunk = (LevelChunk) world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
                 LevelChunkSection[] chunkSections = chunk != null ? chunk.getSections() : null;
                 int chunkMinSection = chunk != null ? chunk.getMinSection() : 0;
                 for (int Y = start.y(); Y < ((end.y() + 16) & 0xFFFFFFF0); Y += 16) {
-                    int chunkSectionIndex = Y >> 4 - chunkMinSection;
+                    int chunkSectionIndex = (Y >> 4) - chunkMinSection;
                     LevelChunkSection chunkSection = chunkSections != null ? chunkSections[chunkSectionIndex] : null;
                     int sectionMinX = Math.max((X) & 0xFFFFFFF0, start.x());
                     int sectionMinY = Math.max((Y) & 0xFFFFFFF0, start.y());
@@ -76,9 +76,10 @@ public class Util {
                     int sectionMaxX = Math.min((X + 16) & 0xFFFFFFF0, end.x() + 1);
                     int sectionMaxY = Math.min((Y + 16) & 0xFFFFFFF0, end.y() + 1);
                     int sectionMaxZ = Math.min((Z + 16) & 0xFFFFFFF0, end.z() + 1);
-                    for (int x = sectionMinX; x < sectionMaxX; x++) {
-                        for (int y = sectionMinY; y < sectionMaxY; y++) {
-                            for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+                    // PalettedContainers are indexed [y][z][x]
+                    for (int y = sectionMinY; y < sectionMaxY; y++) {
+                        for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+                            for (int x = sectionMinX; x < sectionMaxX; x++) {
                                 scratchVector.set(x, y, z);
                                 BlockState state = Blocks.AIR.defaultBlockState();
                                 if (chunkSection != null) {
