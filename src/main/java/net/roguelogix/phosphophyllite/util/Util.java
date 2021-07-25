@@ -68,7 +68,7 @@ public class Util {
                 LevelChunkSection[] chunkSections = chunk != null ? chunk.getSections() : null;
                 int chunkMinSection = chunk != null ? chunk.getMinSection() : 0;
                 for (int Y = start.y(); Y < ((end.y() + 16) & 0xFFFFFFF0); Y += 16) {
-                    int chunkSectionIndex = Y >> 4 - chunkMinSection;
+                    int chunkSectionIndex = (Y >> 4) - chunkMinSection;
                     LevelChunkSection chunkSection = chunkSections != null ? chunkSections[chunkSectionIndex] : null;
                     int sectionMinX = Math.max((X) & 0xFFFFFFF0, start.x());
                     int sectionMinY = Math.max((Y) & 0xFFFFFFF0, start.y());
