@@ -76,7 +76,7 @@ public class Util {
                     int sectionMaxX = Math.min((X + 16) & 0xFFFFFFF0, end.x() + 1);
                     int sectionMaxY = Math.min((Y + 16) & 0xFFFFFFF0, end.y() + 1);
                     int sectionMaxZ = Math.min((Z + 16) & 0xFFFFFFF0, end.z() + 1);
-		    // PalettedContainers are indexed [y][z][x]
+                    // PalettedContainers are indexed [y][z][x]
                     for (int y = sectionMinY; y < sectionMaxY; y++) {
                         for (int z = sectionMinZ; z < sectionMaxZ; z++) {
                             for (int x = sectionMinX; x < sectionMaxX; x++) {
