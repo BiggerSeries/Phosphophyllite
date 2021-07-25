@@ -76,9 +76,10 @@ public class Util {
                     int sectionMaxX = Math.min((X + 16) & 0xFFFFFFF0, end.x() + 1);
                     int sectionMaxY = Math.min((Y + 16) & 0xFFFFFFF0, end.y() + 1);
                     int sectionMaxZ = Math.min((Z + 16) & 0xFFFFFFF0, end.z() + 1);
-                    for (int x = sectionMinX; x < sectionMaxX; x++) {
-                        for (int y = sectionMinY; y < sectionMaxY; y++) {
-                            for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+		    // PalettedContainers are indexed [y][z][x]
+                    for (int y = sectionMinY; y < sectionMaxY; y++) {
+                        for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+                            for (int x = sectionMinX; x < sectionMaxX; x++) {
                                 scratchVector.set(x, y, z);
                                 BlockState state = Blocks.AIR.defaultBlockState();
                                 if (chunkSection != null) {
@@ -88,19 +89,6 @@ public class Util {
                             }
                         }
                     }
-                    // PalettedContainers are indexed [y][z][x]
-                    for (int y = sectionMinY; y < sectionMaxY; y++) {
-						for (int z = sectionMinZ; z < sectionMaxZ; ++z) {
-							for (int x = sectionMinX; x < sectionMaxX; x++) {
-                                scratchVector.set(x, y, z);
-                                BlockState state = Blocks.AIR.defaultBlockState();
-                                if (chunkSection != null) {
-                                    state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
-                                }
-								func.accept(state, scratchVector);
-							}
-						}
-					}
                 }
             }
         }
