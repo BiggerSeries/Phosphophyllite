@@ -58,10 +58,10 @@ public class Util {
         chunkCachedBlockStateIteration(start, end, world, func, new Vector3i());
     }
     
-    // TODO: 7/22/21 ZYX order
     public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
-        for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
-            for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
+        // ChunkSource implementations are indexed [z][x]
+        for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
+            for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
                 LevelChunk chunk = (LevelChunk) world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
@@ -88,6 +88,19 @@ public class Util {
                             }
                         }
                     }
+                    // PalettedContainers are indexed [y][z][x]
+                    for (int y = sectionMinY; y < sectionMaxY; y++) {
+						for (int z = sectionMinZ; z < sectionMaxZ; ++z) {
+							for (int x = sectionMinX; x < sectionMaxX; x++) {
+                                scratchVector.set(x, y, z);
+                                BlockState state = Blocks.AIR.defaultBlockState();
+                                if (chunkSection != null) {
+                                    state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
+                                }
+								func.accept(state, scratchVector);
+							}
+						}
+					}
                 }
             }
         }
