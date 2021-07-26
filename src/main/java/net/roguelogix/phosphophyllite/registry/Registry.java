@@ -520,13 +520,11 @@ public class Registry {
                 return;
             }
             
-            LiquidBlock block = new LiquidBlock(stillSupplier, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noDrops());
-            
             stillInstance.isSource = true;
             
             fluids[0] = stillInstance;
             fluids[1] = flowingInstance;
-            blockArray[0] = block;
+            blockArray[0] = new LiquidBlock(stillInstance, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noDrops());
             
             for (Field declaredField : fluidClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterFluid.Instance.class)) {
@@ -775,6 +773,26 @@ public class Registry {
                     // if it doesn't exist, that's handled below
                 }
             }
+            
+            if (supplier[0] == null) {
+                // fall back to using the constructor via refletion, if the correct one exists
+                // its not quite as fast, but its easier, and *meh*
+                try {
+                    Constructor<?> constructor = tileClazz.getDeclaredConstructor(BlockEntityType.class, BlockPos.class, BlockState.class);
+                    constructor.setAccessible(true);
+                    supplier[0] = (pos, state) -> {
+                        try {
+                            return (BlockEntity) constructor.newInstance(pos, state);
+                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                            e.printStackTrace();
+                            throw new IllegalStateException("Unable to instantiate instance of " + tileClazz.getSimpleName());
+                        }
+                    };
+                } catch (NoSuchMethodException ignored) {
+                    // if it doesn't exist, that's handled below
+                }
+            }
+            
             if (supplier[0] == null) {
                 LOGGER.error("No supplier found for tile " + tileClazz.getSimpleName());
             }

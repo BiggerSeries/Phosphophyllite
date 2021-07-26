@@ -11,13 +11,13 @@ public class PhosphophylliteFluid extends ForgeFlowingFluid {
     
     protected PhosphophylliteFluid(Properties properties) {
         super(properties);
-//        setDefaultState(getDefaultState().with(LEVEL_1_8, 8));
+        registerDefaultState(defaultFluidState().setValue(LEVEL, 8));
     }
     
     @Override
     protected void createFluidStateDefinition(@Nonnull StateDefinition.Builder<Fluid, FluidState> builder) {
         super.createFluidStateDefinition(builder);
-//        builder.add(LEVEL_1_8);
+        builder.add(LEVEL);
     }
     
     boolean isSource = false;
@@ -31,6 +31,6 @@ public class PhosphophylliteFluid extends ForgeFlowingFluid {
     
     @Override
     public int getAmount(FluidState state) {
-        return state.getAmount();
+        return state.getValue(LEVEL);
     }
 }
