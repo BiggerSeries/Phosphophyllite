@@ -1,8 +1,8 @@
 package net.roguelogix.phosphophyllite;
 
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.ServerResources;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.TickEvent;
@@ -11,18 +11,21 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fmlserverevents.FMLServerStoppedEvent;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.generic.MultiblockTile;
+import net.roguelogix.phosphophyllite.multiblock.modular.MultiblockController;
+import net.roguelogix.phosphophyllite.multiblock.modular.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 @SuppressWarnings("unused")
 @Mod(Phosphophyllite.modid)
 public class Phosphophyllite {
@@ -42,14 +45,14 @@ public class Phosphophyllite {
             LOGGER.warn("Performant " + (FMLLoader.getLoadingModList().getModFileById("performant") != null ? "is" : "is not") + " present");
         } else {
             if (FMLLoader.getLoadingModList().getModFileById("performant") != null) {
-                throw new IllegalStateException("" +
-                        "Performant is incompatible with Phosphophyllite\n" +
-                        "This is a known issue with performant and it breaking other mods, the author does not care\n" +
-                        "GitHub issue on the matter: https://github.com/someaddons/performant_issues/issues/70\n" +
-                        "To bypass this check add \"bypassPerformantCheck: true\" to your phosphophyllite config\n" +
-                        "If you bypass this check I (RogueLogix) will not provide any support for any issues related to Phosphophyllite or the mods that use it\n" +
-                        "If you believe your issue is unrelated, disable performant and reproduce it\n" +
-                        "By choosing to bypass this check you understand that here there be dragons");
+                throw new IllegalStateException("""
+                        Performant is incompatible with Phosphophyllite
+                        This is a known issue with performant and it breaking other mods, the author does not care
+                        GitHub issue on the matter: https://github.com/someaddons/performant_issues/issues/70
+                        To bypass this check add "bypassPerformantCheck: true" to your phosphophyllite config
+                        If you bypass this check I (RogueLogix) will not provide any support for any issues related to Phosphophyllite or the mods that use it
+                        If you believe your issue is unrelated, disable performant and reproduce it
+                        By choosing to bypass this check you understand that here there be dragons""");
             }
         }
     }
@@ -73,21 +76,21 @@ public class Phosphophyllite {
     
     public static final WorkQueue serverQueue = Queues.serverThread;
     
-    private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new HashMap<>();
-    private static final HashMap<ServerLevel, ArrayList<MultiblockTile<?, ?, ?>>> tilesToAttach = new HashMap<>();
-    private static final ArrayList<MultiblockController<?, ?, ?>> newControllers = new ArrayList<>();
-    private static final ArrayList<MultiblockController<?, ?, ?>> oldControllers = new ArrayList<>();
-    private static final ArrayList<MultiblockTile<?, ?, ?>> newTiles = new ArrayList<>();
+    private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
+    private static final HashMap<ServerLevel, ArrayList<MultiblockTileModule<?, ?>>> tilesToAttach = new HashMap<>();
+    private static final ArrayList<MultiblockController<?, ?>> newControllers = new ArrayList<>();
+    private static final ArrayList<MultiblockController<?, ?>> oldControllers = new ArrayList<>();
+    private static final ArrayList<MultiblockTileModule<?, ?>> newTiles = new ArrayList<>();
     
-    public static void addController(MultiblockController<?, ?, ?> controller) {
+    public static void addController(MultiblockController<?, ?> controller) {
         newControllers.add(controller);
     }
     
-    public static void removeController(MultiblockController<?, ?, ?> controller) {
+    public static void removeController(MultiblockController<?, ?> controller) {
         oldControllers.add(controller);
     }
     
-    public static void attachTile(MultiblockTile<?, ?, ?> tile) {
+    public static void attachTile(MultiblockTileModule<?, ?> tile) {
         newTiles.add(tile);
     }
     
@@ -95,9 +98,9 @@ public class Phosphophyllite {
     void onWorldUnload(final WorldEvent.Unload worldUnloadEvent) {
         if (!worldUnloadEvent.getWorld().isClientSide()) {
             //noinspection SuspiciousMethodCalls
-            ArrayList<MultiblockController<?, ?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getWorld());
+            ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getWorld());
             if (controllersToTick != null) {
-                for (MultiblockController<?, ?, ?> multiblockController : controllersToTick) {
+                for (MultiblockController<?, ?> multiblockController : controllersToTick) {
                     multiblockController.suicide();
                 }
             }
@@ -106,7 +109,7 @@ public class Phosphophyllite {
             tilesToAttach.remove(worldUnloadEvent.getWorld());
             newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
             oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
-            newTiles.removeIf(multiblockTile -> multiblockTile.getLevel() == worldUnloadEvent.getWorld());
+            newTiles.removeIf(multiblockTile -> multiblockTile.iface.getLevel() == worldUnloadEvent.getWorld());
         }
     }
     
@@ -121,19 +124,19 @@ public class Phosphophyllite {
         tick++;
         
         Queues.serverThread.runAll();
-
-        for (MultiblockController<?, ?, ?> newController : newControllers) {
+        
+        for (MultiblockController<?, ?> newController : newControllers) {
             controllersToTick.computeIfAbsent((ServerLevel) newController.getWorld(), k -> new ArrayList<>()).add(newController);
         }
         newControllers.clear();
-        for (MultiblockController<?, ?, ?> oldController : oldControllers) {
+        for (MultiblockController<?, ?> oldController : oldControllers) {
             //noinspection SuspiciousMethodCalls
-            ArrayList<MultiblockController<?, ?, ?>> controllers = controllersToTick.get(oldController.getWorld());
+            ArrayList<MultiblockController<?, ?>> controllers = controllersToTick.get(oldController.getWorld());
             controllers.remove(oldController);
         }
         oldControllers.clear();
-        for (MultiblockTile<?, ?, ?> newTile : newTiles) {
-            tilesToAttach.computeIfAbsent((ServerLevel) newTile.getLevel(), k -> new ArrayList<>()).add(newTile);
+        for (var newTile : newTiles) {
+            tilesToAttach.computeIfAbsent((ServerLevel) newTile.iface.getLevel(), k -> new ArrayList<>()).add(newTile);
         }
         newTiles.clear();
     }
@@ -147,19 +150,19 @@ public class Phosphophyllite {
             return;
         }
         
-        ArrayList<MultiblockController<?, ?, ?>> controllersToTick = Phosphophyllite.controllersToTick.get(e.world);
+        ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.get(e.world);
         if (controllersToTick != null) {
-            for (MultiblockController<?, ?, ?> controller : controllersToTick) {
+            for (MultiblockController<?, ?> controller : controllersToTick) {
                 if (controller != null) {
                     controller.update();
                 }
             }
         }
         
-        ArrayList<MultiblockTile<?, ?, ?>> tilesToAttach = Phosphophyllite.tilesToAttach.get(e.world);
+        ArrayList<MultiblockTileModule<?, ?>> tilesToAttach = Phosphophyllite.tilesToAttach.get(e.world);
         if (tilesToAttach != null) {
-            tilesToAttach.sort(Comparator.comparing(BlockEntity::getBlockPos));
-            for (MultiblockTile<?, ?, ?> toAttach : tilesToAttach) {
+            tilesToAttach.sort(Comparator.comparing(module -> module.iface.getBlockPos()));
+            for (var toAttach : tilesToAttach) {
                 if (toAttach != null) {
                     toAttach.attachToNeighbors();
                 }
