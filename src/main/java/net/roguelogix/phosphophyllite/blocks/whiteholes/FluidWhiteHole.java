@@ -27,11 +27,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterBlock(name = "fluid_white_hole", tileEntityClass = FluidWhiteHoleTile.class)
 public class FluidWhiteHole extends Block implements EntityBlock {
     
-    @RegisterBlock.Instance
-    public static FluidWhiteHole INSTANCE;
+    @RegisterBlock(name = "fluid_white_hole", tileEntityClass = FluidWhiteHoleTile.class)
+    public static final FluidWhiteHole INSTANCE = new FluidWhiteHole();
     
     public FluidWhiteHole() {
         super(Properties.of(Material.METAL));

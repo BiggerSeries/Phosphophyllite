@@ -18,11 +18,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterBlock(name = "power_black_hole", tileEntityClass = PowerBlackHoleTile.class)
 public class PowerBlackHole extends Block implements EntityBlock {
     
-    @RegisterBlock.Instance
-    public static PowerBlackHole INSTANCE;
+    @RegisterBlock(name = "power_black_hole", tileEntityClass = PowerBlackHoleTile.class)
+    public static final PowerBlackHole INSTANCE = new PowerBlackHole();
     
     public PowerBlackHole() {
         super(Properties.of(Material.METAL));

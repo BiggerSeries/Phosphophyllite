@@ -92,7 +92,8 @@ public class Registry {
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Item> itemRegistryEvent;
     private final Event itemGroupCreationEvent = new Event();
-    private CreativeModeTab itemGroup = null;
+    private final CreativeModeTab itemGroup;
+    private Item itemGroupItem = Items.STONE;
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Fluid> fluidRegistryEvent;
@@ -122,8 +123,8 @@ public class Registry {
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTileEntity.class.getName(), this::registerTileEntityAnnotation);
         annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
-        annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
-        annotationMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
+//        annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
+//        annotationMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
     }
     
     public Registry() {
@@ -131,6 +132,27 @@ public class Registry {
         String callerPackage = callerClass.substring(0, callerClass.lastIndexOf("."));
         String modNamespace = callerPackage.substring(callerPackage.lastIndexOf(".") + 1);
         ModFileScanData modFileScanData = FMLLoader.getLoadingModList().getModFileById(modNamespace).getFile().getScanResult();
+        
+        itemGroup = new CreativeModeTab(modNamespace) {
+            @Override
+            @Nonnull
+            public ItemStack makeIcon() {
+                return new ItemStack(itemGroupItem);
+            }
+            
+            @Override
+            public void fillItemList(@Nonnull NonNullList<ItemStack> items) {
+                super.fillItemList(items);
+                items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
+            }
+        };
+    
+        // these two are special cases that need to be handled first
+        // in case anything needs config options durring static construction
+        handleAnnotationType(modFileScanData, callerPackage, modNamespace, RegisterConfig.class.getName(), this::registerConfigAnnotation);
+        // this is used for module registration, which need to happen before block registration
+        handleAnnotationType(modFileScanData, callerPackage, modNamespace, OnModLoad.class.getName(), this::onModLoadAnnotation);
+        
         
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
             AnnotationHandler handler = annotationMap.get(annotation.annotationType().getClassName());
@@ -170,6 +192,24 @@ public class Registry {
         // kill the thread when loading is done, but only if we are phos
         if (modNamespace.equals(Phosphophyllite.modid)) {
             ModBus.addListener((FMLLoadCompleteEvent e) -> preEventWorkQueue.enqueue(() -> stopWorkerThread = true));
+        }
+    }
+    
+    private static void handleAnnotationType(ModFileScanData modFileScanData, String callerPackage, String modNamespace, String name, AnnotationHandler handler){
+        for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
+            if (!annotation.annotationType().getClassName().equals(name)) {
+                // not the annotation handled here
+                continue;
+            }
+            String className = annotation.clazz().getClassName();
+            if (className.startsWith(callerPackage)) {
+                try {
+                    Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
+                    // class loaded, so, pass it off to the handler
+                    handler.run(modNamespace, clazz, annotation.memberName());
+                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                }
+            }
         }
     }
     
@@ -230,10 +270,31 @@ public class Registry {
     }
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
-        assert blockClazz.isAnnotationPresent(RegisterBlock.class);
+//        assert blockClazz.isAnnotationPresent(RegisterBlock.class);
         
-        final RegisterBlock annotation = blockClazz.getAnnotation(RegisterBlock.class);
-        final Block[] blockArray = new Block[1];
+        final Block block;
+        final RegisterBlock annotation;
+        try {
+            final Field field = blockClazz.getDeclaredField(memberName);
+            field.setAccessible(true);
+            block = (Block) field.get(null);
+            annotation = field.getAnnotation(RegisterBlock.class);
+            
+            if (!Modifier.isFinal(field.getModifiers())) {
+                LOGGER.warn("Non-final block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+            }
+        } catch (NoSuchFieldException e) {
+            LOGGER.error("Unable to find block field for block " + memberName);
+            return;
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Unable to access block field for block " + memberName);
+            return;
+        }
+        
+        if(block == null){
+            LOGGER.warn("Null block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+            return;
+        }
         
         String modid = annotation.modid();
         if (modid.equals("")) {
@@ -241,7 +302,7 @@ public class Registry {
         }
         String name = annotation.name();
         if (modid.equals("")) {
-            LOGGER.error("Unable to register block without a name");
+            LOGGER.error("Unable to register block without a name from class " + blockClazz.getSimpleName());
             return;
         }
         
@@ -249,6 +310,7 @@ public class Registry {
             LOGGER.error("Attempt to register block from class not extended from Block. " + blockClazz.getSimpleName());
             return;
         }
+        
         
         final String registryName = modid + ":" + name;
         
@@ -263,47 +325,14 @@ public class Registry {
             }
             constructor.setAccessible(true);
             
-            Block block;
-            try {
-                block = (Block) constructor.newInstance();
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException | ClassCastException e) {
-                LOGGER.error("Exception caught when instantiating instance of " + blockClazz.getSimpleName());
-                e.printStackTrace();
-                return;
-            }
-            
-            for (Field declaredField : blockClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(RegisterBlock.Instance.class)) {
-                    if (!declaredField.getType().isAssignableFrom(blockClazz)) {
-                        LOGGER.error("Unassignable instance variable " + declaredField.getName() + " in " + blockClazz.getSimpleName());
-                        continue;
-                    }
-                    if (!Modifier.isStatic(declaredField.getModifiers())) {
-                        LOGGER.error("Cannot set non-static instance variable " + declaredField.getName() + " in " + blockClazz.getSimpleName());
-                        continue;
-                    }
-                    declaredField.setAccessible(true);
-                    try {
-                        declaredField.set(null, block);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            
             if (annotation.tileEntityClass() != RegisterBlock.class) {
                 tileBlocks.computeIfAbsent(annotation.tileEntityClass(), k -> new LinkedList<>()).add(block);
             }
             
-            blockArray[0] = block;
         });
         blockRegistrationQueue.enqueue(() -> {
             if (!blockCreationEvent.join(10000)) {
                 stalledWorker();
-            }
-            Block block = blockArray[0];
-            if (block == null) {
-                return;
             }
             block.setRegistryName(registryName);
             blockRegistryEvent.getRegistry().register(block);
@@ -311,10 +340,6 @@ public class Registry {
         clientSetupQueue.enqueue(() -> {
             if (!blockCreationEvent.join(10000)) {
                 stalledWorker();
-            }
-            Block block = blockArray[0];
-            if (block == null) {
-                return;
             }
             RenderType renderType = null;
             for (Method declaredMethod : blockClazz.getDeclaredMethods()) {
@@ -349,37 +374,17 @@ public class Registry {
         });
         if (annotation.registerItem()) {
             
-            Item[] blockItemArray = new Item[1];
-            blockItemArray[0] = Blocks.STONE.asItem();
-            
-            if (blockClazz.isAnnotationPresent(CreativeTabBlock.class)) {
-                itemGroup = new CreativeModeTab(modNamespace) {
-                    @Override
-                    @Nonnull
-                    public ItemStack makeIcon() {
-                        return new ItemStack(blockItemArray[0]);
-                    }
-                    
-                    @Override
-                    public void fillItemList(@Nonnull NonNullList<ItemStack> items) {
-                        super.fillItemList(items);
-                        items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
-                    }
-                };
-                itemGroupCreationEvent.trigger();
-            }
-            
+            boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
             itemRegistrationQueue.enqueue(() -> {
                 if (!blockCreationEvent.join(10000)) {
                     stalledWorker();
                 }
-                Block block = blockArray[0];
-                if (block == null) {
-                    return;
-                }
                 //noinspection ConstantConditions
-                blockItemArray[0] = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
-                itemRegistryEvent.getRegistry().register(blockItemArray[0]);
+                var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
+                itemRegistryEvent.getRegistry().register(item);
+                if(creativeTabBlock){
+                    itemGroupItem = item;
+                }
             });
         }
     }
@@ -903,6 +908,10 @@ public class Registry {
         biomeLoadingEventHandlers.add(() -> {
             
             IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstanceArray[0];
+            
+            if (oreInfo == null) {
+                return;
+            }
             
             if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
                 return;

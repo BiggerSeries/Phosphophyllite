@@ -26,11 +26,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterBlock(name = "item_white_hole", tileEntityClass = ItemWhiteHoleTile.class)
 public class ItemWhiteHole extends Block implements EntityBlock {
     
-    @RegisterBlock.Instance
-    public static ItemWhiteHole INSTANCE;
+    @RegisterBlock(name = "item_white_hole", tileEntityClass = ItemWhiteHoleTile.class)
+    public static final ItemWhiteHole INSTANCE = new ItemWhiteHole();
     
     public ItemWhiteHole() {
         super(Properties.of(Material.METAL));

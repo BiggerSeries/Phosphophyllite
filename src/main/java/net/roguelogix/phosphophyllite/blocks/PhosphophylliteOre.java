@@ -10,11 +10,10 @@ import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 @CreativeTabBlock
-@RegisterBlock(name = "phosphophyllite_ore")
 public class PhosphophylliteOre extends Block {
     
-    @RegisterBlock.Instance
-    public static PhosphophylliteOre INSTANCE;
+    @RegisterBlock(name = "phosphophyllite_ore")
+    public static final PhosphophylliteOre INSTANCE = new PhosphophylliteOre();
     
     public PhosphophylliteOre() {
         super(Properties.of(Material.STONE).noDrops().destroyTime(3.0F).explosionResistance(3.0F));

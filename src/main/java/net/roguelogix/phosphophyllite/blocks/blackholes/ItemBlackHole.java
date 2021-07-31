@@ -18,11 +18,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterBlock(name = "item_black_hole", tileEntityClass = ItemBlackHoleTile.class)
 public class ItemBlackHole extends Block implements EntityBlock {
     
-    @RegisterBlock.Instance
-    public static ItemBlackHole INSTANCE;
+    @RegisterBlock(name = "item_black_hole", tileEntityClass = ItemBlackHoleTile.class)
+    public static final ItemBlackHole INSTANCE = new ItemBlackHole();
     
     public ItemBlackHole() {
         super(Properties.of(Material.METAL));

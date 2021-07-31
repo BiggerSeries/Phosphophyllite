@@ -18,11 +18,10 @@ import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterBlock(name = "fluid_black_hole", tileEntityClass = FluidBlackHoleTile.class)
 public class FluidBlackHole extends Block implements EntityBlock {
     
-    @RegisterBlock.Instance
-    public static FluidBlackHole INSTANCE;
+    @RegisterBlock(name = "fluid_black_hole", tileEntityClass = FluidBlackHoleTile.class)
+    public static final FluidBlackHole INSTANCE = new FluidBlackHole();
     
     public FluidBlackHole() {
         super(Properties.of(Material.METAL));
