@@ -1,10 +1,10 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
-import net.roguelogix.phosphophyllite.multiblock.modular.IMultiblockTile;
-import net.roguelogix.phosphophyllite.multiblock.modular.MultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock.IMultiblockTile;
+import net.roguelogix.phosphophyllite.multiblock.MultiblockTileModule;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 

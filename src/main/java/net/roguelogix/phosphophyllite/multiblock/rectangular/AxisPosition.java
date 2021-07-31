@@ -1,10 +1,9 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
-import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @MethodsReturnNonnullByDefault

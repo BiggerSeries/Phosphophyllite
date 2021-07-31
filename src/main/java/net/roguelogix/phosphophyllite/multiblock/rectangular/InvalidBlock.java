@@ -1,9 +1,9 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.block.Block;
-import net.roguelogix.phosphophyllite.multiblock.modular.ValidationError;
+import net.roguelogix.phosphophyllite.multiblock.ValidationError;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import javax.annotation.ParametersAreNonnullByDefault;

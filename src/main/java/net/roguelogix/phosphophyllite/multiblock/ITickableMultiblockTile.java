@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular;
+package net.roguelogix.phosphophyllite.multiblock;
 
 /**
  * ticked from the multiblock controller after it is ticked

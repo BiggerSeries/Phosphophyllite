@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.level.block.Block;
@@ -11,7 +11,7 @@ import net.roguelogix.phosphophyllite.registry.OnModLoad;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static net.roguelogix.phosphophyllite.multiblock.modular.rectangular.AxisPosition.*;
+import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault

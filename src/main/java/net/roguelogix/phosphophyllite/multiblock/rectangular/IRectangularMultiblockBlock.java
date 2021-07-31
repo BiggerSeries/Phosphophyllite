@@ -1,7 +1,7 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.roguelogix.phosphophyllite.multiblock.modular.IMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock.IMultiblockBlock;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 

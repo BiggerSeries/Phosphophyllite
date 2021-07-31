@@ -1,13 +1,13 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.roguelogix.phosphophyllite.multiblock.modular.IMultiblockTile;
-import net.roguelogix.phosphophyllite.multiblock.modular.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.modular.ValidationError;
-import net.roguelogix.phosphophyllite.multiblock.modular.Validator;
+import net.roguelogix.phosphophyllite.multiblock.IMultiblockTile;
+import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
+import net.roguelogix.phosphophyllite.multiblock.ValidationError;
+import net.roguelogix.phosphophyllite.multiblock.Validator;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.Util;
 

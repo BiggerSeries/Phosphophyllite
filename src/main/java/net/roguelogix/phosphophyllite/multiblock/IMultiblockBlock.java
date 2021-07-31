@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular;
+package net.roguelogix.phosphophyllite.multiblock;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.Util;

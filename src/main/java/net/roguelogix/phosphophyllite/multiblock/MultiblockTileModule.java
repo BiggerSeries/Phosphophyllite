@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular;
+package net.roguelogix.phosphophyllite.multiblock;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -17,7 +17,7 @@ import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static net.roguelogix.phosphophyllite.multiblock.modular.IAssemblyStateBlock.ASSEMBLED;
+import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault

@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular;
+package net.roguelogix.phosphophyllite.multiblock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

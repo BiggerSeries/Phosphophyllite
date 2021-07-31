@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock.modular.rectangular;
+package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
@@ -6,13 +6,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
-import net.roguelogix.phosphophyllite.multiblock.modular.MultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.util.BlockStates;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static net.roguelogix.phosphophyllite.multiblock.modular.rectangular.AxisPosition.*;
-import static net.roguelogix.phosphophyllite.multiblock.modular.rectangular.AxisPosition.Z_AXIS_POSITION;
+import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
+import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.Z_AXIS_POSITION;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
