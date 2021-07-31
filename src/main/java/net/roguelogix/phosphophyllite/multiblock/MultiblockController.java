@@ -24,7 +24,6 @@ public class MultiblockController<
         ControllerType extends MultiblockController<TileType, ControllerType>
         > implements IDebuggable {
     
-    
     protected final Level world;
     
     private boolean hasSaveDelegate = false;
@@ -44,6 +43,7 @@ public class MultiblockController<
     private final Vector3i minExtremeBlocks = new Vector3i();
     private final Vector3i maxExtremeBlocks = new Vector3i();
     
+    protected final boolean pauseOnUnload;
     
     public enum AssemblyState {
         ASSEMBLED,
@@ -63,11 +63,11 @@ public class MultiblockController<
     
     long lastTick = -1;
     
-    
-    public MultiblockController(@Nonnull Level world, @Nonnull Validator<IMultiblockTile<?, ?>> tileTypeValidator) {
+    public MultiblockController(@Nonnull Level world, @Nonnull Validator<IMultiblockTile<?, ?>> tileTypeValidator, boolean pauseOnUnload) {
         this.tileTypeValidator = tileTypeValidator;
         this.world = world;
         Phosphophyllite.addController(this);
+        this.pauseOnUnload = pauseOnUnload;
     }
     
     ControllerType self() {
@@ -278,7 +278,9 @@ public class MultiblockController<
         
         if (onChunkUnload) {
             onPartDetached(toDetachTile);
-            state = AssemblyState.PAUSED;
+            if (pauseOnUnload) {
+                state = AssemblyState.PAUSED;
+            }
         } else {
             onPartBroken(toDetachTile);
             // dont need to try to attach if the chunk just unloaded
@@ -479,7 +481,6 @@ public class MultiblockController<
         assemblyAttemptedTiles.forEach(IAssemblyAttemptedTile::onAssemblyAttempted);
     }
     
-    
     private void onBlockWithNBTAttached(CompoundTag nbt) {
         if (cachedNBT == null) {
             readNBT(nbt);
@@ -541,6 +542,9 @@ public class MultiblockController<
      */
     @Nonnull
     final CompoundTag getNBT() {
+        if(!pauseOnUnload){
+            return new CompoundTag();
+        }
         if (shouldUpdateNBT) {
             shouldUpdateNBT = false;
             updateCachedNBT();
@@ -605,7 +609,6 @@ public class MultiblockController<
             assemblyValidator = validator;
         }
     }
-    
     
     /**
      * Called at the end of a tick for assembled multiblocks only

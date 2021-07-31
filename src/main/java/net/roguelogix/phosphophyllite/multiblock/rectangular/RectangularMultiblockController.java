@@ -22,7 +22,7 @@ public class RectangularMultiblockController<
     final Validator<Block> blockTypeValidator;
     
     public RectangularMultiblockController(@Nonnull Level world, @Nonnull Validator<IMultiblockTile<?, ?>> tileTypeValidator, @Nonnull Validator<Block> blockTypeValidator) {
-        super(world, tileTypeValidator);
+        super(world, tileTypeValidator, true);
         this.blockTypeValidator = blockTypeValidator;
     }
     
