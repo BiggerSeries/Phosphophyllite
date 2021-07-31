@@ -141,7 +141,6 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     protected void readNBT(CompoundTag compound) {
     }
     
-    @Nonnull
     protected CompoundTag writeNBT() {
         return new CompoundTag();
     }
@@ -173,7 +172,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
             nbt.put("sub", subNBTs);
         }
         CompoundTag localNBT = getDataNBT();
-        if (localNBT != null) {
+        if (!localNBT.isEmpty()) {
             nbt.put("local", localNBT);
         }
         return nbt;
@@ -184,7 +183,6 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         readNBT(nbt);
     }
     
-    @Nullable
     protected CompoundTag getDataNBT() {
         return writeNBT();
     }
