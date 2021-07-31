@@ -44,6 +44,7 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.blocks.whiteholes.PowerWhiteHole;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.threading.Event;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
@@ -52,8 +53,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.lang.invoke.LambdaConversionException;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class Registry {
@@ -146,7 +152,7 @@ public class Registry {
                 items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
             }
         };
-    
+        
         // these two are special cases that need to be handled first
         // in case anything needs config options durring static construction
         handleAnnotationType(modFileScanData, callerPackage, modNamespace, RegisterConfig.class.getName(), this::registerConfigAnnotation);
@@ -195,7 +201,7 @@ public class Registry {
         }
     }
     
-    private static void handleAnnotationType(ModFileScanData modFileScanData, String callerPackage, String modNamespace, String name, AnnotationHandler handler){
+    private static void handleAnnotationType(ModFileScanData modFileScanData, String callerPackage, String modNamespace, String name, AnnotationHandler handler) {
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
             if (!annotation.annotationType().getClassName().equals(name)) {
                 // not the annotation handled here
@@ -291,7 +297,7 @@ public class Registry {
             return;
         }
         
-        if(block == null){
+        if (block == null) {
             LOGGER.warn("Null block instance variable " + memberName + " in " + blockClazz.getSimpleName());
             return;
         }
@@ -382,7 +388,7 @@ public class Registry {
                 //noinspection ConstantConditions
                 var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
                 itemRegistryEvent.getRegistry().register(item);
-                if(creativeTabBlock){
+                if (creativeTabBlock) {
                     itemGroupItem = item;
                 }
             });
@@ -760,46 +766,42 @@ public class Registry {
                     }
                 }
             }
+            
             if (supplier[0] == null) {
-                // fall back to using the constructor via refletion, if the correct one exists
+                // fall back to using the constructor via LambdaMetaFactory, if the correct one exists
                 // its not quite as fast, but its easier, and *meh*
+                
                 try {
-                    Constructor<?> constructor = tileClazz.getDeclaredConstructor(BlockPos.class, BlockState.class);
-                    constructor.setAccessible(true);
-                    supplier[0] = (pos, state) -> {
-                        try {
-                            return (BlockEntity) constructor.newInstance(pos, state);
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                            throw new IllegalStateException("Unable to instantiate instance of " + tileClazz.getSimpleName());
-                        }
-                    };
+                    var lookup = MethodHandles.lookup();
+                    var methodHandle = lookup.findConstructor(tileClazz, MethodType.methodType(void.class, new Class<?>[]{BlockPos.class, BlockState.class}));
+                    var callSite = LambdaMetafactory.metafactory(
+                            lookup,
+                            "apply",
+                            MethodType.methodType(BiFunction.class),
+                            methodHandle.type().generic(),
+                            methodHandle,
+                            methodHandle.type()
+                    );
+                    @SuppressWarnings("unchecked")
+                    BiFunction<BlockPos, BlockState, BlockEntity> tileSupplier = (BiFunction<BlockPos, BlockState, BlockEntity>) callSite.getTarget().invokeExact();
+                    //noinspection NullableProblems
+                    supplier[0] = tileSupplier::apply;
                 } catch (NoSuchMethodException ignored) {
                     // if it doesn't exist, that's handled below
+                    LOGGER.error("Unable to find constructor for " + tileClazz.getSimpleName());
+                } catch (LambdaConversionException e) {
+                    LOGGER.error("LambdaConversionException creating tile supplier for for " + tileClazz.getSimpleName());
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    LOGGER.error("Unable to access constructor for " + tileClazz.getSimpleName());
+                } catch (Throwable throwable) {
+                    LOGGER.error("Unknown error occurred attempting to create supplier for " + tileClazz.getSimpleName());
+                    throwable.printStackTrace();
                 }
             }
             
             if (supplier[0] == null) {
-                // fall back to using the constructor via refletion, if the correct one exists
-                // its not quite as fast, but its easier, and *meh*
-                try {
-                    Constructor<?> constructor = tileClazz.getDeclaredConstructor(BlockEntityType.class, BlockPos.class, BlockState.class);
-                    constructor.setAccessible(true);
-                    supplier[0] = (pos, state) -> {
-                        try {
-                            return (BlockEntity) constructor.newInstance(pos, state);
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                            e.printStackTrace();
-                            throw new IllegalStateException("Unable to instantiate instance of " + tileClazz.getSimpleName());
-                        }
-                    };
-                } catch (NoSuchMethodException ignored) {
-                    // if it doesn't exist, that's handled below
-                }
-            }
-            
-            if (supplier[0] == null) {
-                LOGGER.error("No supplier found for tile " + tileClazz.getSimpleName());
+                throw new IllegalStateException("No supplier found for tile " + tileClazz.getSimpleName());
             }
         });
         
