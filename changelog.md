@@ -1,3 +1,12 @@
+# 1.17.1-0.6.0-alpha.1
+ - tile and block module system properly functional, features still missing
+ - multiblock system moved to tile/block module system
+ - use mojang's BlockEntitySupplier instead of TileSupplier
+   - Registry will now also use a constructor via LambadaMetaFactory if no supplier is provided
+ - fix fluids being placed into world 
+ - registry now uses statically initialized blocks
+ - add capability for multiblocks to not pause on chunk unload
+
 # 1.17.1-0.6.0-alpha
  - 1.17.1
  
