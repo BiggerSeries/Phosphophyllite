@@ -92,6 +92,8 @@ public class Registry {
         thread.start();
     }
     
+    private static final Event waitForPhos = new Event();
+    
     private final WorkQueue blockRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Block> blockRegistryEvent;
     
@@ -138,6 +140,10 @@ public class Registry {
         String callerPackage = callerClass.substring(0, callerClass.lastIndexOf("."));
         String modNamespace = callerPackage.substring(callerPackage.lastIndexOf(".") + 1);
         ModFileScanData modFileScanData = FMLLoader.getLoadingModList().getModFileById(modNamespace).getFile().getScanResult();
+    
+        if (!modNamespace.equals(Phosphophyllite.modid)) {
+            waitForPhos.join();
+        }
         
         itemGroup = new CreativeModeTab(modNamespace) {
             @Override
@@ -154,7 +160,7 @@ public class Registry {
         };
         
         // these two are special cases that need to be handled first
-        // in case anything needs config options durring static construction
+        // in case anything needs config options during static construction
         handleAnnotationType(modFileScanData, callerPackage, modNamespace, RegisterConfig.class.getName(), this::registerConfigAnnotation);
         // this is used for module registration, which need to happen before block registration
         handleAnnotationType(modFileScanData, callerPackage, modNamespace, OnModLoad.class.getName(), this::onModLoadAnnotation);
@@ -198,6 +204,7 @@ public class Registry {
         // kill the thread when loading is done, but only if we are phos
         if (modNamespace.equals(Phosphophyllite.modid)) {
             ModBus.addListener((FMLLoadCompleteEvent e) -> preEventWorkQueue.enqueue(() -> stopWorkerThread = true));
+            waitForPhos.trigger();
         }
     }
     
