@@ -30,10 +30,9 @@ public class DebugTool extends Item {
                     }
                     player.sendMessage(new TextComponent(debugString), Util.NIL_UUID);
                     System.out.println(debugString);
-                    return InteractionResult.SUCCESS;
                 }
             }
         }
-        return super.onItemUseFirst(stack, context);
+        return InteractionResult.SUCCESS;
     }
 }
