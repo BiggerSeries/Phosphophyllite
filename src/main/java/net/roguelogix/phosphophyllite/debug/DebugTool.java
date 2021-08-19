@@ -21,15 +21,18 @@ public class DebugTool extends Item {
     @Override
     public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
         if (!context.getLevel().isClientSide()) {
-            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof IDebuggable debuggable) {
-                var player = context.getPlayer();
-                if (player != null) {
+            var player = context.getPlayer();
+            if (player != null) {
+                if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof IDebuggable debuggable) {
+                    
                     var debugString = debuggable.getDebugString();
                     if (debugString == null) {
-                        debugString = "Null string returned";
+                        debugString = "Null debug string returned";
                     }
                     player.sendMessage(new TextComponent(debugString), Util.NIL_UUID);
                     System.out.println(debugString);
+                } else {
+                    player.sendMessage(new TextComponent("Non-debuggable block"), Util.NIL_UUID);
                 }
             }
         }
