@@ -66,40 +66,11 @@ public class Registry {
     
     private static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Registry");
     
-    private static final WorkQueue preEventWorkQueue = new WorkQueue();
-    private static boolean stopWorkerThread = false;
-    
-    static {
-        Thread thread = new Thread(() -> {
-            LOGGER.info("Thread started");
-            while (!stopWorkerThread) {
-                try {
-                    preEventWorkQueue.runAll();
-                } catch (Throwable e) {
-                    LOGGER.error("Exception rolled back");
-                    e.printStackTrace();
-                }
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(50);
-                } catch (InterruptedException ignored) {
-                }
-            }
-            LOGGER.info("Thread stopped");
-        });
-        thread.setName("Phosphophyllite Registry Worker");
-        thread.setDaemon(true);
-        thread.start();
-    }
-    
-    private static final Event waitForPhos = new Event();
-    
     private final WorkQueue blockRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Block> blockRegistryEvent;
     
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
     private RegistryEvent.Register<Item> itemRegistryEvent;
-    private final Event itemGroupCreationEvent = new Event();
     private final CreativeModeTab itemGroup;
     private Item itemGroupItem = Items.STONE;
     
@@ -140,10 +111,6 @@ public class Registry {
         String callerPackage = callerClass.substring(0, callerClass.lastIndexOf("."));
         String modNamespace = callerPackage.substring(callerPackage.lastIndexOf(".") + 1);
         ModFileScanData modFileScanData = FMLLoader.getLoadingModList().getModFileById(modNamespace).getFile().getScanResult();
-    
-        if (!modNamespace.equals(Phosphophyllite.modid)) {
-            waitForPhos.join();
-        }
         
         itemGroup = new CreativeModeTab(modNamespace) {
             @Override
@@ -183,8 +150,7 @@ public class Registry {
             }
         }
         
-        // in case you didnt register one, this will make sure the items still get registered
-        itemGroupCreationEvent.trigger();
+
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
@@ -199,12 +165,6 @@ public class Registry {
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModBus.addListener(this::clientSetupEventHandler);
-        }
-        
-        // kill the thread when loading is done, but only if we are phos
-        if (modNamespace.equals(Phosphophyllite.modid)) {
-            ModBus.addListener((FMLLoadCompleteEvent e) -> preEventWorkQueue.enqueue(() -> stopWorkerThread = true));
-            waitForPhos.trigger();
         }
     }
     
@@ -274,60 +234,56 @@ public class Registry {
         biomeLoadingEvent = null;
     }
     
-    private void stalledWorker() {
-        throw new IllegalThreadStateException("Registry worker thread stalled or dead, check logs");
-    }
-    
     private interface AnnotationHandler {
         void run(final String modNamespace, final Class<?> clazz, final String memberName);
     }
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
-//        assert blockClazz.isAnnotationPresent(RegisterBlock.class);
         
-        final Block block;
-        final RegisterBlock annotation;
-        try {
-            final Field field = blockClazz.getDeclaredField(memberName);
-            field.setAccessible(true);
-            block = (Block) field.get(null);
-            annotation = field.getAnnotation(RegisterBlock.class);
-            
-            if (!Modifier.isFinal(field.getModifiers())) {
-                LOGGER.warn("Non-final block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+        
+        blockRegistrationQueue.enqueue(() -> {
+            final Block block;
+            final RegisterBlock annotation;
+            try {
+                final Field field = blockClazz.getDeclaredField(memberName);
+                field.setAccessible(true);
+                block = (Block) field.get(null);
+                annotation = field.getAnnotation(RegisterBlock.class);
+                
+                if (!Modifier.isFinal(field.getModifiers())) {
+                    LOGGER.warn("Non-final block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+                }
+            } catch (NoSuchFieldException e) {
+                LOGGER.error("Unable to find block field for block " + memberName);
+                return;
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Unable to access block field for block " + memberName);
+                return;
             }
-        } catch (NoSuchFieldException e) {
-            LOGGER.error("Unable to find block field for block " + memberName);
-            return;
-        } catch (IllegalAccessException e) {
-            LOGGER.error("Unable to access block field for block " + memberName);
-            return;
-        }
-        
-        if (block == null) {
-            LOGGER.warn("Null block instance variable " + memberName + " in " + blockClazz.getSimpleName());
-            return;
-        }
-        
-        String modid = annotation.modid();
-        if (modid.equals("")) {
-            modid = modNamespace;
-        }
-        String name = annotation.name();
-        if (modid.equals("")) {
-            LOGGER.error("Unable to register block without a name from class " + blockClazz.getSimpleName());
-            return;
-        }
-        
-        if (!Block.class.isAssignableFrom(blockClazz)) {
-            LOGGER.error("Attempt to register block from class not extended from Block. " + blockClazz.getSimpleName());
-            return;
-        }
-        
-        
-        final String registryName = modid + ":" + name;
-        
-        final Event blockCreationEvent = preEventWorkQueue.enqueue(() -> {
+            
+            if (block == null) {
+                LOGGER.warn("Null block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+                return;
+            }
+            
+            String modid = annotation.modid();
+            if (modid.equals("")) {
+                modid = modNamespace;
+            }
+            String name = annotation.name();
+            if (modid.equals("")) {
+                LOGGER.error("Unable to register block without a name from class " + blockClazz.getSimpleName());
+                return;
+            }
+            
+            if (!Block.class.isAssignableFrom(blockClazz)) {
+                LOGGER.error("Attempt to register block from class not extended from Block. " + blockClazz.getSimpleName());
+                return;
+            }
+            
+            
+            final String registryName = modid + ":" + name;
+            
             
             Constructor<?> constructor;
             try {
@@ -342,91 +298,83 @@ public class Registry {
                 tileBlocks.computeIfAbsent(annotation.tileEntityClass(), k -> new LinkedList<>()).add(block);
             }
             
-        });
-        blockRegistrationQueue.enqueue(() -> {
-            if (!blockCreationEvent.join(10000)) {
-                stalledWorker();
-            }
             block.setRegistryName(registryName);
             blockRegistryEvent.getRegistry().register(block);
-        });
-        clientSetupQueue.enqueue(() -> {
-            if (!blockCreationEvent.join(10000)) {
-                stalledWorker();
+    
+            if (FMLEnvironment.dist.isClient()) {
+                clientSetupQueue.enqueue(() -> {
+                    RenderType renderType = null;
+                    for (Method declaredMethod : blockClazz.getDeclaredMethods()) {
+                        if (declaredMethod.isAnnotationPresent(RegisterBlock.RenderLayer.class)) {
+                            if (Modifier.isStatic(declaredMethod.getModifiers())) {
+                                LOGGER.error("Cannot call static render layer method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName());
+                                continue;
+                            }
+                            if (!RenderType.class.isAssignableFrom(declaredMethod.getReturnType())) {
+                                LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " does not return RenderType");
+                                continue;
+                            }
+                            if (declaredMethod.getParameterCount() != 0) {
+                                LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " requires arguments");
+                                continue;
+                            }
+                            if (renderType != null) {
+                                LOGGER.error("Duplicate RenderLayer methods in " + blockClazz.getSimpleName());
+                                continue;
+                            }
+                            declaredMethod.setAccessible(true);
+                            try {
+                                Object obj = declaredMethod.invoke(block);
+                                renderType = (RenderType) obj;
+                            } catch (IllegalAccessException | InvocationTargetException e) {
+                                e.printStackTrace();
+                                continue;
+                            }
+                            ItemBlockRenderTypes.setRenderLayer(block, renderType);
+                        }
+                    }
+                });
             }
-            RenderType renderType = null;
-            for (Method declaredMethod : blockClazz.getDeclaredMethods()) {
-                if (declaredMethod.isAnnotationPresent(RegisterBlock.RenderLayer.class)) {
-                    if (Modifier.isStatic(declaredMethod.getModifiers())) {
-                        LOGGER.error("Cannot call static render layer method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName());
-                        continue;
-                    }
-                    if (!RenderType.class.isAssignableFrom(declaredMethod.getReturnType())) {
-                        LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " does not return RenderType");
-                        continue;
-                    }
-                    if (declaredMethod.getParameterCount() != 0) {
-                        LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " requires arguments");
-                        continue;
-                    }
-                    if (renderType != null) {
-                        LOGGER.error("Duplicate RenderLayer methods in " + blockClazz.getSimpleName());
-                        continue;
-                    }
-                    declaredMethod.setAccessible(true);
-                    try {
-                        Object obj = declaredMethod.invoke(block);
-                        renderType = (RenderType) obj;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        e.printStackTrace();
-                        continue;
-                    }
-                    ItemBlockRenderTypes.setRenderLayer(block, renderType);
-                }
-            }
-        });
-        if (annotation.registerItem()) {
             
-            boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
-            itemRegistrationQueue.enqueue(() -> {
-                if (!blockCreationEvent.join(10000)) {
-                    stalledWorker();
-                }
-                //noinspection ConstantConditions
-                var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
-                itemRegistryEvent.getRegistry().register(item);
-                if (creativeTabBlock) {
-                    itemGroupItem = item;
-                }
-            });
-        }
+            if (annotation.registerItem()) {
+                
+                boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
+                itemRegistrationQueue.enqueue(() -> {
+                    //noinspection ConstantConditions
+                    var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
+                    itemRegistryEvent.getRegistry().register(item);
+                    if (creativeTabBlock) {
+                        itemGroupItem = item;
+                    }
+                });
+            }
+        });
     }
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
-        assert itemClazz.isAnnotationPresent(RegisterItem.class);
-        
-        final RegisterItem annotation = itemClazz.getAnnotation(RegisterItem.class);
-        final Item[] itemArray = new Item[1];
-        
-        String modid = annotation.modid();
-        if (modid.equals("")) {
-            modid = modNamespace;
-        }
-        String name = annotation.name();
-        if (modid.equals("")) {
-            LOGGER.error("Unable to register item without a name");
-            return;
-        }
-        
-        
-        if (!Item.class.isAssignableFrom(itemClazz)) {
-            LOGGER.error("Attempt to register item from class not extended from Item");
-            return;
-        }
-        
-        final String registryName = modid + ":" + name;
-        
-        final Event itemCreationEvent = preEventWorkQueue.enqueue(() -> {
+        itemRegistrationQueue.enqueue(() -> {
+    
+            assert itemClazz.isAnnotationPresent(RegisterItem.class);
+    
+            final RegisterItem annotation = itemClazz.getAnnotation(RegisterItem.class);
+    
+            String modid = annotation.modid();
+            if (modid.equals("")) {
+                modid = modNamespace;
+            }
+            String name = annotation.name();
+            if (modid.equals("")) {
+                LOGGER.error("Unable to register item without a name");
+                return;
+            }
+    
+    
+            if (!Item.class.isAssignableFrom(itemClazz)) {
+                LOGGER.error("Attempt to register item from class not extended from Item");
+                return;
+            }
+    
+            final String registryName = modid + ":" + name;
             
             Constructor<?> constructor;
             try {
@@ -436,7 +384,7 @@ public class Registry {
                 return;
             }
             constructor.setAccessible(true);
-            
+    
             Item item;
             try {
                 item = (Item) constructor.newInstance(new Item.Properties().tab(itemGroup));
@@ -445,7 +393,7 @@ public class Registry {
                 e.printStackTrace();
                 return;
             }
-            
+    
             for (Field declaredField : itemClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterItem.Instance.class)) {
                     if (!declaredField.getType().isAssignableFrom(itemClazz)) {
@@ -464,48 +412,37 @@ public class Registry {
                     }
                 }
             }
-            
-            itemArray[0] = item;
-        }, itemGroupCreationEvent);
-        
-        itemRegistrationQueue.enqueue(() -> {
-            if (!itemCreationEvent.join(10000)) {
-                stalledWorker();
-            }
-            Item item = itemArray[0];
-            if (item == null) {
-                return;
-            }
+    
             item.setRegistryName(registryName);
             itemRegistryEvent.getRegistry().register(item);
         });
     }
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
-        assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
-        
-        final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
-        
-        String modid = annotation.modid().equals("") ? modNamespace : annotation.modid();
-        String name = annotation.name();
-        if (modid.equals("")) {
-            LOGGER.error("Unable to register fluid without a name");
-            return;
-        }
-        
-        
-        if (!ForgeFlowingFluid.class.isAssignableFrom(fluidClazz)) {
-            LOGGER.error("Attempt to register fluid from class not extended from PhosphophylliteFluid");
-            return;
-        }
-        
-        final String baseRegistryName = modid + ":" + name;
-        
-        PhosphophylliteFluid[] fluids = new PhosphophylliteFluid[2];
-        Item[] bucketArray = new Item[1];
-        LiquidBlock[] blockArray = new LiquidBlock[1];
-        
-        final Event fluidCreationEvent = preEventWorkQueue.enqueue(() -> {
+        blockRegistrationQueue.enqueue(() -> {
+    
+            assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
+    
+            final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
+    
+            String modid = annotation.modid().equals("") ? modNamespace : annotation.modid();
+            String name = annotation.name();
+            if (modid.equals("")) {
+                LOGGER.error("Unable to register fluid without a name");
+                return;
+            }
+    
+    
+            if (!ForgeFlowingFluid.class.isAssignableFrom(fluidClazz)) {
+                LOGGER.error("Attempt to register fluid from class not extended from PhosphophylliteFluid");
+                return;
+            }
+    
+            final String baseRegistryName = modid + ":" + name;
+    
+            PhosphophylliteFluid[] fluids = new PhosphophylliteFluid[2];
+            Item[] bucketArray = new Item[1];
+            LiquidBlock[] blockArray = new LiquidBlock[1];
             
             Constructor<?> constructor;
             try {
@@ -562,51 +499,33 @@ public class Registry {
                     }
                 }
             }
-        });
-        
-        fluidRegistrationQueue.enqueue(() -> {
-            if (!fluidCreationEvent.join(10000)) {
-                stalledWorker();
-            }
-            PhosphophylliteFluid still = fluids[0];
-            PhosphophylliteFluid flowing = fluids[1];
-            if (still == null || flowing == null) {
-                return;
-            }
+    
+            blockArray[0].setRegistryName(baseRegistryName);
+            blockRegistryEvent.getRegistry().register(blockArray[0]);
             
-            still.setRegistryName(baseRegistryName);
-            flowing.setRegistryName(baseRegistryName + "_flowing");
-            
-            fluidRegistryEvent.getRegistry().register(still);
-            fluidRegistryEvent.getRegistry().register(flowing);
-        });
-        
-        blockRegistrationQueue.enqueue(() -> {
-            if (!fluidCreationEvent.join(10000)) {
-                stalledWorker();
-            }
-            Block block = blockArray[0];
-            if (block == null) {
-                return;
-            }
-            block.setRegistryName(baseRegistryName);
-            blockRegistryEvent.getRegistry().register(block);
-        });
-        
-        if (annotation.registerBucket()) {
-            itemRegistrationQueue.enqueue(() -> {
-                if (!fluidCreationEvent.join(10000)) {
-                    stalledWorker();
-                }
-                if (fluids[0] == null) {
+            fluidRegistrationQueue.enqueue(() -> {
+                PhosphophylliteFluid still = fluids[0];
+                PhosphophylliteFluid flowing = fluids[1];
+                if (still == null || flowing == null) {
                     return;
                 }
-                BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
-                bucketArray[0] = bucket;
-                bucket.setRegistryName(baseRegistryName + "_bucket");
-                itemRegistryEvent.getRegistry().register(bucket);
+        
+                still.setRegistryName(baseRegistryName);
+                flowing.setRegistryName(baseRegistryName + "_flowing");
+        
+                fluidRegistryEvent.getRegistry().register(still);
+                fluidRegistryEvent.getRegistry().register(flowing);
             });
-        }
+    
+            if (annotation.registerBucket()) {
+                itemRegistrationQueue.enqueue(() -> {
+                    BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
+                    bucketArray[0] = bucket;
+                    bucket.setRegistryName(baseRegistryName + "_bucket");
+                    itemRegistryEvent.getRegistry().register(bucket);
+                });
+            }
+        });
     }
     
     private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
@@ -634,7 +553,7 @@ public class Registry {
         
         MenuType<?>[] containerTypeArray = new MenuType[1];
         
-        final Event containerTypeCreationEvent = preEventWorkQueue.enqueue(() -> {
+       containerRegistrationQueue.enqueue(() -> {
             ContainerSupplier supplier = null;
             for (Field declaredField : containerClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterContainer.Supplier.class)) {
@@ -692,57 +611,41 @@ public class Registry {
                     }
                 }
             }
-        });
-        
-        containerRegistrationQueue.enqueue(() -> {
-            if (!containerTypeCreationEvent.join(10000)) {
-                stalledWorker();
-            }
-            MenuType<?> type = containerTypeArray[0];
-            if (type == null) {
-                return;
-            }
-            type.setRegistryName(registryName);
-            containerRegistryEvent.getRegistry().register(type);
-        });
-        
-        clientSetupQueue.enqueue(() -> {
-            if (!containerTypeCreationEvent.join(10000)) {
-                stalledWorker();
-            }
-            MenuType<?> type = containerTypeArray[0];
-            if (type == null) {
-                return;
-            }
-        });
+    
+           MenuType<?> type = containerTypeArray[0];
+           if (type == null) {
+               return;
+           }
+           type.setRegistryName(registryName);
+           containerRegistryEvent.getRegistry().register(type);
+       });
     }
     
     private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
         assert tileClazz.isAnnotationPresent(RegisterTileEntity.class);
         
-        final RegisterTileEntity annotation = tileClazz.getAnnotation(RegisterTileEntity.class);
-        
-        String modid = annotation.modid();
-        if (modid.equals("")) {
-            modid = modNamespace;
-        }
-        String name = annotation.name();
-        if (modid.equals("")) {
-            LOGGER.error("Unable to register tile type without a name");
-            return;
-        }
-        
-        if (!BlockEntity.class.isAssignableFrom(tileClazz)) {
-            LOGGER.error("Attempt to register tile type from class not extended from TileEntity");
-            return;
-        }
-        
-        final String registryName = modid + ":" + name;
-        
-        final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
-        
-        
-        final Event supplierLookupEvent = preEventWorkQueue.enqueue(() -> {
+        tileRegistrationQueue.enqueue(() -> {
+            final RegisterTileEntity annotation = tileClazz.getAnnotation(RegisterTileEntity.class);
+    
+            String modid = annotation.modid();
+            if (modid.equals("")) {
+                modid = modNamespace;
+            }
+            String name = annotation.name();
+            if (modid.equals("")) {
+                LOGGER.error("Unable to register tile type without a name");
+                return;
+            }
+    
+            if (!BlockEntity.class.isAssignableFrom(tileClazz)) {
+                LOGGER.error("Attempt to register tile type from class not extended from TileEntity");
+                return;
+            }
+    
+            final String registryName = modid + ":" + name;
+    
+            final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
+            
             for (Field declaredField : tileClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterTileEntity.Supplier.class)) {
                     int modifiers = declaredField.getModifiers();
@@ -810,16 +713,7 @@ public class Registry {
             if (supplier[0] == null) {
                 throw new IllegalStateException("No supplier found for tile " + tileClazz.getSimpleName());
             }
-        });
-        
-        tileRegistrationQueue.enqueue(() -> {
-            if (!supplierLookupEvent.join(10000)) {
-                stalledWorker();
-            }
             
-            if (supplier[0] == null) {
-                return;
-            }
             
             LinkedList<Block> blocks = tileBlocks.remove(tileClazz);
             
