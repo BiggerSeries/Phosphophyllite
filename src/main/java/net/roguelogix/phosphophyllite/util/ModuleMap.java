@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.util;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectAVLTreeMap;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -10,24 +11,20 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.LinkedHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends BlockEntity & IModularTile> {
-    private Vector3i scratchVector = new Vector3i();
     
-    private final LinkedHashMap<Vector3ic, TileModule<?>[][][]> internalMap = new LinkedHashMap<>();
+    private final Long2ObjectAVLTreeMap<TileModule<?>[][][]> internalMap = new Long2ObjectAVLTreeMap<>();
     private int size = 0;
     
     public boolean addModule(ModuleType module) {
         BlockPos tilePos = module.iface.getBlockPos();
-        scratchVector.set(tilePos.getX() >> 4, tilePos.getY() >> 4, tilePos.getZ() >> 4);
-        var sectionArray = internalMap.computeIfAbsent(scratchVector, k -> {
+        var sectionArray = internalMap.computeIfAbsent(tilePos.asLong(), k -> {
             // the previous scratch vector is now the key, no longer allowed to edit it, so, new one plx
-            scratchVector = new Vector3i(k);
             return new TileModule<?>[16][][];
         });
         var XsubSection = sectionArray[tilePos.getX() & 15];
@@ -56,8 +53,7 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     
     public boolean removeModule(ModuleType module) {
         BlockPos tilePos = module.iface.getBlockPos();
-        scratchVector.set(tilePos.getX() >> 4, tilePos.getY() >> 4, tilePos.getZ() >> 4);
-        var sectionArray = internalMap.get(scratchVector);
+        var sectionArray = internalMap.get(tilePos.asLong());
         if (sectionArray == null) {
             return false;
         }
@@ -96,11 +92,9 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
                 return true;
             }
         }
-        internalMap.remove(scratchVector);
         
         return true;
     }
-    
     
     public boolean containsTile(TileType tile) {
         return containsPos(tile.getBlockPos());
@@ -119,10 +113,8 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     }
     
     @Nullable
-    public ModuleType getModule(Vector3ic pos) {
-        int x = pos.x(), y = pos.y(), z = pos.z();
-        scratchVector.set(pos.x() >> 4, pos.y() >> 4, pos.z() >> 4);
-        TileModule<?>[][][] sectionArray = internalMap.get(scratchVector);
+    public ModuleType getModule(int x, int y, int z) {
+        TileModule<?>[][][] sectionArray = internalMap.get(BlockPos.asLong(x, y, z));
         // getModule(BlockPos) passes the scratch vector in, so, i cant assume that pos isn't the scratchvector
         if (sectionArray == null) {
             return null;
@@ -142,14 +134,18 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     
     @Nullable
     public ModuleType getModule(BlockPos pos) {
-        scratchVector.set(pos.getX(), pos.getY(), pos.getZ());
-        return getModule(scratchVector);
+        return getModule(pos.getX(), pos.getY(), pos.getZ());
     }
     
     @Nullable
-    public TileType getTile(Vector3ic pos){
-        var module = getModule(pos);
-        if(module == null) {
+    public ModuleType getModule(Vector3ic pos) {
+        return getModule(pos.x(), pos.y(), pos.z());
+    }
+    
+    @Nullable
+    public TileType getTile(int x, int y, int z) {
+        var module = getModule(x, y, z);
+        if (module == null) {
             return null;
         }
         return module.iface;
@@ -157,8 +153,13 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     
     @Nullable
     public TileType getTile(BlockPos pos) {
-        scratchVector.set(pos.getX(), pos.getY(), pos.getZ());
-        return getTile(scratchVector);
+        return getTile(pos.getX(), pos.getY(), pos.getZ());
+    }
+    
+    @Nullable
+    public TileType getTile(Vector3ic pos) {
+        return getTile(pos.x(), pos.y(), pos.z());
+        
     }
     
     public void forEachPosAndModule(BiConsumer<BlockPos, ModuleType> consumer) {
