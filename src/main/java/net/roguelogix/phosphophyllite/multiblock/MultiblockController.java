@@ -403,6 +403,7 @@ public class MultiblockController<
         if (!controllersToMerge.isEmpty()) {
             HashSet<ControllerType> newToMerge = new HashSet<>();
             for (ControllerType otherController : controllersToMerge) {
+                ((MultiblockController<?, ?>)otherController).disassembledBlockStates();
                 Phosphophyllite.removeController(otherController);
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
