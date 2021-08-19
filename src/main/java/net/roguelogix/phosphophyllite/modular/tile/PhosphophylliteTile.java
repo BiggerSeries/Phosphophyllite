@@ -277,6 +277,9 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         for (TileModule<?> tileTypeITileModule : moduleList) {
             String debugString = tileTypeITileModule.getDebugString();
             if (debugString != null) {
+                builder.append("\n");
+                builder.append(tileTypeITileModule.getClass().getSimpleName());
+                builder.append(":");
                 var lines = debugString.split("\n");
                 for (String line : lines) {
                     builder.append("\n    ");
