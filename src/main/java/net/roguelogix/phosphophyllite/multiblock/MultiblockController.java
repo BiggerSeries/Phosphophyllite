@@ -428,7 +428,7 @@ public class MultiblockController<
         
         if (state == AssemblyState.ASSEMBLED) {
             tick();
-//            toTick.forEach(ITickableMultiblockTile::tick);
+            toTick.forEach(ITickableMultiblockTile::tick);
         } else if (state == AssemblyState.DISASSEMBLED) {
             disassembledTick();
         }
