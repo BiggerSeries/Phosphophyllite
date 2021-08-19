@@ -330,7 +330,9 @@ public class Registry {
                                 e.printStackTrace();
                                 continue;
                             }
-                            ItemBlockRenderTypes.setRenderLayer(block, renderType);
+                            final RenderType finalRenderType = renderType;
+                            // parallel dispatch, and non-synchronized
+                            clientSetupEvent.enqueueWork(()-> ItemBlockRenderTypes.setRenderLayer(block, finalRenderType));
                         }
                     }
                 });
