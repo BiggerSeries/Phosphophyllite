@@ -29,16 +29,16 @@ public interface IMultiblockBlock extends IModularBlock, EntityBlock {
         
         @Override
         public InteractionResult onUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-            if (!level.isClientSide && hand == InteractionHand.MAIN_HAND && (!state.hasProperty(IAssemblyStateBlock.ASSEMBLED) || !state.getValue(IAssemblyStateBlock.ASSEMBLED))) {
-                if (player.getMainHandItem().isEmpty() && level.getBlockEntity(pos) instanceof IMultiblockTile tile) {
+            if (player.getMainHandItem().isEmpty() && hand == InteractionHand.MAIN_HAND && (!state.hasProperty(IAssemblyStateBlock.ASSEMBLED) || !state.getValue(IAssemblyStateBlock.ASSEMBLED))) {
+                if (!level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockTile tile) {
                     var controller = tile.nullableController();
                     if (controller != null && controller.lastValidationError != null) {
                         player.sendMessage(controller.lastValidationError.getTextComponent(), Util.NIL_UUID);
                     } else {
                         player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.unknown"), Util.NIL_UUID);
                     }
-                    return InteractionResult.SUCCESS;
                 }
+                return InteractionResult.SUCCESS;
             }
             return super.onUse(state, level, pos, player, hand, hitResult);
         }
