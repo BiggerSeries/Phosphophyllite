@@ -1,3 +1,10 @@
+# 1.17.1-0.6.0-alpha.2
+ - registry rework 2, electric boogaloo, ordering is now more strict and is in the stages that Forge uses, 
+   - this is mostly so @RegisterBlock fields aren't classloaded before all @OnModLoad functions are called to register block modules
+ - switch ModuleMap to use to Long2ObjectAVLTreeMap, seems marginally faster
+ - ensure that an assimilated controllers blocks are reset to disassembled
+ - tick ITickableMultiblockTiles properly, missed in modular transision
+
 # 1.17.1-0.6.0-alpha.1
  - tile and block module system properly functional, features still missing
  - multiblock system moved to tile/block module system
