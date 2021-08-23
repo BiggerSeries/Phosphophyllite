@@ -13,6 +13,7 @@ import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 public class RectangularMultiblockController<
         TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
@@ -37,6 +38,8 @@ public class RectangularMultiblockController<
     protected Validator<Block> exteriorValidator = null;
     protected Validator<Block> interiorValidator = null;
     protected Validator<Block> genericValidator = null;
+    protected Consumer<Block> blockValidatedCallback = null;
+    protected Runnable validationStartedCallback = null;
     
     private final Validator<ControllerType> mainValidator = controller -> {
         int minX = controller.minCoord().x();
@@ -100,7 +103,10 @@ public class RectangularMultiblockController<
                     controller.maxSize.x, controller.maxSize.y, controller.maxSize.z));
         }
         // or it didnt, at this point i dont really know, and you dont either, works(tm)
-        
+    
+        if (validationStartedCallback != null) {
+            validationStartedCallback.run();
+        }
         Util.chunkCachedBlockStateIteration(controller.minCoord(), controller.maxCoord(), controller.world, (blockState, pos) -> {
             Block block = blockState.getBlock();
             int extremes = 0;
@@ -189,6 +195,9 @@ public class RectangularMultiblockController<
                     }
                     throw new InvalidBlock(block, pos, "generic");
                 }
+            }
+            if (blockValidatedCallback != null) {
+                blockValidatedCallback.accept(block);
             }
         });
         return true;
