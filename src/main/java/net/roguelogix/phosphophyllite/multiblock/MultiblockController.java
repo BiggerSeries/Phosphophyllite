@@ -245,6 +245,7 @@ public class MultiblockController<
         } else {
             onPartPlaced(toAttachTile);
         }
+        toAttachModule.updateNeighbors();
         updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
     }
     
@@ -262,6 +263,7 @@ public class MultiblockController<
         }
         TileType toDetachTile = toDetachModule.iface;
         
+        toDetachModule.nullNeighbors();
         
         if (toDetachTile instanceof ITickableMultiblockTile) {
             toTick.remove(toDetachTile);
@@ -355,31 +357,30 @@ public class MultiblockController<
         }
         
         if (checkForDetachments) {
-            BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
-            
-            AStarList aStarList = new AStarList();
+            AStarList<MultiblockTileModule<?,?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
             
             for (BlockPos removedBlock : removedBlocks) {
-                for (Direction value : Direction.values()) {
-                    mutableBlockPos.set(removedBlock);
-                    mutableBlockPos.move(value);
-                    MultiblockTileModule<TileType, ControllerType> module = blocks.getModule(mutableBlockPos);
-                    if (module != null && module.controller == this) {
-                        aStarList.addTarget(module.iface.getBlockPos());
+                final MultiblockTileModule<TileType, ControllerType> removedModule = blocks.getModule(removedBlock);
+                if (removedModule == null) {
+                    continue;
+                }
+                for (MultiblockTileModule<?, ?> neighbor : removedModule.neighbors) {
+                    if(neighbor != null){
+                        aStarList.addTarget(neighbor);
                     }
                 }
             }
             removedBlocks.clear();
             
+            var directions = Direction.values();
+            
             while (!aStarList.done()) {
-                BlockPos node = aStarList.nextNode();
-                for (Direction value : Direction.values()) {
-                    mutableBlockPos.set(node);
-                    mutableBlockPos.move(value);
-                    MultiblockTileModule<TileType, ControllerType> module = blocks.getModule(mutableBlockPos);
+                var node = aStarList.nextNode();
+                for (int i = 0; i < 6; i++) {
+                    var module = node.getNeighbor(directions[i]);
                     if (module != null && module.controller == this && module.lastSavedTick != this.lastTick) {
                         module.lastSavedTick = this.lastTick;
-                        aStarList.addNode(module.iface.getBlockPos());
+                        aStarList.addNode(module);
                     }
                 }
             }

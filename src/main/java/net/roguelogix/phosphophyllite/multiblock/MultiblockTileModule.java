@@ -27,9 +27,44 @@ public class MultiblockTileModule<
         > extends TileModule<TileType> {
     
     protected ControllerType controller;
+    protected final MultiblockTileModule<?, ?>[] neighbors = new MultiblockTileModule<?, ?>[6];
     
     public ControllerType controller() {
         return controller;
+    }
+    
+    @Nullable
+    public MultiblockTileModule<?, ?> getNeighbor(Direction direction) {
+        return neighbors[direction.get3DDataValue()];
+    }
+    
+    void updateNeighbors() {
+        if (controller == null) {
+            return;
+        }
+        var pos = iface.getBlockPos();
+        for (Direction value : Direction.values()) {
+            neighbors[value.get3DDataValue()] = controller.blocks.getModule(pos.getX() + value.getStepX(), pos.getY() + value.getStepY(), pos.getZ() + value.getStepZ());
+        }
+        for (int i = 0; i < neighbors.length; i++) {
+            MultiblockTileModule<?, ?> neighbor = neighbors[i];
+            if(neighbor != null){
+                neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = this;
+            }
+        }
+    }
+    
+    void nullNeighbors(){
+        for (int i = 0; i < neighbors.length; i++) {
+            MultiblockTileModule<?, ?> neighbor = neighbors[i];
+            if(neighbor != null){
+                neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
+            }
+        }
+    
+        for (Direction value : Direction.values()) {
+            neighbors[value.get3DDataValue()] = null;
+        }
     }
     
     @OnModLoad
@@ -45,7 +80,6 @@ public class MultiblockTileModule<
     public String saveKey() {
         return "phosphophyllite_multiblock";
     }
-    
     
     long lastSavedTick = 0;
     
@@ -142,7 +176,6 @@ public class MultiblockTileModule<
         }
         return null;
     }
-    
     
     @Override
     public void onAdded() {
