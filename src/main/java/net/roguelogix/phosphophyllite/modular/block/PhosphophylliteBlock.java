@@ -1,5 +1,7 @@
 package net.roguelogix.phosphophyllite.modular.block;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -20,7 +22,9 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -29,7 +33,7 @@ public class PhosphophylliteBlock extends Block implements IModularBlock {
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularBlock");
     
-    private Map<Class<?>, BlockModule<?>> modules;
+    private Int2ObjectMap<BlockModule<?>> modules;
     
     private List<BlockModule<?>> moduleList;
     
@@ -37,24 +41,24 @@ public class PhosphophylliteBlock extends Block implements IModularBlock {
         if (modules != null) {
             return;
         }
-        final Map<Class<?>, BlockModule<?>> modules = new LinkedHashMap<>();
+        final Int2ObjectMap<BlockModule<?>> modules = new Int2ObjectOpenHashMap<>();
         final List<BlockModule<?>> moduleList = new ArrayList<>();
         // must be called before super constructor
         Class<?> thisClazz = this.getClass();
         ModuleRegistry.forEachBlockModule((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
                 var module = constructor.apply(this);
-                modules.put(clazz, module);
+                modules.put(clazz.hashCode(), module);
                 moduleList.add(module);
             }
         });
-        this.modules = Collections.unmodifiableMap(modules);
+        this.modules = modules;
         this.moduleList = Collections.unmodifiableList(moduleList);
     }
     
     @Override
     public BlockModule<?> module(Class<? extends IModularBlock> interfaceClazz) {
-        return modules.get(interfaceClazz);
+        return modules.get(interfaceClazz.hashCode());
     }
     
     @Override

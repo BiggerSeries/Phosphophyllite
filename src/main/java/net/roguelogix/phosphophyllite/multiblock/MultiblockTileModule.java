@@ -26,15 +26,19 @@ public class MultiblockTileModule<
         ControllerType extends MultiblockController<TileType, ControllerType>
         > extends TileModule<TileType> {
     
+    private final boolean ASSEMBLY_STATE = iface.getBlockState().hasProperty(ASSEMBLED);
+    
     protected ControllerType controller;
-    protected final MultiblockTileModule<?, ?>[] neighbors = new MultiblockTileModule<?, ?>[6];
+    @SuppressWarnings("unchecked") // its fine
+    protected final MultiblockTileModule<TileType, ControllerType>[] neighbors = new MultiblockTileModule[6];
+    protected final BlockEntity[] neighborTiles = new BlockEntity[6];
     
     public ControllerType controller() {
         return controller;
     }
     
     @Nullable
-    public MultiblockTileModule<?, ?> getNeighbor(Direction direction) {
+    public MultiblockTileModule<TileType, ControllerType> getNeighbor(Direction direction) {
         return neighbors[direction.get3DDataValue()];
     }
     
@@ -47,9 +51,10 @@ public class MultiblockTileModule<
             neighbors[value.get3DDataValue()] = controller.blocks.getModule(pos.getX() + value.getStepX(), pos.getY() + value.getStepY(), pos.getZ() + value.getStepZ());
         }
         for (int i = 0; i < neighbors.length; i++) {
-            MultiblockTileModule<?, ?> neighbor = neighbors[i];
+            MultiblockTileModule<TileType, ControllerType> neighbor = neighbors[i];
             if(neighbor != null){
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = this;
+                neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = iface;
             }
         }
     }
@@ -59,6 +64,7 @@ public class MultiblockTileModule<
             MultiblockTileModule<?, ?> neighbor = neighbors[i];
             if(neighbor != null){
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
+                neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
             }
         }
     
@@ -96,17 +102,15 @@ public class MultiblockTileModule<
     private boolean allowAttach = true;
     boolean isSaveDelegate = false;
     
-    protected BlockState assembledBlockState() {
-        BlockState state = iface.getBlockState();
-        if (state.hasProperty(ASSEMBLED)) {
+    protected BlockState assembledBlockState(BlockState state) {
+        if (ASSEMBLY_STATE) {
             state = state.setValue(ASSEMBLED, true);
         }
         return state;
     }
     
-    protected BlockState disassembledBlockState() {
-        BlockState state = iface.getBlockState();
-        if (state.hasProperty(ASSEMBLED)) {
+    protected BlockState disassembledBlockState(BlockState state) {
+        if (ASSEMBLY_STATE) {
             state = state.setValue(ASSEMBLED, false);
         }
         return state;
@@ -120,7 +124,7 @@ public class MultiblockTileModule<
                 return;
             }
             
-            if (iface.getBlockState().hasProperty(ASSEMBLED)) {
+            if (ASSEMBLY_STATE) {
                 iface.getLevel().setBlockAndUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
             }
             if (controller != null) {

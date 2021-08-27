@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.modular.tile;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,8 +14,8 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
-import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
+import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +24,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
 
@@ -33,7 +33,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
     
-    private final LinkedHashMap<Class<?>, TileModule<?>> modules = new LinkedHashMap<>();
+    private final Int2ObjectOpenHashMap<TileModule<?>> modules = new Int2ObjectOpenHashMap<>();
     private final ArrayList<TileModule<?>> moduleList = new ArrayList<>();
     private final List<TileModule<?>> moduleListRO = Collections.unmodifiableList(moduleList);
     
@@ -43,14 +43,14 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         ModuleRegistry.forEachTileModule((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
                 TileModule<?> module = constructor.apply(this);
-                modules.put(clazz, module);
+                modules.put(clazz.hashCode(), module);
                 moduleList.add(module);
             }
         });
     }
     
     public TileModule<?> module(Class<?> interfaceClazz) {
-        return modules.get(interfaceClazz);
+        return modules.get(interfaceClazz.hashCode());
     }
     
     @Override

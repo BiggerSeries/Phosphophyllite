@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite;
 
+import com.google.common.base.Stopwatch;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.ServerResources;
 import net.minecraft.server.level.ServerLevel;
@@ -16,6 +17,7 @@ import net.roguelogix.phosphophyllite.multiblock.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
+import net.roguelogix.phosphophyllite.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,6 +25,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -56,7 +59,6 @@ public class Phosphophyllite {
             }
         }
     }
-    
     
     public static ServerResources dataPackRegistries;
     
@@ -169,5 +171,7 @@ public class Phosphophyllite {
             }
             tilesToAttach.clear();
         }
+        
+        Util.worldTickEndEvent(e.world);
     }
 }

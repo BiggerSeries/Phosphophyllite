@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -27,7 +28,7 @@ public class MultiblockController<
     protected final Level world;
     
     private boolean hasSaveDelegate = false;
-    protected final ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<>();
+    protected final ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
     protected final Set<ITickableMultiblockTile> toTick = new LinkedHashSet<>();
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
     protected final Set<IOnAssemblyTile> onAssemblyTiles = new LinkedHashSet<>();
@@ -173,7 +174,10 @@ public class MultiblockController<
         }
         
         // ok, its a valid tile to attach, so ima attach it
-        blocks.addModule(toAttachModule);
+        if(!blocks.addModule(toAttachModule)){
+            // prevent double adding, just in case
+            return;
+        }
         
         BlockPos toAttachPos = toAttachTile.getBlockPos();
         // update minmax
@@ -358,15 +362,15 @@ public class MultiblockController<
         
         if (checkForDetachments) {
             AStarList<MultiblockTileModule<?,?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
-            
+    
+            BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
             for (BlockPos removedBlock : removedBlocks) {
-                final MultiblockTileModule<TileType, ControllerType> removedModule = blocks.getModule(removedBlock);
-                if (removedModule == null) {
-                    continue;
-                }
-                for (MultiblockTileModule<?, ?> neighbor : removedModule.neighbors) {
-                    if(neighbor != null){
-                        aStarList.addTarget(neighbor);
+                for (Direction value : Direction.values()) {
+                    mutableBlockPos.set(removedBlock);
+                    mutableBlockPos.move(value);
+                    MultiblockTileModule<TileType, ControllerType> module = blocks.getModule(mutableBlockPos);
+                    if (module != null && module.controller == this) {
+                        aStarList.addTarget(module);
                     }
                 }
             }
@@ -437,7 +441,7 @@ public class MultiblockController<
     }
     
     public void suicide() {
-        ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<>();
+        ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
         blocks.addAll(this.blocks);
         blocks.forEachModule(module -> module.onRemoved(true));
         Phosphophyllite.removeController(this);
@@ -489,28 +493,53 @@ public class MultiblockController<
         }
     }
     
+    private final Long2ObjectLinkedOpenHashMap<BlockState> newStates = new Long2ObjectLinkedOpenHashMap<>();
+    
     private void assembledBlockStates() {
-        final HashMap<BlockPos, BlockState> newStates = new LinkedHashMap<>();
-        blocks.forEachPosAndModule((pos, module) -> {
-            BlockState state = module.assembledBlockState();
-            if (state != module.iface.getBlockState()) {
-                newStates.put(pos, state);
-                module.iface.setBlockState(state);
+        newStates.clear();
+    
+        final int size = blocks.size();
+        final TileType[] tileElements = blocks.tileElements();
+        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();
+        final var posElements = blocks.posElements();
+        if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
+            throw new IllegalStateException("Arrays too short");
+        }
+        for (int i = 0; i < size; i++) {
+            final var entity = tileElements[i];
+            final var module = moduleElements[i];
+            final var pos = posElements[i];
+            final BlockState oldState = entity.getBlockState();
+            BlockState newState = module.assembledBlockState(oldState);
+            if (newState != oldState) {
+                newStates.put(pos, newState);
+                entity.setBlockState(newState);
             }
-        });
+        }
+        
         Util.setBlockStates(newStates, world);
     }
     
     private void disassembledBlockStates() {
-        final HashMap<BlockPos, BlockState> newStates = new LinkedHashMap<>();
-        blocks.forEachPosAndModule((pos, module) -> {
-            BlockState state = module.disassembledBlockState();
-            if (state != module.iface.getBlockState()) {
-                newStates.put(pos, state);
-                module.iface.setBlockState(state);
+        newStates.clear();
+        final int size = blocks.size();
+        final TileType[] tileElements = blocks.tileElements();
+        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();;
+        final var posElements = blocks.posElements();
+        if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
+            throw new IllegalStateException("Arrays too short");
+        }
+        for (int i = 0; i < size; i++) {
+            final var entity = tileElements[i];
+            final var module = moduleElements[i];
+            final var pos = posElements[i];
+            final BlockState oldState = entity.getBlockState();
+            BlockState newState = module.disassembledBlockState(oldState);
+            if (newState != oldState) {
+                newStates.put(pos, newState);
+                entity.setBlockState(newState);
             }
-        });
-        Util.setBlockStates(newStates, world);
+        }        Util.setBlockStates(newStates, world);
     }
     
     /**

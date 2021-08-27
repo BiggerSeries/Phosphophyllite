@@ -3,10 +3,18 @@ package net.roguelogix.phosphophyllite.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.shorts.ShortArraySet;
+import it.unimi.dsi.fastutil.shorts.ShortIterator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
+import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,7 +28,9 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -112,7 +122,7 @@ public class Util {
             chunkPos.set(pos.getX() >> 4, 0, pos.getZ() >> 4);
             HashMap<BlockPos, BlockState> chunksNewStates = stateChunks.get(chunkPos);
             if (chunksNewStates == null) {
-                chunksNewStates = new HashMap<>();
+                chunksNewStates = new LinkedHashMap<>(8192);
                 stateChunks.put(chunkPos.immutable(), chunksNewStates);
             }
             chunksNewStates.put(pos, state);
@@ -123,19 +133,165 @@ public class Util {
             states.forEach((bPos, state) -> {
                 LevelChunkSection section = chunkSections[bPos.getY() >> 4];
                 if (section != null) {
-                    BlockState oldState = section.setBlockState(bPos.getX() & 15, bPos.getY() & 15, bPos.getZ() & 15, state);
-                    world.sendBlockUpdated(bPos, oldState, state, 0);
+                    section.setBlockState(bPos.getX() & 15, bPos.getY() & 15, bPos.getZ() & 15, state);
+                    markForUpdatePacket(bPos);
                 }
             });
             chunk.markUnsaved();
         });
     }
     
+    private static final ObjectArrayList<Long2ObjectLinkedOpenHashMap<BlockState>> existingMaps = new ObjectArrayList<>();
+    private static final Long2ObjectLinkedOpenHashMap<Long2ObjectLinkedOpenHashMap<BlockState>> stateChunks = new Long2ObjectLinkedOpenHashMap<>();
+    
+    public static void setBlockStates(Long2ObjectMap<BlockState> newStates, Level world) {
+        stateChunks.clear();
+        BlockPos.MutableBlockPos chunkPos = new BlockPos.MutableBlockPos();
+        ((Long2ObjectMap.FastEntrySet<BlockState>) newStates.long2ObjectEntrySet()).fastIterator().forEachRemaining((entry) -> {
+            final var posLong = entry.getLongKey();
+            final var state = entry.getValue();
+            chunkPos.set(BlockPos.getX(posLong) >> 4, 0, BlockPos.getZ(posLong) >> 4);
+            Long2ObjectLinkedOpenHashMap<BlockState> chunksNewStates = stateChunks.get(chunkPos.asLong());
+            if (chunksNewStates == null) {
+                if (existingMaps.isEmpty()) {
+                    chunksNewStates = new Long2ObjectLinkedOpenHashMap<>();
+                } else {
+                    chunksNewStates = existingMaps.pop();
+                    chunksNewStates.clear();
+                }
+                stateChunks.put(chunkPos.asLong(), chunksNewStates);
+            }
+            chunksNewStates.put(posLong, state);
+        });
+        ((Long2ObjectMap.FastEntrySet<Long2ObjectLinkedOpenHashMap<BlockState>>) stateChunks.long2ObjectEntrySet()).fastIterator().forEachRemaining((entry) -> {
+            final var cPosLong = entry.getLongKey();
+            final var states = entry.getValue();
+            LevelChunk chunk = world.getChunk(BlockPos.getX(cPosLong), BlockPos.getZ(cPosLong));
+            LevelChunkSection[] chunkSections = chunk.getSections();
+            ((Long2ObjectMap.FastEntrySet<BlockState>) states.long2ObjectEntrySet()).fastIterator().forEachRemaining((entry1) -> {
+                final var bPosLong = entry1.getLongKey();
+                final var state = entry1.getValue();
+                LevelChunkSection section = chunkSections[BlockPos.getY(bPosLong) >> 4];
+                if (section != null) {
+                    section.getStates().set(BlockPos.getX(bPosLong) & 15, BlockPos.getY(bPosLong) & 15, BlockPos.getZ(bPosLong) & 15, state);
+                    markForUpdatePacket(bPosLong);
+                }
+            });
+            existingMaps.add(states);
+            chunk.markUnsaved();
+        });
+    }
+    
+    private static final ObjectArrayList<boolean[]> existingArrays = new ObjectArrayList<>();
+    private static final Long2ObjectLinkedOpenHashMap<boolean[]> updateArrays = new Long2ObjectLinkedOpenHashMap<>();
+    
+    private static void markForUpdatePacket(BlockPos pos) {
+        var chunkPos = SectionPos.asLong(pos);
+        var updateArray = updateArrays.get(chunkPos);
+        if (updateArray == null) {
+            if(existingArrays.isEmpty()) {
+                updateArray = new boolean[4096];
+            }else {
+                updateArray = existingArrays.pop();
+                Arrays.fill(updateArray, false);
+            }
+            updateArrays.put(chunkPos, updateArray);
+        }
+        var sectionPos = SectionPos.sectionRelativePos(pos);
+        assert sectionPos >= 0 && sectionPos < 4096;
+        updateArray[sectionPos] = true;
+    }
+    
+    private static void markForUpdatePacket(long blockPosLong) {
+        long sectionPosLong = SectionPos.blockToSection(blockPosLong);
+        var updateArray = updateArrays.get(sectionPosLong);
+        if (updateArray == null) {
+            if(existingArrays.isEmpty()) {
+                updateArray = new boolean[4096];
+            }else {
+                updateArray = existingArrays.pop();
+                Arrays.fill(updateArray, false);
+            }
+            updateArrays.put(sectionPosLong, updateArray);
+        }
+        int i = SectionPos.sectionRelative(BlockPos.getX(blockPosLong));
+        int j = SectionPos.sectionRelative(BlockPos.getY(blockPosLong));
+        int k = SectionPos.sectionRelative(BlockPos.getZ(blockPosLong));
+        var sectionPos = (short) (i << 8 | k << 4 | j);
+        assert sectionPos >= 0 && sectionPos < 4096;
+        updateArray[sectionPos] = true;
+    }
+    
+    private static class SpecialShortArraySet extends ShortArraySet {
+        private int size = 0;
+        private final short[] elements = new short[4096];
+        
+        public SpecialShortArraySet() {
+        }
+        
+        @Override
+        public int size() {
+            return size;
+        }
+        
+        @Override
+        public ShortIterator iterator() {
+            return new ShortIterator() {
+                int index = 0;
+                
+                @Override
+                public boolean hasNext() {
+                    return index < size;
+                }
+                
+                @Override
+                public short nextShort() {
+                    return elements[index++];
+                }
+            };
+        }
+        
+        public void clear(){
+            size = 0;
+        }
+        
+        public void fadd(short val){
+            elements[size++] = val;
+        }
+    }
+    
+    public static void worldTickEndEvent(Level level) {
+        if (updateArrays.isEmpty()) {
+            return;
+        }
+        final SpecialShortArraySet shortSet = new SpecialShortArraySet();
+        updateArrays.long2ObjectEntrySet().fastIterator().forEachRemaining(entry -> {
+            long entryKey = entry.getLongKey();
+            var entryArray = entry.getValue();
+            var sectionPos = SectionPos.of(entryKey);
+            var levelSection = level.getChunk(sectionPos.x(), sectionPos.z()).getSections()[sectionPos.y()];
+            if (levelSection != null) {
+                shortSet.clear();
+                for (int i = 0; i < 4096; i++) {
+                    if (entryArray[i]) {
+                        shortSet.fadd((short) i);
+                    }
+                }
+                var packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, shortSet, levelSection, true);
+                ((ServerChunkCache) level.getChunkSource()).chunkMap.getPlayers(sectionPos.chunk(), false).forEach(serverPlayer -> {
+                    serverPlayer.connection.send(packet);
+                });
+            }
+            existingArrays.add(entryArray);
+        });
+        updateArrays.clear();
+    }
+    
     public static Direction directionFromPositions(BlockPos reference, BlockPos neighbor) {
         int xDifference = reference.getX() - neighbor.getX();
         int yDifference = reference.getY() - neighbor.getY();
         int zDifference = reference.getZ() - neighbor.getZ();
-        if(Math.abs(xDifference) + Math.abs(yDifference) + Math.abs(zDifference) > 1){
+        if (Math.abs(xDifference) + Math.abs(yDifference) + Math.abs(zDifference) > 1) {
             throw new IllegalArgumentException("positions not neighbors");
         }
         if (xDifference == -1) {

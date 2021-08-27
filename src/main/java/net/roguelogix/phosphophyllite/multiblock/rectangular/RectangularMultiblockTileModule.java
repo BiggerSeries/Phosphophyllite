@@ -21,14 +21,16 @@ public class RectangularMultiblockTileModule<
         ControllerType extends RectangularMultiblockController<TileType, ControllerType>
         > extends MultiblockTileModule<TileType, ControllerType> {
     
+    private final boolean AXIS_POSITIONS = iface.getBlockState().hasProperty(X_AXIS_POSITION);
+    private final boolean FACE_DIRECTION = iface.getBlockState().hasProperty(BlockStates.FACING);
+    
     public RectangularMultiblockTileModule(IModularTile blockEntity) {
         super(blockEntity);
     }
     
     @Override
-    protected BlockState assembledBlockState() {
-        BlockState state = super.assembledBlockState();
-        if (state.hasProperty(X_AXIS_POSITION)) {
+    protected BlockState assembledBlockState(BlockState state) {
+        if (AXIS_POSITIONS) {
             BlockPos pos = iface.getBlockPos();
             
             if (pos.getX() == controller.minCoord().x()) {
@@ -55,7 +57,7 @@ public class RectangularMultiblockTileModule<
                 state = state.setValue(Z_AXIS_POSITION, AxisPosition.MIDDLE);
             }
         }
-        if (state.hasProperty(BlockStates.FACING)) {
+        if (FACE_DIRECTION) {
             BlockPos pos = iface.getBlockPos();
             if (pos.getX() == controller.minCoord().x()) {
                 state = state.setValue(BlockStates.FACING, Direction.WEST);
@@ -71,6 +73,6 @@ public class RectangularMultiblockTileModule<
                 state = state.setValue(BlockStates.FACING, Direction.SOUTH);
             }
         }
-        return state;
+        return super.assembledBlockState(state);
     }
 }
