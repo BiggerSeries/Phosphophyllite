@@ -69,32 +69,64 @@ public class Util {
     }
     
     public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
+        final int minx = start.x();
+        final int miny = start.y();
+        final int minz = start.z();
+        final int maxx = end.x();
+        final int maxy = end.y();
+        final int maxz = end.z();
+        final int maxX = (maxx + 16) & 0xFFFFFFF0;
+        final int maxY = (maxy + 16) & 0xFFFFFFF0;
+        final int maxZ = (maxz + 16) & 0xFFFFFFF0;
+        final var AIR_STATE = Blocks.AIR.defaultBlockState();
         // ChunkSource implementations are indexed [z][x]
-        for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
-            for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
+        for (int Z = minz; Z < maxZ; Z += 16) {
+            final int sectionMinZ = Math.max((Z) & 0xFFFFFFF0, minz);
+            final int sectionMaxZ = Math.min((Z + 16) & 0xFFFFFFF0, maxz + 1);
+            for (int X = minx; X < maxX; X += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
+                final int sectionMinX = Math.max((X) & 0xFFFFFFF0, minx);
+                final int sectionMaxX = Math.min((X + 16) & 0xFFFFFFF0, maxx + 1);
                 LevelChunk chunk = (LevelChunk) world.getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
-                LevelChunkSection[] chunkSections = chunk != null ? chunk.getSections() : null;
-                int chunkMinSection = chunk != null ? chunk.getMinSection() : 0;
-                for (int Y = start.y(); Y < ((end.y() + 16) & 0xFFFFFFF0); Y += 16) {
+                if(chunk == null) {
+                    for (int x = sectionMinX; x < sectionMaxX; x++) {
+                        for (int y = miny; y < maxy; y++) {
+                            for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+                                scratchVector.set(x, y, z);
+                                func.accept(AIR_STATE, scratchVector);
+                            }
+                        }
+                    }
+                    continue;
+                }
+                LevelChunkSection[] chunkSections = chunk.getSections();
+                int chunkMinSection = chunk.getMinSection();
+                for (int Y = miny; Y < maxY; Y += 16) {
+                    int sectionMinY = Math.max((Y) & 0xFFFFFFF0, miny);
+                    int sectionMaxY = Math.min((Y + 16) & 0xFFFFFFF0, maxy + 1);
+                    
                     int chunkSectionIndex = (Y >> 4) - chunkMinSection;
-                    LevelChunkSection chunkSection = chunkSections != null ? chunkSections[chunkSectionIndex] : null;
-                    int sectionMinX = Math.max((X) & 0xFFFFFFF0, start.x());
-                    int sectionMinY = Math.max((Y) & 0xFFFFFFF0, start.y());
-                    int sectionMinZ = Math.max((Z) & 0xFFFFFFF0, start.z());
-                    int sectionMaxX = Math.min((X + 16) & 0xFFFFFFF0, end.x() + 1);
-                    int sectionMaxY = Math.min((Y + 16) & 0xFFFFFFF0, end.y() + 1);
-                    int sectionMaxZ = Math.min((Z + 16) & 0xFFFFFFF0, end.z() + 1);
+                    LevelChunkSection chunkSection = chunkSections[chunkSectionIndex];
+                    
+                    if(chunkSection == null){
+                        for (int x = sectionMinX; x < sectionMaxX; x++) {
+                            for (int y = sectionMinY; y < sectionMaxY; y++) {
+                                for (int z = sectionMinZ; z < sectionMaxZ; z++) {
+                                    scratchVector.set(x, y, z);
+                                    func.accept(AIR_STATE, scratchVector);
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    
                     // PalettedContainers are indexed [y][z][x]
                     for (int y = sectionMinY; y < sectionMaxY; y++) {
                         for (int z = sectionMinZ; z < sectionMaxZ; z++) {
                             for (int x = sectionMinX; x < sectionMaxX; x++) {
                                 scratchVector.set(x, y, z);
-                                BlockState state = Blocks.AIR.defaultBlockState();
-                                if (chunkSection != null) {
-                                    state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
-                                }
+                                BlockState state = chunkSection.getBlockState(x & 15, y & 15, z & 15);
                                 func.accept(state, scratchVector);
                             }
                         }
