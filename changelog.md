@@ -1,3 +1,10 @@
+# 1.17.1-0.6.0-alpha.3
+ - switch to parchment mappings, shouldn't really effect anything
+ - add beginValidation and blockValidated callbacks to rectangular multiblock controller
+ - add list neighboring multiblock modules to the multiblock module
+ - optimizations
+   - mostly magic
+
 # 1.17.1-0.6.0-alpha.2
  - registry rework 2, electric boogaloo, ordering is now more strict and is in the stages that Forge uses, 
    - this is mostly so @RegisterBlock fields aren't classloaded before all @OnModLoad functions are called to register block modules
