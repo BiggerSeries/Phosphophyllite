@@ -1,5 +1,7 @@
 package net.roguelogix.phosphophyllite.registry;
 
+import net.minecraft.world.level.block.entity.BlockEntity;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -17,7 +19,7 @@ public @interface RegisterBlock {
     
     boolean creativeTab() default true;
     
-    Class<?> tileEntityClass() default RegisterBlock.class;
+    Class<? extends BlockEntity> tileEntityClass() default BlockEntity.class;
     
     @Retention(RetentionPolicy.RUNTIME)
     @interface RenderLayer {

@@ -294,7 +294,7 @@ public class Registry {
             }
             constructor.setAccessible(true);
             
-            if (annotation.tileEntityClass() != RegisterBlock.class) {
+            if (annotation.tileEntityClass() != BlockEntity.class) {
                 tileBlocks.computeIfAbsent(annotation.tileEntityClass(), k -> new LinkedList<>()).add(block);
             }
             
