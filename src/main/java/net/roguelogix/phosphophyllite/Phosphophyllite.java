@@ -116,6 +116,15 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
+    void onServerStop(final FMLServerStoppedEvent serverStoppedEvent){
+        controllersToTick.clear();
+        tilesToAttach.clear();
+        newControllers.clear();
+        oldControllers.clear();
+        newTiles.clear();
+    }
+    
+    @SubscribeEvent
     public void advanceTick(TickEvent.ServerTickEvent e) {
         if (!e.side.isServer()) {
             return;
