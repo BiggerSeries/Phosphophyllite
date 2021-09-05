@@ -85,6 +85,8 @@ public class JSON5 {
                 for (int i = 0; i < elements.length; i++) {
                     parseElement(elements[i], indentLevel + 1, builder, i > 0);
                 }
+                builder.deleteCharAt(builder.length() - 1);
+                builder.deleteCharAt(builder.length() - 1);
                 newLine(indentLevel, builder);
                 builder.append("]");
                 break;
@@ -95,9 +97,8 @@ public class JSON5 {
                 for (Element value : elements) {
                     parseElement(value, indentLevel + 1, builder, omitComments);
                 }
-                if (builder.charAt(builder.length() - 1) == ',') {
-                    builder.setCharAt(builder.length() - 1, ' ');
-                }
+                builder.deleteCharAt(builder.length() - 1);
+                builder.deleteCharAt(builder.length() - 1);
                 newLine(indentLevel, builder);
                 builder.append("}");
                 break;
