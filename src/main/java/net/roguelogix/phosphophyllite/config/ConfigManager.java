@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.config;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.parsers.Element;
 import net.roguelogix.phosphophyllite.parsers.JSON5;
+import net.roguelogix.phosphophyllite.parsers.TOML;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,6 +17,7 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Objects;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -60,8 +62,8 @@ public class ConfigManager {
         
         private Field enableAdvanced;
         
-        boolean enableAdvanced(){
-            if(enableAdvanced == null){
+        boolean enableAdvanced() {
+            if (enableAdvanced == null) {
                 return false;
             }
             try {
@@ -192,19 +194,14 @@ public class ConfigManager {
         
         void generateFile() {
             spec.writeDefaults();
-            writeFile(spec.generateElementTree(false));
+            writeFile(Objects.requireNonNull(spec.trimElementTree(spec.generateElementTree(false))));
         }
         
-        void writeFile(Element tree){
-            String str = null;
-            switch (annotation.format()) {
-                case JSON5: {
-                    str = JSON5.parseElement(tree);
-                    break;
-                }
-                case TOML:
-                    throw new RuntimeException("TOML not supported");
-            }
+        void writeFile(Element tree) {
+            String str = switch (actualFormat) {
+                case JSON5 -> JSON5.parseElement(tree);
+                case TOML -> TOML.parseElement(tree);
+            };
             try {
                 //noinspection ResultOfMethodCallIgnored
                 actualFile.getParentFile().mkdirs();
@@ -223,16 +220,10 @@ public class ConfigManager {
                 throw new RuntimeException("Failed to read config file");
             }
             
-            Element elementTree = null;
-            switch (actualFormat) {
-                case JSON5: {
-                    elementTree = JSON5.parseString(str);
-                    break;
-                }
-                case TOML:
-                    throw new RuntimeException("TOML not supported");
-            }
-            return elementTree;
+            return switch (actualFormat) {
+                case JSON5 -> JSON5.parseString(str);
+                case TOML -> TOML.parseString(str);
+            };
         }
     }
 }
