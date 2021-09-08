@@ -150,7 +150,6 @@ public class Registry {
             }
         }
         
-
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
@@ -300,7 +299,7 @@ public class Registry {
             
             block.setRegistryName(registryName);
             blockRegistryEvent.getRegistry().register(block);
-    
+            
             if (FMLEnvironment.dist.isClient()) {
                 clientSetupQueue.enqueue(() -> {
                     RenderType renderType = null;
@@ -332,7 +331,7 @@ public class Registry {
                             }
                             final RenderType finalRenderType = renderType;
                             // parallel dispatch, and non-synchronized
-                            clientSetupEvent.enqueueWork(()-> ItemBlockRenderTypes.setRenderLayer(block, finalRenderType));
+                            clientSetupEvent.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(block, finalRenderType));
                         }
                     }
                 });
@@ -355,11 +354,11 @@ public class Registry {
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
         itemRegistrationQueue.enqueue(() -> {
-    
+            
             assert itemClazz.isAnnotationPresent(RegisterItem.class);
-    
+            
             final RegisterItem annotation = itemClazz.getAnnotation(RegisterItem.class);
-    
+            
             String modid = annotation.modid();
             if (modid.equals("")) {
                 modid = modNamespace;
@@ -369,13 +368,13 @@ public class Registry {
                 LOGGER.error("Unable to register item without a name");
                 return;
             }
-    
-    
+            
+            
             if (!Item.class.isAssignableFrom(itemClazz)) {
                 LOGGER.error("Attempt to register item from class not extended from Item");
                 return;
             }
-    
+            
             final String registryName = modid + ":" + name;
             
             Constructor<?> constructor;
@@ -386,7 +385,7 @@ public class Registry {
                 return;
             }
             constructor.setAccessible(true);
-    
+            
             Item item;
             try {
                 item = (Item) constructor.newInstance(new Item.Properties().tab(itemGroup));
@@ -395,7 +394,7 @@ public class Registry {
                 e.printStackTrace();
                 return;
             }
-    
+            
             for (Field declaredField : itemClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterItem.Instance.class)) {
                     if (!declaredField.getType().isAssignableFrom(itemClazz)) {
@@ -414,7 +413,7 @@ public class Registry {
                     }
                 }
             }
-    
+            
             item.setRegistryName(registryName);
             itemRegistryEvent.getRegistry().register(item);
         });
@@ -422,26 +421,26 @@ public class Registry {
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
         blockRegistrationQueue.enqueue(() -> {
-    
+            
             assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
-    
+            
             final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
-    
+            
             String modid = annotation.modid().equals("") ? modNamespace : annotation.modid();
             String name = annotation.name();
             if (modid.equals("")) {
                 LOGGER.error("Unable to register fluid without a name");
                 return;
             }
-    
-    
+            
+            
             if (!ForgeFlowingFluid.class.isAssignableFrom(fluidClazz)) {
                 LOGGER.error("Attempt to register fluid from class not extended from PhosphophylliteFluid");
                 return;
             }
-    
+            
             final String baseRegistryName = modid + ":" + name;
-    
+            
             PhosphophylliteFluid[] fluids = new PhosphophylliteFluid[2];
             Item[] bucketArray = new Item[1];
             LiquidBlock[] blockArray = new LiquidBlock[1];
@@ -501,7 +500,7 @@ public class Registry {
                     }
                 }
             }
-    
+            
             blockArray[0].setRegistryName(baseRegistryName);
             blockRegistryEvent.getRegistry().register(blockArray[0]);
             
@@ -511,14 +510,14 @@ public class Registry {
                 if (still == null || flowing == null) {
                     return;
                 }
-        
+                
                 still.setRegistryName(baseRegistryName);
                 flowing.setRegistryName(baseRegistryName + "_flowing");
-        
+                
                 fluidRegistryEvent.getRegistry().register(still);
                 fluidRegistryEvent.getRegistry().register(flowing);
             });
-    
+            
             if (annotation.registerBucket()) {
                 itemRegistrationQueue.enqueue(() -> {
                     BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
@@ -555,7 +554,7 @@ public class Registry {
         
         MenuType<?>[] containerTypeArray = new MenuType[1];
         
-       containerRegistrationQueue.enqueue(() -> {
+        containerRegistrationQueue.enqueue(() -> {
             ContainerSupplier supplier = null;
             for (Field declaredField : containerClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterContainer.Supplier.class)) {
@@ -613,14 +612,14 @@ public class Registry {
                     }
                 }
             }
-    
-           MenuType<?> type = containerTypeArray[0];
-           if (type == null) {
-               return;
-           }
-           type.setRegistryName(registryName);
-           containerRegistryEvent.getRegistry().register(type);
-       });
+            
+            MenuType<?> type = containerTypeArray[0];
+            if (type == null) {
+                return;
+            }
+            type.setRegistryName(registryName);
+            containerRegistryEvent.getRegistry().register(type);
+        });
     }
     
     private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
@@ -628,7 +627,7 @@ public class Registry {
         
         tileRegistrationQueue.enqueue(() -> {
             final RegisterTileEntity annotation = tileClazz.getAnnotation(RegisterTileEntity.class);
-    
+            
             String modid = annotation.modid();
             if (modid.equals("")) {
                 modid = modNamespace;
@@ -638,14 +637,14 @@ public class Registry {
                 LOGGER.error("Unable to register tile type without a name");
                 return;
             }
-    
+            
             if (!BlockEntity.class.isAssignableFrom(tileClazz)) {
                 LOGGER.error("Attempt to register tile type from class not extended from TileEntity");
                 return;
             }
-    
+            
             final String registryName = modid + ":" + name;
-    
+            
             final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
             
             for (Field declaredField : tileClazz.getDeclaredFields()) {
@@ -761,39 +760,29 @@ public class Registry {
     }
     
     private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
-        assert oreClazz.isAnnotationPresent(RegisterOre.class);
-        
-        if (!oreClazz.isAnnotationPresent(RegisterBlock.class)) {
-            LOGGER.error("Cannot register unknown block for world generation");
-            return;
-        }
-        
-        final RegisterBlock blockAnnotation = oreClazz.getAnnotation(RegisterBlock.class);
-        
-        // dont need to error check because RegisterBlock handles that for us
-        String modid = blockAnnotation.modid();
-        if (modid.equals("")) {
-            modid = modNamespace;
-        }
-        String name = blockAnnotation.name();
-        
-        final String registryName = modid + ":" + name;
-        final ResourceLocation resourceLocation = new ResourceLocation(registryName);
-        
-        final VanillaFeatureWrapper<?, ?>[] wrapperArray = new VanillaFeatureWrapper<?, ?>[1];
-        final Block[] oreInstanceArray = new Block[1];
-        final HashSet<String> spawnBiomes = new HashSet<>();
-        
         commonSetupQueue.enqueue(() -> {
-            Block oreInstance = ForgeRegistries.BLOCKS.getValue(resourceLocation);
-            if (!(oreInstance instanceof IPhosphophylliteOre)) {
+            final Block oreInstance;
+            try {
+                final Field field = oreClazz.getDeclaredField(memberName);
+                field.setAccessible(true);
+                oreInstance = (Block) field.get(null);
+            } catch (NoSuchFieldException e) {
+                LOGGER.error("Unable to find block field for block " + memberName);
+                return;
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Unable to access block field for block " + memberName);
+                return;
+            }
+
+            final ResourceLocation resourceLocation = oreInstance.getRegistryName();
+    
+            
+            if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
                 LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
                 return;
             }
-            IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstance;
-            
+    
             RuleTest fillerBlock = oreInfo.isNetherOre() ? OreConfiguration.Predicates.NETHERRACK : OreConfiguration.Predicates.NATURAL_STONE;
-            
             
             ConfiguredFeature<?, ?> feature = Feature.ORE
                     .configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()))
@@ -803,31 +792,23 @@ public class Registry {
             
             boolean doSpawn = oreInfo.doSpawn();
             
-            VanillaFeatureWrapper<?, ?> wrapper = new VanillaFeatureWrapper<>(feature, () -> doSpawn);
-            
-            wrapperArray[0] = wrapper;
-            oreInstanceArray[0] = oreInstance;
-            spawnBiomes.addAll(Arrays.asList(oreInfo.spawnBiomes()));
+            final var wrapper = new VanillaFeatureWrapper<>(feature, () -> doSpawn);
+    
+            final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
             commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(net.minecraft.core.RegistryAccess.builtin().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
-        });
-        biomeLoadingEventHandlers.add(() -> {
             
-            IPhosphophylliteOre oreInfo = (IPhosphophylliteOre) oreInstanceArray[0];
-            
-            if (oreInfo == null) {
-                return;
-            }
-            
-            if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
-                return;
-            }
-            if (spawnBiomes.size() > 0) {
-                if (!spawnBiomes.contains(biomeLoadingEvent.getName().toString())) {
+            biomeLoadingEventHandlers.add(() -> {
+                if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
                     return;
                 }
-            }
-            
-            biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> wrapperArray[0]);
+                if (spawnBiomes.size() > 0) {
+                    if (!spawnBiomes.contains(biomeLoadingEvent.getName().toString())) {
+                        return;
+                    }
+                }
+                
+                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> wrapper);
+            });
         });
     }
     

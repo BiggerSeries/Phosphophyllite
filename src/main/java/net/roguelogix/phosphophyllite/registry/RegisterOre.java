@@ -1,11 +1,12 @@
 package net.roguelogix.phosphophyllite.registry;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-//TODO: switch to something else where these values dont have to be constant
-//      works fine for other registrations, because those dont change with configs
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
 public @interface RegisterOre {
     
 
