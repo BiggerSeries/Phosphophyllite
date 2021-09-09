@@ -1,3 +1,10 @@
+# 1.17.1-0.6.0-alpha.4
+  - Fix oregen registration
+  - Add TOML support to config system (partial, doesn't support arrays)
+  - Ensure multiblock registry is cleared on server stop, 
+    - thrown exceptions could have resulted in it not being cleared properly, crashing on world reload
+  - Phosphophyllite not built independently, no more monolithic repository
+
 # 1.17.1-0.6.0-alpha.3
  - switch to parchment mappings, shouldn't really effect anything
  - add beginValidation and blockValidated callbacks to rectangular multiblock controller
