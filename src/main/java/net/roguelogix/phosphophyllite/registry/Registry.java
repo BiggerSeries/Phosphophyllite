@@ -388,7 +388,8 @@ public class Registry {
             
             Item item;
             try {
-                item = (Item) constructor.newInstance(new Item.Properties().tab(itemGroup));
+                //noinspection ConstantConditions
+                item = (Item) constructor.newInstance(new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */));
             } catch (InstantiationException | InvocationTargetException | IllegalAccessException | ClassCastException e) {
                 LOGGER.error("Exception caught when instantiating instance of " + itemClazz.getSimpleName());
                 e.printStackTrace();
