@@ -76,8 +76,6 @@ public class Phosphophyllite {
         return tick;
     }
     
-    public static final WorkQueue serverQueue = Queues.serverThread;
-    
     private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
     private static final HashMap<ServerLevel, ArrayList<MultiblockTileModule<?, ?>>> tilesToAttach = new HashMap<>();
     private static final ArrayList<MultiblockController<?, ?>> newControllers = new ArrayList<>();
