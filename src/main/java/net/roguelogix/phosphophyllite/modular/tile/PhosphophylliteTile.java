@@ -253,6 +253,12 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         return optional;
     }
     
+    @Nonnull
+    @Override
+    public final <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap) {
+        return getCapability(cap, null);
+    }
+    
     /**
      * coped from ICapabilityProvider
      * <p>
