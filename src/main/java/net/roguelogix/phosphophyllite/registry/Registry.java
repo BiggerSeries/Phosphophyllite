@@ -10,7 +10,6 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -37,16 +36,11 @@ import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.language.ModFileScanData;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.roguelogix.phosphophyllite.Phosphophyllite;
-import net.roguelogix.phosphophyllite.blocks.whiteholes.PowerWhiteHole;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
-import net.roguelogix.phosphophyllite.threading.Event;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.VanillaFeatureWrapper;
 import org.apache.logging.log4j.LogManager;
@@ -774,15 +768,15 @@ public class Registry {
                 LOGGER.error("Unable to access block field for block " + memberName);
                 return;
             }
-
+            
             final ResourceLocation resourceLocation = oreInstance.getRegistryName();
-    
+            
             
             if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
                 LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
                 return;
             }
-    
+            
             RuleTest fillerBlock = oreInfo.isNetherOre() ? OreConfiguration.Predicates.NETHERRACK : OreConfiguration.Predicates.NATURAL_STONE;
             
             ConfiguredFeature<?, ?> feature = Feature.ORE
@@ -794,7 +788,7 @@ public class Registry {
             boolean doSpawn = oreInfo.doSpawn();
             
             final var wrapper = new VanillaFeatureWrapper<>(feature, () -> doSpawn);
-    
+            
             final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
             commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(net.minecraft.core.RegistryAccess.builtin().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
             
@@ -814,7 +808,11 @@ public class Registry {
     }
     
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {
-        ConfigManager.registerConfig(configClazz, modNamespace);
+        try {
+            ConfigManager.registerConfig(configClazz.getDeclaredField(memberName), modNamespace);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
     }
     
     private void onModLoadAnnotation(String modNamespace, Class<?> modLoadClazz, final String memberName) {

@@ -1,26 +1,20 @@
 package net.roguelogix.phosphophyllite;
 
-import net.roguelogix.phosphophyllite.registry.RegisterConfig;
+import net.roguelogix.phosphophyllite.config.ConfigValue;
 
-import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
-
-// ironic
-@RegisterConfig
-@net.roguelogix.phosphophyllite.config.PhosphophylliteConfig(
-        folder = modid,
-        name = "general"
-)
 public class PhosphophylliteConfig {
     
-    @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = true)
-    public static boolean bypassPerformantCheck = false;
+    @ConfigValue(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = true)
+    public final boolean bypassPerformantCheck = false;
     
-    @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig
-    public static class GUI{
-        @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value(range = "[50,)")
-        public static long UpdateIntervalMS = 200;
+    public static class GUI {
+        @ConfigValue(range = "[50,)")
+        public final long UpdateIntervalMS = 200;
     }
     
+    @ConfigValue
+    public final GUI gui = new GUI();
+
 //    public static class Multiblock{
 //        @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value
 //        public static boolean StrictNBTConsistency = true;

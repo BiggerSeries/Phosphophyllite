@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.parsers.Element;
 import net.roguelogix.phosphophyllite.parsers.JSON5;
 import net.roguelogix.phosphophyllite.parsers.TOML;
+import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,22 +28,30 @@ public class ConfigManager {
     
     private static final HashSet<ModConfig> modConfigs = new HashSet<>();
     
-    public static void registerConfig(Class<?> clazz, String modName) {
-        if (clazz.isAnnotationPresent(PhosphophylliteConfig.class)) {
-            PhosphophylliteConfig annotation = clazz.getAnnotation(PhosphophylliteConfig.class);
-            if (!annotation.name().equals("")) {
-                modName = annotation.name();
-            }
+    public static void registerConfig(Field field, String modName) {
+        if(!field.isAnnotationPresent(RegisterConfig.class)){
+            throw new IllegalArgumentException("Field must be annotated with @RegisterConfig");
+        }
+        if(!Modifier.isStatic(field.getModifiers())){
+            throw new IllegalArgumentException("Base config object must be static");
+        }
+//        if(Modifier.isFinal(field.getModifiers())){
+//            throw new IllegalArgumentException("Base config object cannot be final");
+//        }
+        var annotation = field.getAnnotation(RegisterConfig.class);
+        if (!annotation.name().equals("")) {
+            modName = annotation.name();
         }
         
-        ModConfig config = new ModConfig(clazz, modName);
+        ModConfig config = new ModConfig(field, modName);
         modConfigs.add(config);
         config.load();
     }
     
     private static class ModConfig {
+        private final Object configObject;
         private final Class<?> configClazz;
-        final PhosphophylliteConfig annotation;
+        final RegisterConfig annotation;
         private final String modName;
         File baseFile;
         File actualFile = null;
@@ -50,14 +59,19 @@ public class ConfigManager {
         
         private final ConfigSpec spec;
         
-        ModConfig(Class<?> clazz, String name) {
-            configClazz = clazz;
+        ModConfig(Field field, String name) {
+            try {
+                configObject = field.get(null);
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException(e);
+            }
+            configClazz = field.getType();
             modName = name;
-            spec = new ConfigSpec(clazz);
-            loadReflections();
-            
-            annotation = clazz.getAnnotation(PhosphophylliteConfig.class);
+            annotation = field.getAnnotation(RegisterConfig.class);
+            spec = new ConfigSpec(field, configObject);
             baseFile = new File("config/" + annotation.folder() + "/" + name + "-" + annotation.type().toString().toLowerCase());
+            
+            loadReflections();
         }
         
         private Field enableAdvanced;
@@ -67,7 +81,7 @@ public class ConfigManager {
                 return false;
             }
             try {
-                return enableAdvanced.getBoolean(null);
+                return enableAdvanced.getBoolean(configObject);
             } catch (IllegalAccessException ignored) {
                 return false;
             }
@@ -79,15 +93,12 @@ public class ConfigManager {
         
         void loadReflections() {
             for (Field declaredField : configClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(PhosphophylliteConfig.EnableAdvanced.class)) {
+                if (declaredField.isAnnotationPresent(ConfigValue.class) && declaredField.getAnnotation(ConfigValue.class).enableAdvanced()) {
                     enableAdvanced = declaredField;
                     enableAdvanced.setAccessible(true);
                     Class<?> EAClass = enableAdvanced.getType();
                     if (EAClass != boolean.class && EAClass != Boolean.class) {
                         throw new ConfigSpec.DefinitionError("Advanced enable flag must be a boolean");
-                    }
-                    if (!Modifier.isStatic(declaredField.getModifiers())) {
-                        throw new ConfigSpec.DefinitionError("Advanced enable flag must be static");
                     }
                     break;
                 }
@@ -103,15 +114,15 @@ public class ConfigManager {
                 if (!Modifier.isStatic(declaredMethod.getModifiers())) {
                     continue;
                 }
-                if (declaredMethod.isAnnotationPresent(PhosphophylliteConfig.PreLoad.class)) {
+                if (declaredMethod.isAnnotationPresent(RegisterConfig.PreLoad.class)) {
                     declaredMethod.setAccessible(true);
                     preLoads.add(declaredMethod);
                 }
-                if (declaredMethod.isAnnotationPresent(PhosphophylliteConfig.Load.class)) {
+                if (declaredMethod.isAnnotationPresent(RegisterConfig.Load.class)) {
                     declaredMethod.setAccessible(true);
                     loads.add(declaredMethod);
                 }
-                if (declaredMethod.isAnnotationPresent(PhosphophylliteConfig.PostLoad.class)) {
+                if (declaredMethod.isAnnotationPresent(RegisterConfig.PostLoad.class)) {
                     declaredMethod.setAccessible(true);
                     postLoads.add(declaredMethod);
                 }

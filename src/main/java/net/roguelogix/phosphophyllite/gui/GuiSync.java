@@ -16,7 +16,7 @@ import net.minecraftforge.fmllegacy.network.NetworkDirection;
 import net.minecraftforge.fmllegacy.network.NetworkEvent;
 import net.minecraftforge.fmllegacy.network.NetworkRegistry;
 import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
-import net.roguelogix.phosphophyllite.PhosphophylliteConfig;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.robn.ROBN;
 
@@ -163,7 +163,7 @@ public class GuiSync {
                 }
                 try {
                     //noinspection BusyWait
-                    Thread.sleep(PhosphophylliteConfig.GUI.UpdateIntervalMS);
+                    Thread.sleep(Phosphophyllite.CONFIG.gui.UpdateIntervalMS);
                 } catch (InterruptedException e) {
                     break;
                 }

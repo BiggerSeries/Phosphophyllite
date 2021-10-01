@@ -41,6 +41,13 @@ public class Element {
         return newArray;
     }
     
+    public int subElemenets(){
+        if(type != Type.Section){
+            return -1;
+        }
+        return ((Object[]) value).length;
+    }
+    
     @Nonnull
     public String asString() {
         return (String) value;

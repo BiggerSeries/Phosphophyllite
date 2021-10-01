@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.parsers.Element;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.reflect.*;
@@ -75,12 +76,14 @@ public class ConfigSpec {
         boolean defaultValue;
     }
     
-    final SpecClazzNode masterNode;
+    @Nonnull
+    final SpecObjectNode masterNode;
     
-    ConfigSpec(Class<?> clazz) {
-        masterNode = buildNodeForClazz(clazz);
+    ConfigSpec(Field field, Object object) {
+        field.setAccessible(true);
+        this.masterNode = buildNodeForObject(object.getClass(), object);
+        masterNode.field = field;
     }
-    
     
     Element trimAndRegenerateTree(Element tree, boolean enableAdvanced) {
         return regenerateElementTree(trimElementTree(tree), enableAdvanced);
@@ -345,12 +348,18 @@ public class ConfigSpec {
                 {
                     for (Element element : elements) {
                         if (entry.getKey().equals(element.name)) {
-                            subElements.add(regenerateElementTreeForNode(element, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced));
+                            var subElement = regenerateElementTreeForNode(element, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced);
+                            if (subElement.subElemenets() != 0) {
+                                subElements.add(subElement);
+                            }
                             break nextEntry;
                         }
                     }
                     if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                        subElements.add(regenerateElementTreeForNode(null, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced));
+                        var subElement = regenerateElementTreeForNode(null, entry.getValue(), nodeObject, entry.getKey(), enableAdvanced);
+                        if (subElement.subElemenets() != 0) {
+                            subElements.add(subElement);
+                        }
                     }
                 }
             }
@@ -593,7 +602,7 @@ public class ConfigSpec {
             writeElementNode(tree, masterNode, null);
         } catch (IllegalAccessException e) {
             ConfigManager.LOGGER.error("Unexpected error caught reading from config");
-            ConfigManager.LOGGER.error(e.toString());
+            e.printStackTrace();
             throw new DefinitionError(e.getMessage());
         }
     }
@@ -627,7 +636,12 @@ public class ConfigSpec {
                 return;
             }
             
-            Object nodeObject = createClassInstance(((SpecObjectNode) node).clazz);
+            Object nodeObject = ((SpecObjectNode) node).field.get(object);
+            boolean existingObject = true;
+            if (nodeObject == null) {
+                nodeObject = createClassInstance(((SpecObjectNode) node).clazz);
+                existingObject = false;
+            }
             
             Element[] subElements = element.asArray();
             
@@ -640,7 +654,9 @@ public class ConfigSpec {
                 }
             }
             
-            ((SpecObjectNode) node).field.set(object, nodeObject);
+            if (!existingObject) {
+                ((SpecObjectNode) node).field.set(object, nodeObject);
+            }
             return;
         } else if (node instanceof SpecMapNode) {
             if (element.type != Element.Type.Section) {
@@ -914,7 +930,7 @@ public class ConfigSpec {
     
     @Nullable
     private static SpecClazzNode buildNodeForClazz(Class<?> clazz) {
-        if (!clazz.isAnnotationPresent(PhosphophylliteConfig.class)) {
+        if (!clazz.isAnnotationPresent(ConfigValue.class)) {
             return null;
         }
         
@@ -957,10 +973,6 @@ public class ConfigSpec {
     }
     
     private static SpecObjectNode buildNodeForObject(Class<?> clazz, Object object) {
-        if (!clazz.isAnnotationPresent(PhosphophylliteConfig.class)) {
-            throw new DefinitionError("Attempt to build node for invalid object class");
-        }
-        
         SpecObjectNode node = new SpecObjectNode();
         node.clazz = clazz;
         node.subNodes = new HashMap<>();
@@ -984,7 +996,7 @@ public class ConfigSpec {
     
     @Nullable
     private static SpecFieldNode buildNodeForField(Field field, @Nullable Object object) {
-        if (!field.isAnnotationPresent(PhosphophylliteConfig.Value.class)) {
+        if (!field.isAnnotationPresent(ConfigValue.class)) {
             return null;
         }
         field.setAccessible(true);
@@ -1014,7 +1026,7 @@ public class ConfigSpec {
         }
         
         
-        PhosphophylliteConfig.Value fieldAnnotation = field.getAnnotation(PhosphophylliteConfig.Value.class);
+        ConfigValue fieldAnnotation = field.getAnnotation(ConfigValue.class);
         
         StringBuilder comment = new StringBuilder(fieldAnnotation.comment());
         if (!fieldAnnotation.range().equals("(,)")) {
@@ -1024,7 +1036,7 @@ public class ConfigSpec {
             comment.append("Valid range: ").append(fieldAnnotation.range());
         }
         
-        if (fieldAnnotation.commentDefaultValue() && !fieldClass.isArray() && !fieldClass.isAnnotationPresent(PhosphophylliteConfig.class)) {
+        if (fieldAnnotation.commentDefaultValue() && !fieldClass.isArray() && !fieldClass.isAnnotationPresent(ConfigValue.class)) {
             if (comment.length() != 0) {
                 comment.append('\n');
             }
@@ -1071,7 +1083,7 @@ public class ConfigSpec {
                 Class<?> valueClass = (Class<?>) generics[0];
                 listNode.elementClass = valueClass;
                 
-                if (!valueClass.isAnnotationPresent(PhosphophylliteConfig.class)) {
+                if (!valueClass.isAnnotationPresent(ConfigValue.class)) {
                     throw new RuntimeException("list values must be config objects");
                 }
                 List<?> list = (List<?>) fieldObject;
@@ -1096,7 +1108,7 @@ public class ConfigSpec {
             }
             
             Class<?> valueClass = (Class<?>) generics[1];
-            if (!valueClass.isAnnotationPresent(PhosphophylliteConfig.class)) {
+            if (!valueClass.isAnnotationPresent(ConfigValue.class)) {
                 throw new RuntimeException("map values must be config objects");
             }
             
@@ -1232,12 +1244,8 @@ public class ConfigSpec {
                 
                 node = numberNode;
             }
-        } else if (fieldClass.isAnnotationPresent(PhosphophylliteConfig.class)) {
+        } else {
             node = buildNodeForObject(fieldClass, fieldObject);
-        }
-        
-        if (node == null) {
-            throw new DefinitionError("Cannot build config spec for invalid class");
         }
         
         node.field = field;
