@@ -18,7 +18,7 @@ public class ROBN {
         return arrayList;
     }
     
-    public static Object fromROBN(ArrayList<Byte> buf) {
+    public static Object fromROBN(List<Byte> buf) {
         return fromROBN(buf.iterator());
     }
     

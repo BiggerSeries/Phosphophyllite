@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.robn;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public interface ROBNObject {
@@ -10,9 +11,9 @@ public interface ROBNObject {
     
     Map<String, Object> toROBNMap();
     
-    default void fromROBN(ArrayList<Byte> buf){
+    default void fromROBN(List<Byte> buf) {
         Object robnObject = ROBN.fromROBN(buf);
-        if(!(robnObject instanceof Map)){
+        if (!(robnObject instanceof Map)) {
             throw new IllegalArgumentException("Malformed binary");
         }
         // TODO: 7/26/20 check to make sure the keys are strings
