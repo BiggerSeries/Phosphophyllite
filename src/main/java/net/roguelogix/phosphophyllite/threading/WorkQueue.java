@@ -1,19 +1,26 @@
 package net.roguelogix.phosphophyllite.threading;
 
+import net.minecraft.CrashReport;
+import net.minecraft.client.Minecraft;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("unused")
 public class WorkQueue {
-    private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
     
     private final ArrayList<DequeueThread> dequeueThreads = new ArrayList<>();
+    
+    private RuntimeException toRethrow;
     
     public WorkQueue() {
         // workaround for FML issue
@@ -21,14 +28,14 @@ public class WorkQueue {
         dequeueThreads.forEach(DequeueThread::finish);
     }
     
-    private static class DequeueThread implements Runnable {
-        private final WeakReference<Queue<Runnable>> queue;
+    private class DequeueThread implements Runnable {
+        private final WeakReference<BlockingQueue<Runnable>> queue;
         private final AtomicBoolean stop = new AtomicBoolean(false);
         
-        public DequeueThread(Queue<Runnable> queue, String name) {
+        public DequeueThread(BlockingQueue<Runnable> queue, String name) {
             this.queue = new WeakReference<>(queue);
             Thread thread = new Thread(this);
-            if(name != null){
+            if (name != null) {
                 thread.setName(name);
             }
             thread.setDaemon(true); // just, because, shouldn't be necessary, but just because
@@ -37,23 +44,25 @@ public class WorkQueue {
         
         public void run() {
             while (!stop.get()) {
-                Queue<Runnable> queue = this.queue.get();
+                BlockingQueue<Runnable> queue = this.queue.get();
                 if (queue == null) {
                     return;
                 }
-                Runnable nextItem = queue.poll();
-                if (nextItem == null) {
-                    synchronized (queue) {
-                        try {
-                            queue.wait();
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-                    continue;
+                Runnable nextItem;
+                try {
+                    nextItem = queue.take();
+                } catch (InterruptedException e) {
+                    return;
                 }
                 try {
                     nextItem.run();
-                } catch (Throwable ignored) {
+                } catch (RuntimeException e) {
+                    WorkQueue.this.toRethrow = e;
+                    e.printStackTrace();
+                } catch (Throwable e) {
+                    // this should be impossible, but just in case
+                    e.printStackTrace();
+                    Minecraft.crash(new CrashReport("Exception rolled back to Phosphophyllite WorkQueue", e));
                 }
             }
             
@@ -101,24 +110,21 @@ public class WorkQueue {
             this.work = work;
             if (waitEvents.length == 0) {
                 queue.add(this);
-                synchronized (queue) {
-                    queue.notify();
-                }
                 return;
             }
             unTriggeredWaitEvents.set(waitEvents.length);
             for (Event event : waitEvents) {
                 if (event == null) {
-                    synchronized (readyEvent) {
-                        if (unTriggeredWaitEvents.decrementAndGet() == 0) {
+                    if (unTriggeredWaitEvents.decrementAndGet() == 0) {
+                        synchronized (readyEvent) {
                             readyEvent.trigger();
                         }
                     }
                 }
                 assert event != null;
                 event.registerCallback(() -> {
-                    synchronized (readyEvent) {
-                        if (unTriggeredWaitEvents.decrementAndGet() == 0) {
+                    if (unTriggeredWaitEvents.decrementAndGet() == 0) {
+                        synchronized (readyEvent) {
                             readyEvent.trigger();
                         }
                     }
@@ -126,9 +132,6 @@ public class WorkQueue {
             }
             readyEvent.registerCallback(() -> {
                 queue.add(this);
-                synchronized (queue) {
-                    queue.notify();
-                }
             });
         }
         
@@ -142,15 +145,18 @@ public class WorkQueue {
         }
     }
     
-    public Event enqueue(Runnable runnable, Set<Event> events) {
-        return this.enqueue(runnable, (Event[]) events.toArray());
-    }
-    
-    public Event enqueue(Runnable runnable, List<Event> events) {
-        return this.enqueue(runnable, (Event[]) events.toArray());
-    }
+//    public Event enqueue(Runnable runnable, Set<Event> events) {
+//        return this.enqueue(runnable, (Event[]) events.toArray());
+//    }
+//
+//    public Event enqueue(Runnable runnable, List<Event> events) {
+//        return this.enqueue(runnable, (Event[]) events.toArray());
+//    }
     
     public Event enqueue(Runnable runnable, Event... events) {
+        if(toRethrow != null){
+            throw toRethrow;
+        }
         WorkItem item = new WorkItem(queue, runnable, events);
         return item.waitEvent;
     }
