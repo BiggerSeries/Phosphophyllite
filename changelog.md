@@ -1,3 +1,13 @@
+# 1.17.1-0.6.0-alpha.5
+ - remove serverQueue from Phosphophyllite class, use Queues class instead
+   - Queues class also inits queues on class load, allows them to be used w/o forge
+ - add new blockstate update function that also triggers light updates
+   - also fix old one with worlds that go below 0
+ - move config system to object based instead of class based
+ - add independent serialization capabilities, allows use of code without minecraft/forge being loaded
+ - fix registry bug with item creative tab flag
+ - override and finalize other getCapability call in PhosphophylliteTile class
+
 # 1.17.1-0.6.0-alpha.4
   - Fix oregen registration
   - Add TOML support to config system (partial, doesn't support arrays)
