@@ -165,7 +165,7 @@ public class Util {
             LevelChunk chunk = world.getChunk(cPos.getX(), cPos.getZ());
             LevelChunkSection[] chunkSections = chunk.getSections();
             states.forEach((bPos, state) -> {
-                LevelChunkSection section = chunkSections[bPos.getY() >> 4];
+                LevelChunkSection section = chunkSections[(bPos.getY() >> 4) - chunk.getMinSection()];
                 if (section != null) {
                     section.setBlockState(bPos.getX() & 15, bPos.getY() & 15, bPos.getZ() & 15, state);
                     markForUpdatePacket(bPos);
