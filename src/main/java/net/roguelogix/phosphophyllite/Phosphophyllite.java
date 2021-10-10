@@ -78,10 +78,8 @@ public class Phosphophyllite {
     }
     
     private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
-    private static final HashMap<ServerLevel, ArrayList<MultiblockTileModule<?, ?>>> tilesToAttach = new HashMap<>();
     private static final ArrayList<MultiblockController<?, ?>> newControllers = new ArrayList<>();
     private static final ArrayList<MultiblockController<?, ?>> oldControllers = new ArrayList<>();
-    private static final ArrayList<MultiblockTileModule<?, ?>> newTiles = new ArrayList<>();
     
     public static void addController(MultiblockController<?, ?> controller) {
         newControllers.add(controller);
@@ -89,10 +87,6 @@ public class Phosphophyllite {
     
     public static void removeController(MultiblockController<?, ?> controller) {
         oldControllers.add(controller);
-    }
-    
-    public static void attachTile(MultiblockTileModule<?, ?> tile) {
-        newTiles.add(tile);
     }
     
     @SubscribeEvent
@@ -106,21 +100,16 @@ public class Phosphophyllite {
                 }
             }
             // apparently, stragglers can exist
-            //noinspection SuspiciousMethodCalls
-            tilesToAttach.remove(worldUnloadEvent.getWorld());
             newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
             oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
-            newTiles.removeIf(multiblockTile -> multiblockTile.iface.getLevel() == worldUnloadEvent.getWorld());
         }
     }
     
     @SubscribeEvent
     void onServerStop(final FMLServerStoppedEvent serverStoppedEvent){
         controllersToTick.clear();
-        tilesToAttach.clear();
         newControllers.clear();
         oldControllers.clear();
-        newTiles.clear();
     }
     
     @SubscribeEvent
@@ -145,10 +134,6 @@ public class Phosphophyllite {
             controllers.remove(oldController);
         }
         oldControllers.clear();
-        for (var newTile : newTiles) {
-            tilesToAttach.computeIfAbsent((ServerLevel) newTile.iface.getLevel(), k -> new ArrayList<>()).add(newTile);
-        }
-        newTiles.clear();
     }
     
     @SubscribeEvent
@@ -167,17 +152,6 @@ public class Phosphophyllite {
                     controller.update();
                 }
             }
-        }
-        
-        ArrayList<MultiblockTileModule<?, ?>> tilesToAttach = Phosphophyllite.tilesToAttach.get(e.world);
-        if (tilesToAttach != null) {
-            tilesToAttach.sort(Comparator.comparing(module -> module.iface.getBlockPos()));
-            for (var toAttach : tilesToAttach) {
-                if (toAttach != null) {
-                    toAttach.attachToNeighbors();
-                }
-            }
-            tilesToAttach.clear();
         }
         
         Util.worldTickEndEvent(e.world);

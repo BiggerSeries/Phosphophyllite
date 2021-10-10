@@ -52,22 +52,22 @@ public class MultiblockTileModule<
         }
         for (int i = 0; i < neighbors.length; i++) {
             MultiblockTileModule<TileType, ControllerType> neighbor = neighbors[i];
-            if(neighbor != null){
+            if (neighbor != null) {
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = this;
                 neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = iface;
             }
         }
     }
     
-    void nullNeighbors(){
+    void nullNeighbors() {
         for (int i = 0; i < neighbors.length; i++) {
             MultiblockTileModule<?, ?> neighbor = neighbors[i];
-            if(neighbor != null){
+            if (neighbor != null) {
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
                 neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
             }
         }
-    
+        
         for (Direction value : Direction.values()) {
             neighbors[value.get3DDataValue()] = null;
         }
@@ -89,16 +89,11 @@ public class MultiblockTileModule<
     
     long lastSavedTick = 0;
     
+    @Deprecated(forRemoval = true)
     public void attemptAttach() {
-        controller = null;
-        attemptAttach = true;
-        assert iface.getLevel() != null;
-        if (!iface.getLevel().isClientSide) {
-            Phosphophyllite.attachTile(this);
-        }
+        attachToNeighbors();
     }
     
-    private boolean attemptAttach = true;
     private boolean allowAttach = true;
     boolean isSaveDelegate = false;
     
@@ -118,39 +113,40 @@ public class MultiblockTileModule<
     
     public void attachToNeighbors() {
         assert iface.getLevel() != null;
-        if (allowAttach && attemptAttach && !iface.getLevel().isClientSide) {
-            attemptAttach = false;
-            if (iface.getLevel().getBlockEntity(iface.getBlockPos()) != iface) {
-                return;
-            }
-            
-            if (ASSEMBLY_STATE) {
-                iface.getLevel().setBlockAndUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
-            }
-            if (controller != null) {
-                controller.detach(this);
-                controller = null;
-            }
-            // at this point, i need to get or create a controller
-            BlockPos.MutableBlockPos possibleTilePos = new BlockPos.MutableBlockPos();
-            for (Direction value : Direction.values()) {
-                possibleTilePos.set(iface.getBlockPos());
-                possibleTilePos.move(value);
-                ChunkAccess chunk = iface.getLevel().getChunk(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4, ChunkStatus.FULL, false);
-                if (chunk != null) {
-                    BlockEntity possibleTile = chunk.getBlockEntity(possibleTilePos);
-                    if (possibleTile instanceof IMultiblockTile) {
-                        if (((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller != null) {
-                            ((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller.attemptAttach(this);
-                        } else {
-                            ((IMultiblockTile<?, ?>) possibleTile).multiblockModule().attemptAttach = true;
-                        }
+        controller = null;
+        if (iface.getLevel().isClientSide) {
+            return;
+        }
+        if (!allowAttach) {
+            return;
+        }
+        if (iface.getLevel().getBlockEntity(iface.getBlockPos()) != iface) {
+            return;
+        }
+        if (ASSEMBLY_STATE) {
+            iface.getLevel().setBlockAndUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
+        }
+        if (controller != null) {
+            controller.detach(this);
+            controller = null;
+        }
+        // at this point, i need to get or create a controller
+        BlockPos.MutableBlockPos possibleTilePos = new BlockPos.MutableBlockPos();
+        for (Direction value : Direction.values()) {
+            possibleTilePos.set(iface.getBlockPos());
+            possibleTilePos.move(value);
+            ChunkAccess chunk = iface.getLevel().getChunk(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4, ChunkStatus.FULL, false);
+            if (chunk != null) {
+                BlockEntity possibleTile = chunk.getBlockEntity(possibleTilePos);
+                if (possibleTile instanceof IMultiblockTile) {
+                    if (((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller != null) {
+                        ((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller.attemptAttach(this);
                     }
                 }
             }
-            if (controller == null) {
-                iface.createController().attemptAttach(this);
-            }
+        }
+        if (controller == null) {
+            iface.createController().attemptAttach(this);
         }
     }
     
@@ -184,9 +180,10 @@ public class MultiblockTileModule<
     @Override
     public void onAdded() {
         assert iface.getLevel() != null;
-        attemptAttach();
         if (iface.getLevel().isClientSide) {
             controllerData = null;
+        } else {
+            attachToNeighbors();
         }
     }
     
