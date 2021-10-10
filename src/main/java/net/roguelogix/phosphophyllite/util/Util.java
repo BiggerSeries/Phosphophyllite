@@ -345,7 +345,7 @@ public class Util {
             long entryKey = entry.getLongKey();
             var entryArray = entry.getValue();
             var sectionPos = SectionPos.of(entryKey);
-            var levelSection = level.getChunk(sectionPos.x(), sectionPos.z()).getSections()[sectionPos.y()];
+            var levelSection = level.getChunk(sectionPos.x(), sectionPos.z()).getSections()[sectionPos.y() - level.getMinSection()];
             if (levelSection != null) {
                 shortSet.clear();
                 for (int i = 0; i < 4096; i++) {
