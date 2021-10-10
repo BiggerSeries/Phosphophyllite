@@ -22,8 +22,14 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 
 version = "${majorVersion}.${minorVersion}.${patchVersion}"
-if (!"${postfixVersion}".isEmpty()) {
-    version += "-${postfixVersion}"
+if (!"${postfix}".isEmpty()) {
+    version += "-${postfix}"
+    if (!"$postfixMajorVersion".isEmpty()) {
+        version += ".${postfixMajorVersion}"
+        if (!"$postfixMinorVersion".isEmpty()) {
+            version += ".${postfixMinorVersion}"
+        }
+    }
 }
 
 group = 'net.roguelogix.phosphophyllite'
@@ -32,7 +38,13 @@ archivesBaseName = "phosphophyllite-${mc_version}"
 
 setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".${patchVersion}-alpha)")
 if (version.contains("alpha") || version.contains("beta")) {
-    setProperty("compatibility", "[" + version + "]")
+    def nextIncompatibleVersion = "${majorVersion}.${minorVersion}.${patchVersion}-${postfix}"
+    if (!"$postfixMajorVersion".isEmpty()) {
+        nextIncompatibleVersion += "." + ("${postfixMajorVersion}".toInteger() + 1).toString();
+    } else {
+        nextIncompatibleVersion += ".1"
+    }
+    setProperty("compatibility", "[" + version + ", " + nextIncompatibleVersion + ")")
 }
 
 minecraft {
