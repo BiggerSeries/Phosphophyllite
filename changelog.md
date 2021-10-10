@@ -1,3 +1,6 @@
+# 1.17.1-0.6.0-alpha.5.1
+ - fix index out of range issue with sending block updates to client
+
 # 1.17.1-0.6.0-alpha.5
  - remove serverQueue from Phosphophyllite class, use Queues class instead
    - Queues class also inits queues on class load, allows them to be used w/o forge
