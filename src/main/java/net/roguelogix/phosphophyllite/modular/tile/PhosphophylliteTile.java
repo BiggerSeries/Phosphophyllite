@@ -61,6 +61,11 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     @Override
     public final void clearRemoved() {
         super.clearRemoved();
+    }
+    
+    @Override
+    public final void onLoad() {
+        super.onLoad();
         moduleList.forEach(TileModule::onAdded);
         onAdded();
     }
@@ -71,15 +76,15 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     @Override
     public final void setRemoved() {
         super.setRemoved();
-        moduleList.forEach(module -> module.onRemoved(false));
         onRemoved(false);
+        moduleList.forEach(module -> module.onRemoved(false));
     }
     
     @Override
     public final void onChunkUnloaded() {
         super.onChunkUnloaded();
-        moduleList.forEach(module -> module.onRemoved(true));
         onRemoved(true);
+        moduleList.forEach(module -> module.onRemoved(true));
     }
     
     public void onRemoved(@SuppressWarnings("unused") boolean chunkUnload) {
