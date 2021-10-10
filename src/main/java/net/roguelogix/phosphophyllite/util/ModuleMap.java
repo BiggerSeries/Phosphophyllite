@@ -203,4 +203,11 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     public ModuleType getOne() {
         return modules.get(0);
     }
+    
+    public void clear() {
+        modules.clear();
+        poses.clear();
+        tiles.clear();
+        indexMap.clear();
+    }
 }

@@ -174,7 +174,7 @@ public class MultiblockController<
         }
         
         // ok, its a valid tile to attach, so ima attach it
-        if(!blocks.addModule(toAttachModule)){
+        if (!blocks.addModule(toAttachModule)) {
             // prevent double adding, just in case
             return;
         }
@@ -361,8 +361,8 @@ public class MultiblockController<
         }
         
         if (checkForDetachments) {
-            AStarList<MultiblockTileModule<?,?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
-    
+            AStarList<MultiblockTileModule<?, ?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
+            
             BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
             for (BlockPos removedBlock : removedBlocks) {
                 for (Direction value : Direction.values()) {
@@ -408,7 +408,7 @@ public class MultiblockController<
         if (!controllersToMerge.isEmpty()) {
             HashSet<ControllerType> newToMerge = new HashSet<>();
             for (ControllerType otherController : controllersToMerge) {
-                ((MultiblockController<?, ?>)otherController).disassembledBlockStates();
+                ((MultiblockController<?, ?>) otherController).disassembledBlockStates();
                 Phosphophyllite.removeController(otherController);
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
@@ -419,6 +419,7 @@ public class MultiblockController<
                     module.preExistingBlock = false;
                     attemptAttach(module);
                 });
+                otherController.blocks.clear();
             }
             updateExtremes = true;
             updateAssemblyAtTick = Long.MIN_VALUE;
@@ -497,7 +498,7 @@ public class MultiblockController<
     
     private void assembledBlockStates() {
         newStates.clear();
-    
+        
         final int size = blocks.size();
         final TileType[] tileElements = blocks.tileElements();
         final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();
@@ -524,7 +525,7 @@ public class MultiblockController<
         newStates.clear();
         final int size = blocks.size();
         final TileType[] tileElements = blocks.tileElements();
-        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();;
+        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();
         final var posElements = blocks.posElements();
         if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
             throw new IllegalStateException("Arrays too short");
@@ -539,7 +540,8 @@ public class MultiblockController<
                 newStates.put(pos, newState);
                 entity.setBlockState(newState);
             }
-        }        Util.setBlockStates(newStates, world);
+        }
+        Util.setBlockStates(newStates, world);
     }
     
     /**
@@ -573,7 +575,7 @@ public class MultiblockController<
      */
     @Nonnull
     final CompoundTag getNBT() {
-        if(!pauseOnUnload){
+        if (!pauseOnUnload) {
             return new CompoundTag();
         }
         if (shouldUpdateNBT) {
