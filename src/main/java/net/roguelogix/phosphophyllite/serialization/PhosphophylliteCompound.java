@@ -26,6 +26,9 @@ public class PhosphophylliteCompound implements ROBNObject {
     }
     
     public PhosphophylliteCompound(List<Byte> ROBNbuffer) {
+        if (ROBNbuffer.isEmpty()){
+            return;
+        }
         fromROBN(ROBNbuffer);
     }
     
