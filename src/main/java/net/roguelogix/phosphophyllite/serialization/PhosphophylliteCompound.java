@@ -7,6 +7,8 @@ import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,6 +75,10 @@ public class PhosphophylliteCompound implements ROBNObject {
         data.put(key, value);
     }
     
+    public void put(String key, Map<?, ?> value) {
+        data.put(key, value);
+    }
+    
     public Object get(String key) {
         return data.get(key);
     }
@@ -98,6 +104,17 @@ public class PhosphophylliteCompound implements ROBNObject {
             return "";
         }
         return (String) val;
+    }
+    
+    public boolean getBoolean(String key){
+        var val = data.get(key);
+        if (val instanceof Boolean bool) {
+            return bool;
+        }
+        if(val instanceof Number number){
+            return number.longValue() != 0;
+        }
+        return false;
     }
     
     public byte getByte(String key) {
@@ -148,9 +165,20 @@ public class PhosphophylliteCompound implements ROBNObject {
         return ((Number) val).doubleValue();
     }
     
-    public List<Object> getList(String key) {
-        //noinspection unchecked
-        return (List<Object>) data.get(key);
+    public List<?> getList(String key) {
+        Object obj = data.get(key);
+        if(obj instanceof List<?> list){
+            return list;
+        }
+        return new ArrayList<>();
+    }
+    
+    public Map<?, ?> getMap(String key) {
+        Object obj = data.get(key);
+        if(obj instanceof Map<?, ?> map){
+            return map;
+        }
+        return new HashMap<>();
     }
     
     @Override
