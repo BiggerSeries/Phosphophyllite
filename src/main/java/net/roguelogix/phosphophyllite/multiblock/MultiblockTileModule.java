@@ -89,11 +89,6 @@ public class MultiblockTileModule<
     
     long lastSavedTick = 0;
     
-    @Deprecated(forRemoval = true)
-    public void attemptAttach() {
-        attachToNeighbors();
-    }
-    
     private boolean allowAttach = true;
     boolean isSaveDelegate = false;
     

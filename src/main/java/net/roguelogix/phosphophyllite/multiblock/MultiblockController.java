@@ -12,6 +12,7 @@ import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.util.AStarList;
 import net.roguelogix.phosphophyllite.util.ModuleMap;
 import net.roguelogix.phosphophyllite.util.Util;
@@ -290,7 +291,7 @@ public class MultiblockController<
         } else {
             onPartBroken(toDetachTile);
             // dont need to try to attach if the chunk just unloaded
-            toDetachModule.attemptAttach();
+            Queues.serverThread.enqueue(toDetachModule::attachToNeighbors);
         }
         
         if (toDetachModule.isSaveDelegate) {
