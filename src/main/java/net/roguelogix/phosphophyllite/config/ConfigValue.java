@@ -24,5 +24,7 @@ public @interface ConfigValue {
     boolean hidden() default false;
     
     boolean enableAdvanced() default false;
+    
+    boolean reloadable() default false;
 }
 
