@@ -1,3 +1,8 @@
+# 1.17.1-0.6.0-alpha.6
+ - fix incorrectly thrown malformed binary when attempting to deserialize an empty array
+ - remove list of new tiles instead using onLoad
+   - forge changed this to be on first tick, so it gives me the same functionality
+
 # 1.17.1-0.6.0-alpha.5.1
  - fix index out of range issue with sending block updates to client
 
