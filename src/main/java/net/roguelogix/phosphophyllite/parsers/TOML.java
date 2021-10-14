@@ -1,9 +1,10 @@
 package net.roguelogix.phosphophyllite.parsers;
 
 import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.io.ParsingException;
 import com.electronwill.nightconfig.toml.TomlParser;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import org.apache.commons.lang3.NotImplementedException;
+import net.roguelogix.phosphophyllite.config.ConfigManager;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -15,8 +16,15 @@ import java.util.Map;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class TOML {
+    
+    @Nullable
     public static Element parseString(String string) {
-        return parseObject(new TomlParser().parse(string), null);
+        try {
+            return parseObject(new TomlParser().parse(string), null);
+        } catch (ParsingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     
     private static Element parseObject(Object obj, @Nullable String name) {

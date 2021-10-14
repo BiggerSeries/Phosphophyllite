@@ -8,6 +8,7 @@ import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.File;
 import java.io.IOException;
@@ -169,6 +170,10 @@ public class ConfigManager {
                 return;
             }
             Element tree = readFile();
+            if(tree == null){
+                LOGGER.error("No config data for " + modName + " loaded, leaving defaults");
+                return;
+            }
             spec.writeElementTree(tree);
             tree = spec.trimAndRegenerateTree(tree, enableAdvanced());
             writeFile(tree);
@@ -218,23 +223,29 @@ public class ConfigManager {
                 actualFile.getParentFile().mkdirs();
                 Files.write(Paths.get(String.valueOf(actualFile)), str.getBytes());
             } catch (IOException e) {
+                LOGGER.error("Failed to write config file for " + modName);
                 e.printStackTrace();
             }
         }
         
+        @Nullable
         Element readFile() {
             String str;
             try {
                 str = new String(Files.readAllBytes(Paths.get(String.valueOf(actualFile))));
             } catch (IOException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Failed to read config file");
+                LOGGER.error("Failed to read config file for " + modName);
+                return null;
             }
-            
-            return switch (actualFormat) {
+    
+            Element element = switch (actualFormat) {
                 case JSON5 -> JSON5.parseString(str);
                 case TOML -> TOML.parseString(str);
             };
+            if(element == null){
+                LOGGER.error("Failed to parse config for " + modName);
+            }
+            return element;
         }
     }
 }
