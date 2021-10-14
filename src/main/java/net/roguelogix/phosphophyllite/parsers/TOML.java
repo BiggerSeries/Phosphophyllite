@@ -8,6 +8,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -92,6 +93,18 @@ public class TOML {
             }
             case Section: {
                 Element[] elements = element.asArray();
+                Arrays.sort(elements, (a, b) -> {
+                    if (a.type == b.type) {
+                        return 0;
+                    }
+                    if (a.type == Element.Type.Section) {
+                        return 1;
+                    }
+                    if (b.type == Element.Type.Section) {
+                        return -1;
+                    }
+                    return 0;
+                });
                 String sectionname = null;
                 if (element.name != null) {
                     sectionname = (currentSectionName == null ? "" : currentSectionName + ".") + element.name;
