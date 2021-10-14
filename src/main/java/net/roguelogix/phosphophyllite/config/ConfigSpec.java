@@ -138,6 +138,9 @@ public class ConfigSpec {
                 }
                 trimmedElements.add(newElement);
             }
+            if (trimmedElements.size() == 0) {
+                return null;
+            }
             return new Element(Element.Type.Section, node.comment, element.name, trimmedElements.toArray());
         } else if (node instanceof SpecMapNode) {
             if (element.type != Element.Type.Section) {
@@ -153,7 +156,9 @@ public class ConfigSpec {
                 }
                 trimmedElements.add(newElement);
             }
-            
+            if (trimmedElements.size() == 0) {
+                return null;
+            }
             return new Element(Element.Type.Section, node.comment, element.name, trimmedElements.toArray());
         } else if (node instanceof SpecListNode) {
             if (element.type != Element.Type.Array) {
@@ -169,7 +174,9 @@ public class ConfigSpec {
                 }
                 trimmedElements.add(newElement);
             }
-            
+            if (trimmedElements.size() == 0) {
+                return null;
+            }
             return new Element(Element.Type.Array, node.comment, element.name, trimmedElements.toArray());
         } else if (node instanceof SpecStringNode) {
             if (element.type != Element.Type.String && element.type != Element.Type.Number && element.type != Element.Type.Boolean) {
