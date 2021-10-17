@@ -156,7 +156,8 @@ public class MultiblockController<
         if (!tileTypeValidator.validate(toAttachGeneric.iface)) {
             return;
         }
-        
+    
+        //noinspection unchecked
         MultiblockTileModule<TileType, ControllerType> toAttachModule = (MultiblockTileModule<TileType, ControllerType>) toAttachGeneric;
         TileType toAttachTile = toAttachModule.iface;
         
@@ -175,8 +176,11 @@ public class MultiblockController<
         }
         
         // ok, its a valid tile to attach, so ima attach it
+        
+        // prevent double adding, just in case
         if (!blocks.addModule(toAttachModule)) {
-            // prevent double adding, just in case
+            // weird edge case that happened, clearing merged controller's lists of blocks fixed this, but just in case
+            toAttachModule.controller = self();
             return;
         }
         
@@ -417,7 +421,7 @@ public class MultiblockController<
                 this.onMerge(otherController);
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
-                    module.preExistingBlock = false;
+                    module.preExistingBlock = true;
                     attemptAttach(module);
                 });
                 otherController.blocks.clear();
