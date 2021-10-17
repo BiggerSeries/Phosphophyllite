@@ -30,10 +30,10 @@ public class ConfigManager {
     private static final HashSet<ModConfig> modConfigs = new HashSet<>();
     
     public static void registerConfig(Field field, String modName) {
-        if(!field.isAnnotationPresent(RegisterConfig.class)){
+        if (!field.isAnnotationPresent(RegisterConfig.class)) {
             throw new IllegalArgumentException("Field must be annotated with @RegisterConfig");
         }
-        if(!Modifier.isStatic(field.getModifiers())){
+        if (!Modifier.isStatic(field.getModifiers())) {
             throw new IllegalArgumentException("Base config object must be static");
         }
 //        if(Modifier.isFinal(field.getModifiers())){
@@ -170,7 +170,7 @@ public class ConfigManager {
                 return;
             }
             Element tree = readFile();
-            if(tree == null){
+            if (tree == null) {
                 LOGGER.error("No config data for " + modName + " loaded, leaving defaults");
                 return;
             }
@@ -210,10 +210,21 @@ public class ConfigManager {
         
         void generateFile() {
             spec.writeDefaults();
-            writeFile(Objects.requireNonNull(spec.trimElementTree(spec.generateElementTree(false))));
+            writeFile(spec.trimElementTree(spec.generateElementTree(false)));
         }
         
-        void writeFile(Element tree) {
+        void writeFile(@Nullable Element tree) {
+            if (tree == null) {
+                var path = Paths.get(String.valueOf(actualFile));
+                if (Files.exists(path)) {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException ignored) {
+                        // i really dont carez
+                    }
+                }
+                return;
+            }
             String str = switch (actualFormat) {
                 case JSON5 -> JSON5.parseElement(tree);
                 case TOML -> TOML.parseElement(tree);
@@ -237,12 +248,12 @@ public class ConfigManager {
                 LOGGER.error("Failed to read config file for " + modName);
                 return null;
             }
-    
+            
             Element element = switch (actualFormat) {
                 case JSON5 -> JSON5.parseString(str);
                 case TOML -> TOML.parseString(str);
             };
-            if(element == null){
+            if (element == null) {
                 LOGGER.error("Failed to parse config for " + modName);
             }
             return element;
