@@ -1,3 +1,8 @@
+# 1.17.1-0.6.0-alpah.6.1
+ - gracefully handle config parse errors
+ - handle empty config file edge case
+ - always set controller's own blocks' controller back to self
+
 # 1.17.1-0.6.0-alpha.6
  - fix incorrectly thrown malformed binary when attempting to deserialize an empty array
  - remove list of new tiles instead using onLoad
