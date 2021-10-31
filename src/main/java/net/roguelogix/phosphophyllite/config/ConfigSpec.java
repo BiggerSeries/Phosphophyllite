@@ -1043,7 +1043,14 @@ public class ConfigSpec {
             comment.append("Valid range: ").append(fieldAnnotation.range());
         }
         
-        if (fieldAnnotation.commentDefaultValue() && !fieldClass.isArray() && !fieldClass.isAnnotationPresent(ConfigValue.class)) {
+        if (fieldAnnotation.commentDefaultValue() &&
+                (fieldClass.isPrimitive()
+                        || Number.class.isAssignableFrom(fieldClass)
+                        || Boolean.class == fieldClass
+                        || String.class == fieldClass
+                        || fieldClass.isEnum()
+                )
+        ) {
             if (comment.length() != 0) {
                 comment.append('\n');
             }
