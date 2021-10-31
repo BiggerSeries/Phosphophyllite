@@ -871,7 +871,7 @@ public class ConfigSpec {
         } else if (node instanceof SpecMapNode) {
             SpecMapNode mapNode = (SpecMapNode) node;
             
-            HashMap<String, Object> newMap = new HashMap<>();
+            HashMap<String, Object> newMap = new LinkedHashMap<>();
             
             for (Map.Entry<String, SpecFieldNode> entry : mapNode.defaultSubNodes.entrySet()) {
                 Object obj = createClassInstance(mapNode.elementClass);
@@ -943,8 +943,8 @@ public class ConfigSpec {
         
         SpecClazzNode node = new SpecClazzNode();
         node.clazz = clazz;
-        node.clazzNodes = new HashMap<>();
-        node.fieldNodes = new HashMap<>();
+        node.clazzNodes = new LinkedHashMap<>();
+        node.fieldNodes = new LinkedHashMap<>();
         
         for (Class<?> subclass : clazz.getDeclaredClasses()) {
             SpecClazzNode subNode = buildNodeForClazz(subclass);
@@ -982,7 +982,7 @@ public class ConfigSpec {
     private static SpecObjectNode buildNodeForObject(Class<?> clazz, Object object) {
         SpecObjectNode node = new SpecObjectNode();
         node.clazz = clazz;
-        node.subNodes = new HashMap<>();
+        node.subNodes = new LinkedHashMap<>();
         
         for (Field field : clazz.getDeclaredFields()) {
             if (Modifier.isStatic(field.getModifiers())) {
@@ -1120,7 +1120,7 @@ public class ConfigSpec {
             }
             
             mapNode.elementClass = valueClass;
-            mapNode.defaultSubNodes = new HashMap<>();
+            mapNode.defaultSubNodes = new LinkedHashMap<>();
             
             Object defaultObject = createClassInstance(mapNode.elementClass);
             
