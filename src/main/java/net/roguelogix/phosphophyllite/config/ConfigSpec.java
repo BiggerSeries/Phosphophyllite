@@ -81,8 +81,12 @@ public class ConfigSpec {
     
     ConfigSpec(Field field, Object object) {
         field.setAccessible(true);
-        this.masterNode = buildNodeForObject(object.getClass(), object);
+        var masterNode = buildNodeForObject(object.getClass(), object);
+        if (masterNode == null) {
+            throw new IllegalArgumentException("Unable to build root node");
+        }
         masterNode.field = field;
+        this.masterNode = masterNode;
     }
     
     Element trimAndRegenerateTree(Element tree, boolean enableAdvanced) {
@@ -937,10 +941,6 @@ public class ConfigSpec {
     
     @Nullable
     private static SpecClazzNode buildNodeForClazz(Class<?> clazz) {
-        if (!clazz.isAnnotationPresent(ConfigValue.class)) {
-            return null;
-        }
-        
         SpecClazzNode node = new SpecClazzNode();
         node.clazz = clazz;
         node.clazzNodes = new LinkedHashMap<>();
@@ -976,9 +976,14 @@ public class ConfigSpec {
             node.fieldNodes.put(name, fieldNode);
         }
         
+        if (node.clazzNodes.isEmpty() && node.fieldNodes.isEmpty()) {
+            return null;
+        }
+        
         return node;
     }
     
+    @Nullable
     private static SpecObjectNode buildNodeForObject(Class<?> clazz, Object object) {
         SpecObjectNode node = new SpecObjectNode();
         node.clazz = clazz;
@@ -998,6 +1003,11 @@ public class ConfigSpec {
             }
             node.subNodes.put(name, fieldNode);
         }
+        
+        if (node.subNodes.isEmpty()) {
+            return null;
+        }
+        
         return node;
     }
     
@@ -1077,7 +1087,7 @@ public class ConfigSpec {
             }
         }
         
-        SpecFieldNode node = null;
+        SpecFieldNode node;
         
         if (fieldClass.isArray() || List.class == fieldClass || ArrayList.class == fieldClass) {
             SpecListNode listNode = new SpecListNode();
@@ -1087,28 +1097,34 @@ public class ConfigSpec {
                 for (int i = 0; i < Array.getLength(fieldObject); i++) {
                     Object element = Array.get(fieldObject, 0);
                     if (element != null) {
-                        listNode.defaultSubNodes.add(buildNodeForObject(listNode.elementClass, element));
+                        var subNode = buildNodeForObject(listNode.elementClass, element);
+                        if (subNode != null) {
+                            listNode.defaultSubNodes.add(subNode);
+                        }
                     }
                 }
             } else {
                 
                 ParameterizedType type = (ParameterizedType) field.getGenericType();
                 Type[] generics = type.getActualTypeArguments();
-                Class<?> valueClass = (Class<?>) generics[0];
-                listNode.elementClass = valueClass;
+                listNode.elementClass = (Class<?>) generics[0];
                 
-                if (!valueClass.isAnnotationPresent(ConfigValue.class)) {
-                    throw new RuntimeException("list values must be config objects");
-                }
                 List<?> list = (List<?>) fieldObject;
                 list.forEach(element -> {
-                    listNode.defaultSubNodes.add(buildNodeForObject(listNode.elementClass, element));
+                    var subNode = buildNodeForObject(listNode.elementClass, element);
+                    if (subNode != null) {
+                        listNode.defaultSubNodes.add(subNode);
+                    }
                 });
             }
             
             Object defaultObject = createClassInstance(listNode.elementClass);
             
-            listNode.subNodeType = buildNodeForObject(listNode.elementClass, defaultObject);
+            var defaultNode = buildNodeForObject(listNode.elementClass, defaultObject);
+            if (defaultNode == null) {
+                return null;
+            }
+            listNode.subNodeType = defaultNode;
             
             node = listNode;
         } else if (Map.class == fieldClass || HashMap.class == fieldClass) {
@@ -1121,23 +1137,25 @@ public class ConfigSpec {
                 throw new RuntimeException("map keys must be strings");
             }
             
-            Class<?> valueClass = (Class<?>) generics[1];
-            if (!valueClass.isAnnotationPresent(ConfigValue.class)) {
-                throw new RuntimeException("map values must be config objects");
-            }
-            
-            mapNode.elementClass = valueClass;
+            mapNode.elementClass = (Class<?>) generics[1];
             mapNode.defaultSubNodes = new LinkedHashMap<>();
             
             Object defaultObject = createClassInstance(mapNode.elementClass);
             
-            mapNode.nodeType = buildNodeForObject(mapNode.elementClass, defaultObject);
+            var defaultNode = buildNodeForObject(mapNode.elementClass, defaultObject);
+            if (defaultNode == null) {
+                return null;
+            }
+            mapNode.nodeType = defaultNode;
             
             // its checked, see me check that generic type like 10 lines ago
             @SuppressWarnings("unchecked")
             Map<String, ?> map = (Map<String, ?>) fieldObject;
             map.forEach((string, element) -> {
-                mapNode.defaultSubNodes.put(string, buildNodeForObject(mapNode.elementClass, element));
+                var newNode = buildNodeForObject(mapNode.elementClass, element);
+                if (newNode != null) {
+                    mapNode.defaultSubNodes.put(string, newNode);
+                }
             });
             
             node = mapNode;
@@ -1260,6 +1278,9 @@ public class ConfigSpec {
             }
         } else {
             node = buildNodeForObject(fieldClass, fieldObject);
+            if (node == null) {
+                return null;
+            }
         }
         
         node.field = field;
