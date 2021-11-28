@@ -1,17 +1,22 @@
 package net.roguelogix.phosphophyllite.modular.tile;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.world.WorldEvent;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
@@ -63,11 +68,30 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         super.clearRemoved();
     }
     
+    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> worldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
+    private int index = 0;
+    
+    static {
+        MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
+    }
+    
+    private static void worldUnloadEvent(WorldEvent.Unload unload){
+        var removed = worldUnloadEventTiles.remove((Level)unload.getWorld());
+        if(removed != null){
+            for (int i = 0; i < removed.size(); i++) {
+                removed.get(i).remove(true);
+            }
+        }
+    }
+    
     @Override
     public final void onLoad() {
         super.onLoad();
         moduleList.forEach(TileModule::onAdded);
         onAdded();
+        var worldUnloadTiles = worldUnloadEventTiles.computeIfAbsent(level, __ -> new ObjectArrayList<>());
+        index = worldUnloadTiles.size();
+        worldUnloadTiles.add(this);
     }
     
     public void onAdded() {
@@ -76,15 +100,29 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     @Override
     public final void setRemoved() {
         super.setRemoved();
-        onRemoved(false);
-        moduleList.forEach(module -> module.onRemoved(false));
+        remove(false);
     }
     
     @Override
     public final void onChunkUnloaded() {
         super.onChunkUnloaded();
-        onRemoved(true);
-        moduleList.forEach(module -> module.onRemoved(true));
+        remove(true);
+    }
+    
+    private void remove(boolean chunkUnload) {
+        onRemoved(chunkUnload);
+        moduleList.forEach(module -> module.onRemoved(chunkUnload));
+        var worldUnloadTiles = worldUnloadEventTiles.get(level);
+        if (worldUnloadTiles != null) {
+            var arrayTile = worldUnloadTiles.get(index);
+            if (arrayTile == this) {
+                var removed = worldUnloadTiles.pop();
+                if(removed != this){
+                    removed.index = index;
+                    worldUnloadTiles.set(index, removed);
+                }
+            }
+        }
     }
     
     public void onRemoved(@SuppressWarnings("unused") boolean chunkUnload) {
@@ -152,7 +190,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     
     @Override
     public final void handleUpdateTag(CompoundTag compound) {
-        super.handleUpdateTag(compound.getCompound("super"));
+        super.handleUpdateTag(compound);
         if (compound.contains("local")) {
             CompoundTag local = compound.getCompound("local");
             handleDataNBT(local);
@@ -169,10 +207,8 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     
     @Override
     public final CompoundTag getUpdateTag() {
-        CompoundTag superNBT = super.getUpdateTag();
+        CompoundTag nbt = super.getUpdateTag();
         CompoundTag subNBTs = subNBTs(TileModule::getDataNBT);
-        CompoundTag nbt = new CompoundTag();
-        nbt.put("super", superNBT);
         if (subNBTs != null) {
             nbt.put("sub", subNBTs);
         }
