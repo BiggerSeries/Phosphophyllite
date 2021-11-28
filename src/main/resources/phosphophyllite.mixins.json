@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8.4",
+  "package": "net.roguelogix.phosphophyllite.mixin",
+  "compatibilityLevel": "JAVA_16",
+  "refmap": "phosphophyllite.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "NoVizFallbackMixin",
+    "LevelRendererMixin",
+    "MinecraftShutdownMixin",
+    "ResourceReloadListener"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

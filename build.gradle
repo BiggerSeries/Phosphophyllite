@@ -4,10 +4,12 @@ buildscript {
         maven { url = 'https://maven.minecraftforge.net' }
         maven { url = 'https://maven.parchmentmc.org' }
         mavenCentral()
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
         classpath 'org.parchmentmc:librarian:1.+'
+        classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
@@ -15,7 +17,7 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
+apply plugin: 'org.spongepowered.mixin'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(16)
 
@@ -61,6 +63,7 @@ minecraft {
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            arg "-mixin.config=phosphophyllite.mixins.json"
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
@@ -108,6 +111,11 @@ minecraft {
     }
 }
 
+mixin {
+    add sourceSets.main, "phosphophyllite.refmap.json"
+    config 'phosphophyllite.mixins.json'
+}
+
 //repositories {
 //    maven {
 //        name = "CurseForge"
@@ -124,6 +132,8 @@ minecraft {
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
 
+    annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
+
 //    compileOnly fg.deobf('curse.maven:tita-287342:3346366')
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
 //
@@ -137,7 +147,8 @@ jar {
                 "Specification-Version"   : "1",
                 "Implementation-Title"    : project.name,
                 "Implementation-Version"  : "${version}",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                "MixinConfigs": "phosphophyllite.mixins.json",
         ])
     }
 }
