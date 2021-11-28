@@ -156,7 +156,7 @@ public class MultiblockController<
         if (!tileTypeValidator.validate(toAttachGeneric.iface)) {
             return;
         }
-    
+        
         //noinspection unchecked
         MultiblockTileModule<TileType, ControllerType> toAttachModule = (MultiblockTileModule<TileType, ControllerType>) toAttachGeneric;
         TileType toAttachTile = toAttachModule.iface;
@@ -249,6 +249,9 @@ public class MultiblockController<
             if (toAttachModule.controllerData != null) {
                 onBlockWithNBTAttached(toAttachModule.controllerData);
                 toAttachModule.controllerData = null;
+            }
+            if (state == AssemblyState.DISASSEMBLED) {
+                state = AssemblyState.PAUSED;
             }
             onPartAttached(toAttachTile);
         } else {
@@ -413,12 +416,17 @@ public class MultiblockController<
         if (!controllersToMerge.isEmpty()) {
             HashSet<ControllerType> newToMerge = new HashSet<>();
             for (ControllerType otherController : controllersToMerge) {
-                ((MultiblockController<?, ?>) otherController).disassembledBlockStates();
+                var otherMultiblockController = (MultiblockController<?, ?>) otherController;
+                otherMultiblockController.disassembledBlockStates();
                 Phosphophyllite.removeController(otherController);
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
                 otherController.controllersToMerge.clear();
                 this.onMerge(otherController);
+                if (this.cachedNBT == null && otherMultiblockController.cachedNBT != null) {
+                    this.cachedNBT = otherMultiblockController.cachedNBT;
+                    otherMultiblockController.cachedNBT = null;
+                }
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
                     module.preExistingBlock = true;
