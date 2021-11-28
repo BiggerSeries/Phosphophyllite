@@ -137,6 +137,15 @@ public class Registry {
             if (className.startsWith(callerPackage)) {
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
+                    if (clazz.isAnnotationPresent(ClientOnly.class) && !FMLEnvironment.dist.isClient()) {
+                        continue;
+                    }
+                    if (clazz.isAnnotationPresent(SideOnly.class)) {
+                        var sideOnly = clazz.getAnnotation(SideOnly.class);
+                        if (sideOnly.value() != FMLEnvironment.dist) {
+                            continue;
+                        }
+                    }
                     // class loaded, so, pass it off to the handler
                     handler.run(modNamespace, clazz, annotation.memberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
@@ -171,6 +180,15 @@ public class Registry {
             if (className.startsWith(callerPackage)) {
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
+                    if (clazz.isAnnotationPresent(ClientOnly.class) && !FMLEnvironment.dist.isClient()) {
+                        continue;
+                    }
+                    if (clazz.isAnnotationPresent(SideOnly.class)) {
+                        var sideOnly = clazz.getAnnotation(SideOnly.class);
+                        if (sideOnly.value() != FMLEnvironment.dist) {
+                            continue;
+                        }
+                    }
                     // class loaded, so, pass it off to the handler
                     handler.run(modNamespace, clazz, annotation.memberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
@@ -832,6 +850,9 @@ public class Registry {
             method.invoke(null);
             
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (RuntimeException e) {
+            LOGGER.warn(modLoadClazz.getName());
             e.printStackTrace();
         }
     }
