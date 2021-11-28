@@ -20,20 +20,23 @@ public class DebugTool extends Item {
     
     @Override
     public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
-        if (!context.getLevel().isClientSide()) {
-            var player = context.getPlayer();
-            if (player != null) {
-                if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof IDebuggable debuggable) {
-                    
-                    var debugString = debuggable.getDebugString();
-                    if (debugString == null) {
-                        debugString = "Null debug string returned";
-                    }
-                    player.sendMessage(new TextComponent(debugString), Util.NIL_UUID);
-                    System.out.println(debugString);
-                } else {
-                    player.sendMessage(new TextComponent("Non-debuggable block"), Util.NIL_UUID);
+        var player = context.getPlayer();
+        if (player != null) {
+            if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof IDebuggable debuggable) {
+                
+                var debugString = debuggable.getDebugString();
+                if (debugString == null) {
+                    debugString = "Null debug string returned";
                 }
+                if (context.getLevel().isClientSide()) {
+                    debugString = "\nClient:\n" + debugString;
+                }else {
+                    debugString = "\nServer:\n" + debugString;
+                }
+                player.sendMessage(new TextComponent(debugString), Util.NIL_UUID);
+                System.out.println(debugString);
+            } else {
+                player.sendMessage(new TextComponent("Non-debuggable block"), Util.NIL_UUID);
             }
         }
         return InteractionResult.SUCCESS;
