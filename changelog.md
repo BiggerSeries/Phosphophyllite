@@ -1,3 +1,12 @@
+# 1.17.1-0.6.0-alpha.7
+ - Config system preserves declaration order
+ - Config system fixes
+ - ConfigSpec internals now public final for external poking
+ - Fix NBT loss issue with merging controller
+ - Client side debug message with debeefer
+ - Quartz added, this changelog note is an understatement of the amount of work
+   - Mixins!
+
 # 1.17.1-0.6.0-alpah.6.1
  - gracefully handle config parse errors
  - handle empty config file edge case
