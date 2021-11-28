@@ -12,7 +12,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fmlserverevents.FMLServerStoppedEvent;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.threading.Queues;
@@ -22,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 
 @MethodsReturnNonnullByDefault
@@ -106,7 +104,7 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
-    void onServerStop(final FMLServerStoppedEvent serverStoppedEvent){
+    void onServerStop(final FMLServerStoppedEvent serverStoppedEvent) {
         controllersToTick.clear();
         newControllers.clear();
         oldControllers.clear();
@@ -121,8 +119,13 @@ public class Phosphophyllite {
             return;
         }
         tick++;
-        
-        Queues.serverThread.runAll();
+    
+        // prevents deadlock
+        final boolean[] run = {true};
+        Queues.serverThread.enqueue(() -> run[0] = false);
+        while (run[0]) {
+            Queues.serverThread.runOne();
+        }
         
         for (MultiblockController<?, ?> newController : newControllers) {
             controllersToTick.computeIfAbsent((ServerLevel) newController.getWorld(), k -> new ArrayList<>()).add(newController);
@@ -134,6 +137,20 @@ public class Phosphophyllite {
             controllers.remove(oldController);
         }
         oldControllers.clear();
+    }
+    
+    @SubscribeEvent
+    public void advanceTick(TickEvent.ClientTickEvent e) {
+        if(e.phase != TickEvent.Phase.START){
+            return;
+        }
+    
+        // prevents deadlock
+        final boolean[] run = {true};
+        Queues.clientThread.enqueue(() -> run[0] = false);
+        while (run[0]) {
+            Queues.clientThread.runOne();
+        }
     }
     
     @SubscribeEvent
