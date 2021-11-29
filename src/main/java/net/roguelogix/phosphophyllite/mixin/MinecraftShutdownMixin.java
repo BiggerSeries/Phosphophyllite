@@ -9,13 +9,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public class MinecraftShutdownMixin {
-    @Inject(method = "destroy", at = @At("HEAD"))
-    public void destroy(CallbackInfo ci) {
-        QuartzCore.shutdown();
-    }
-    
     @Inject(method = "stop", at = @At("HEAD"))
     public void stop(CallbackInfo ci) {
-        QuartzCore.shutdown();
+        if (Minecraft.getInstance().isRunning()) {
+            QuartzCore.shutdown();
+        }
     }
 }
