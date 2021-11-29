@@ -368,8 +368,8 @@ public class GL33InstancedRendering implements GLDeletable {
     
     public void draw(DrawInfo drawInfo) {
         // for debugging, this shouldn't be here  for a release build
-        long window = Minecraft.getInstance().getWindow().getWindow();
-        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+//        long window = Minecraft.getInstance().getWindow().getWindow();
+//        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
