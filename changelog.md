@@ -1,3 +1,7 @@
+# 1.17.1-0.6.0-alpha.7.1
+ - dont unlock mouse
+ - remove destroy shutdown hook
+
 # 1.17.1-0.6.0-alpha.7
  - Config system preserves declaration order
  - Config system fixes
