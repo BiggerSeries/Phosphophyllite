@@ -34,10 +34,11 @@ public class AStarList<TileType> {
     }
     
     public void addTarget(TileType target) {
-        if (targets.isEmpty()) {
+        if (nodeSet.isEmpty()) {
             nodeSet.add(target);
+        } else {
+            targets.add(target);
         }
-        targets.add(target);
     }
     
     public void addNode(TileType node) {

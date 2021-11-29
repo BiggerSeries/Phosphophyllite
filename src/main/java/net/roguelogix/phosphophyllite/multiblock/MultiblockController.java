@@ -276,6 +276,7 @@ public class MultiblockController<
         TileType toDetachTile = toDetachModule.iface;
         
         toDetachModule.nullNeighbors();
+        toDetachModule.controller = null;
         
         if (toDetachTile instanceof ITickableMultiblockTile) {
             toTick.remove(toDetachTile);
@@ -389,6 +390,7 @@ public class MultiblockController<
             while (!aStarList.done()) {
                 var node = aStarList.nextNode();
                 for (int i = 0; i < 6; i++) {
+                    node.lastSavedTick = this.lastTick;
                     var module = node.getNeighbor(directions[i]);
                     if (module != null && module.controller == this && module.lastSavedTick != this.lastTick) {
                         module.lastSavedTick = this.lastTick;
