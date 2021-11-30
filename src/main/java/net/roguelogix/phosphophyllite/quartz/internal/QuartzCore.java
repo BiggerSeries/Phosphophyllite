@@ -213,17 +213,16 @@ public abstract class QuartzCore implements GLDeletable {
     static boolean resourcesLoaded = false;
     
     public static void resourcesReloaded() {
-        LOGGER.info("Quartz resources reloading");
         if (resourcesLoaded) {
+            LOGGER.info("Quartz resources reloading");
             Quartz.EVENT_BUS.post(new QuartzEvent.ResourcesReloaded());
+            LOGGER.info("Quartz resources reloaded");
         } else {
-            if (instance == null) {
-                throw new IllegalStateException("Quartz failed to load");
-            }
+            LOGGER.info("Quartz resources loading");
             Quartz.EVENT_BUS.post(new QuartzEvent.ResourcesLoaded());
             resourcesLoaded = true;
+            LOGGER.info("Quartz resources loaded");
         }
-        LOGGER.info("Quartz resources reloaded");
     }
     
     public abstract void registerRenderType(RenderType type);
