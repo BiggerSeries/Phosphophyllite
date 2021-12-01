@@ -8,14 +8,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.ScreenOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fmllegacy.network.NetworkDirection;
-import net.minecraftforge.fmllegacy.network.NetworkEvent;
-import net.minecraftforge.fmllegacy.network.NetworkRegistry;
-import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.simple.SimpleChannel;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.robn.ROBN;
@@ -100,9 +100,9 @@ public class GuiSync {
     
     private static IGUIPacketProvider currentGUI;
     
-    public static synchronized void GuiOpenEvent(@Nonnull GuiOpenEvent e) {
+    public static synchronized void GuiOpenEvent(@Nonnull ScreenOpenEvent e) {
         
-        Screen gui = e.getGui();
+        Screen gui = e.getScreen();
         if (gui instanceof AbstractContainerScreen) {
             AbstractContainerMenu container = ((AbstractContainerScreen<?>) gui).getMenu();
             if (container instanceof IGUIPacketProvider) {

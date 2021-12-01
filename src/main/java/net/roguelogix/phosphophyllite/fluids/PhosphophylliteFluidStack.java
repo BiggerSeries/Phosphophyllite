@@ -1,11 +1,11 @@
 package net.roguelogix.phosphophyllite.fluids;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.IRegistryDelegate;
@@ -115,7 +115,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         if (nbt == null) {
             return EMPTY;
         }
-        if (!nbt.contains("FluidName", Constants.NBT.TAG_STRING)) {
+        if (!nbt.contains("FluidName", Tag.TAG_STRING)) {
             return EMPTY;
         }
         
@@ -130,7 +130,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
             stack.amount = nbt.getLong("LongAmount");
         }
         
-        if (nbt.contains("Tag", Constants.NBT.TAG_COMPOUND)) {
+        if (nbt.contains("Tag", Tag.TAG_STRING)) {
             stack.setTag(nbt.getCompound("Tag"));
         }
         return stack;
@@ -221,7 +221,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     public CompoundTag getOrCreateChildTag(String childName) {
         getOrCreateTag();
         CompoundTag child = tag.getCompound(childName);
-        if (!tag.contains(childName, Constants.NBT.TAG_COMPOUND)) {
+        if (!tag.contains(childName, Tag.TAG_STRING)) {
             tag.put(childName, child);
         }
         return child;

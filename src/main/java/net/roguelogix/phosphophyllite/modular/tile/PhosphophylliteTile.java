@@ -75,9 +75,9 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
     }
     
-    private static void worldUnloadEvent(WorldEvent.Unload unload){
-        var removed = worldUnloadEventTiles.remove((Level)unload.getWorld());
-        if(removed != null){
+    private static void worldUnloadEvent(WorldEvent.Unload unload) {
+        var removed = worldUnloadEventTiles.remove((Level) unload.getWorld());
+        if (removed != null) {
             for (int i = 0; i < removed.size(); i++) {
                 removed.get(i).remove(true);
             }
@@ -117,7 +117,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
             var arrayTile = worldUnloadTiles.get(index);
             if (arrayTile == this) {
                 var removed = worldUnloadTiles.pop();
-                if(removed != this){
+                if (removed != this) {
                     removed.index = index;
                     worldUnloadTiles.set(index, removed);
                 }
@@ -267,7 +267,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         if (!sendPacket) {
             return null;
         }
-        return new ClientboundBlockEntityDataPacket(this.getBlockPos(), 0, nbt);
+        return ClientboundBlockEntityDataPacket.create(this, e -> nbt);
     }
     
     protected void handleUpdateNBT(@SuppressWarnings("unused") CompoundTag nbt) {

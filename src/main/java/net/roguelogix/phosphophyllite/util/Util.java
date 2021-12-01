@@ -144,7 +144,7 @@ public class Util {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
                 LevelChunk chunk = world.getChunk(chunkX, chunkZ);
-                chunk.markUnsaved();
+                chunk.setUnsaved(true);
             }
         }
     }
@@ -171,7 +171,7 @@ public class Util {
                     markForUpdatePacket(bPos);
                 }
             });
-            chunk.markUnsaved();
+            chunk.setUnsaved(true);
         });
     }
     
@@ -214,7 +214,7 @@ public class Util {
                 }
             });
             existingMaps.add(states);
-            chunk.markUnsaved();
+            chunk.setUnsaved(true);
         });
     }
     
@@ -254,7 +254,7 @@ public class Util {
                 }
             });
             existingMaps.add(states);
-            chunk.markUnsaved();
+            chunk.setUnsaved(true);
         });
     }
     

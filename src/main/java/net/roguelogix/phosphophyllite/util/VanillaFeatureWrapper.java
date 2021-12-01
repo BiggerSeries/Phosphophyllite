@@ -11,7 +11,6 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
-import net.minecraft.world.level.levelgen.placement.ConfiguredDecorator;
 
 public class VanillaFeatureWrapper<Config extends FeatureConfiguration, FeatureC extends Feature<Config>> extends ConfiguredFeature<Config, FeatureC> {
     
@@ -23,8 +22,8 @@ public class VanillaFeatureWrapper<Config extends FeatureConfiguration, FeatureC
     }
     
     @Nonnull
-    public ConfiguredFeature<?, ?> decorated(@Nonnull ConfiguredDecorator<?> placement) {
-        return new VanillaFeatureWrapper<>(super.decorated(placement), test);
+    public ConfiguredFeature<?, ?> decorated(@Nonnull ConfiguredFeature<?, ?> feature) {
+        return new VanillaFeatureWrapper<>(feature, test);
     }
     
     public boolean place(@Nonnull WorldGenLevel reader, @Nonnull ChunkGenerator generator, @Nonnull Random rand, @Nonnull BlockPos pos) {

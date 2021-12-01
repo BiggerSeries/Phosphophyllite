@@ -6,11 +6,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fmlserverevents.FMLServerStoppedEvent;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.registry.Registry;
@@ -67,7 +67,7 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
-    public void onServerStopped(FMLServerStoppedEvent serverStoppedEvent) {
+    public void onServerStopped(ServerStoppedEvent serverStoppedEvent) {
         dataPackRegistries = null;
     }
     
@@ -104,7 +104,7 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
-    void onServerStop(final FMLServerStoppedEvent serverStoppedEvent) {
+    void onServerStop(final ServerStoppedEvent serverStoppedEvent) {
         controllersToTick.clear();
         newControllers.clear();
         oldControllers.clear();
@@ -119,7 +119,7 @@ public class Phosphophyllite {
             return;
         }
         tick++;
-    
+        
         // prevents deadlock
         final boolean[] run = {true};
         Queues.serverThread.enqueue(() -> run[0] = false);
@@ -141,10 +141,10 @@ public class Phosphophyllite {
     
     @SubscribeEvent
     public void advanceTick(TickEvent.ClientTickEvent e) {
-        if(e.phase != TickEvent.Phase.START){
+        if (e.phase != TickEvent.Phase.START) {
             return;
         }
-    
+        
         // prevents deadlock
         final boolean[] run = {true};
         Queues.clientThread.enqueue(() -> run[0] = false);

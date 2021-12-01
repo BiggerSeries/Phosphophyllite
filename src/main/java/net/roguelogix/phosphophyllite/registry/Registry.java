@@ -4,7 +4,10 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.data.worldgen.features.OreFeatures;
+import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
@@ -18,16 +21,17 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.OreFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
-import net.minecraft.world.level.levelgen.feature.configurations.RangeDecoratorConfiguration;
 import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
-import net.minecraft.world.level.levelgen.placement.FeatureDecorator;
+import net.minecraft.world.level.levelgen.placement.CountPlacement;
+import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.extensions.IForgeContainerType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BiomeLoadingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -605,7 +609,7 @@ public class Registry {
             }
             
             ContainerSupplier finalSupplier = supplier;
-            containerTypeArray[0] = IForgeContainerType.create((windowId, playerInventory, data) -> finalSupplier.create(windowId, data.readBlockPos(), playerInventory.player));
+            containerTypeArray[0] = IForgeMenuType.create((windowId, playerInventory, data) -> finalSupplier.create(windowId, data.readBlockPos(), playerInventory.player));
             
             for (Field declaredField : containerClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterContainer.Type.class)) {
@@ -795,13 +799,9 @@ public class Registry {
                 return;
             }
             
-            RuleTest fillerBlock = oreInfo.isNetherOre() ? OreConfiguration.Predicates.NETHERRACK : OreConfiguration.Predicates.NATURAL_STONE;
+            final RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatures.NETHER_ORE_REPLACEABLES : OreFeatures.STONE_ORE_REPLACEABLES;
             
-            ConfiguredFeature<?, ?> feature = Feature.ORE
-                    .configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()))
-                    .decorated(FeatureDecorator.RANGE.configured(new RangeDecoratorConfiguration(UniformHeight.of(VerticalAnchor.absolute(oreInfo.minLevel()), VerticalAnchor.absolute(oreInfo.maxLevel())))))
-                    .squared()
-                    .count(oreInfo.count());
+            final ConfiguredFeature<?, ?> feature = Feature.ORE.configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()));
             
             boolean doSpawn = oreInfo.doSpawn();
             
@@ -809,6 +809,11 @@ public class Registry {
             
             final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
             commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(net.minecraft.core.RegistryAccess.builtin().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
+            
+            final var placed = wrapper.placed(OrePlacements.orePlacement(
+                    CountPlacement.of(oreInfo.count()),
+                    HeightRangePlacement.uniform(VerticalAnchor.absolute(oreInfo.minLevel()), VerticalAnchor.absolute(oreInfo.maxLevel()))
+            ));
             
             biomeLoadingEventHandlers.add(() -> {
                 if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
@@ -820,7 +825,7 @@ public class Registry {
                     }
                 }
                 
-                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> wrapper);
+                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> placed);
             });
         });
     }
