@@ -63,7 +63,7 @@ minecraft {
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
-//            arg "-mixin.config=phosphophyllite.mixins.json"
+            arg "-mixin.config=phosphophyllite.mixins.json"
 
             // Recommended logging level for the console
             property 'forge.logging.console.level', 'debug'
@@ -132,7 +132,7 @@ mixin {
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
 
-    annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
 //    compileOnly fg.deobf('curse.maven:tita-287342:3346366')
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
