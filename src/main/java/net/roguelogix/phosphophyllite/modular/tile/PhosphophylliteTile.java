@@ -168,17 +168,22 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     
     @Override
     public final CompoundTag save(CompoundTag compound) {
-        CompoundTag nbt = super.save(compound);
+        super.save(compound);
+        saveAdditional(compound);
+        return compound;
+    }
+    
+    @Override
+    public final void saveAdditional(CompoundTag nbt) {
         CompoundTag subNBTs = subNBTs(TileModule::writeNBT);
-        
         if (subNBTs != null) {
             nbt.put("sub", subNBTs);
         }
+        
         CompoundTag localNBT = writeNBT();
         if (!localNBT.isEmpty()) {
             nbt.put("local", localNBT);
         }
-        return nbt;
     }
     
     protected void readNBT(CompoundTag compound) {
