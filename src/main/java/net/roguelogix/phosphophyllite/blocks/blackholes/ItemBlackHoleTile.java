@@ -4,13 +4,13 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 
 import javax.annotation.Nonnull;
@@ -20,7 +20,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "item_black_hole")
-public class ItemBlackHoleTile extends BlockEntity implements IItemHandler {
+public class ItemBlackHoleTile extends PhosphophylliteTile implements IItemHandler {
     
     @RegisterTileEntity.Type
     public static BlockEntityType<?> TYPE;
@@ -34,11 +34,11 @@ public class ItemBlackHoleTile extends BlockEntity implements IItemHandler {
     
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
+    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             return LazyOptional.of(() -> this).cast();
         }
-        return super.getCapability(cap, side);
+        return super.capability(cap, side);
     }
     
     @Override

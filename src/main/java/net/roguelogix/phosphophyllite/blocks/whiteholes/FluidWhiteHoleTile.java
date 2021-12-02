@@ -13,6 +13,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 
 import javax.annotation.Nonnull;
@@ -24,7 +25,7 @@ import static net.minecraftforge.fluids.FluidStack.loadFluidStackFromNBT;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "fluid_white_hole")
-public class FluidWhiteHoleTile extends BlockEntity implements IFluidHandler {
+public class FluidWhiteHoleTile extends PhosphophylliteTile implements IFluidHandler {
     
     @RegisterTileEntity.Type
     public static BlockEntityType<?> TYPE;
@@ -38,11 +39,11 @@ public class FluidWhiteHoleTile extends BlockEntity implements IFluidHandler {
     
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
+    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
         if (cap == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             return LazyOptional.of(() -> this).cast();
         }
-        return super.getCapability(cap, side);
+        return super.capability(cap, side);
     }
     
     FluidStack fluidStack = FluidStack.EMPTY;
@@ -93,15 +94,16 @@ public class FluidWhiteHoleTile extends BlockEntity implements IFluidHandler {
     }
     
     @Override
-    public CompoundTag save(CompoundTag compound) {
+    public CompoundTag writeNBT() {
+        var compound = super.writeNBT();
         compound.put("fluidstack", fluidStack.writeToNBT(new CompoundTag()));
-        return super.save(compound);
+        return compound;
     }
     
     @Override
-    public void load(CompoundTag compound) {
+    public void readNBT(CompoundTag compound) {
         fluidStack = loadFluidStackFromNBT(compound.getCompound("fluidstack"));
-        super.load(compound);
+        super.readNBT(compound);
     }
     
     public void tick() {

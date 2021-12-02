@@ -15,6 +15,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 
 import javax.annotation.Nonnull;
@@ -25,7 +26,7 @@ import java.util.Objects;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "item_white_hole")
-public class ItemWhiteHoleTile extends BlockEntity implements IItemHandler {
+public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandler {
     
     @RegisterTileEntity.Type
     public static BlockEntityType<?> TYPE;
@@ -39,11 +40,11 @@ public class ItemWhiteHoleTile extends BlockEntity implements IItemHandler {
     
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
+    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
         if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
             return LazyOptional.of(() -> this).cast();
         }
-        return super.getCapability(cap, side);
+        return super.capability(cap, side);
     }
     
     Item item = null;
@@ -53,20 +54,21 @@ public class ItemWhiteHoleTile extends BlockEntity implements IItemHandler {
     }
     
     @Override
-    public void load(CompoundTag compound) {
+    public CompoundTag writeNBT() {
+        var compound = super.writeNBT();
         if (compound.contains("item")) {
             item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(compound.getString("item")));
         }
-        super.load(compound);
+        return compound;
     }
     
     @Nonnull
     @Override
-    public CompoundTag save(@Nonnull CompoundTag compound) {
+    public void readNBT(@Nonnull CompoundTag compound) {
+        super.readNBT(compound);
         if (item != null) {
             compound.putString("item", Objects.requireNonNull(item.getRegistryName()).toString());
         }
-        return super.save(compound);
     }
     
     public void tick() {

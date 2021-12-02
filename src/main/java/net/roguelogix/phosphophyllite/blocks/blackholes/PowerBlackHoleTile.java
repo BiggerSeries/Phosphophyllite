@@ -3,13 +3,13 @@ package net.roguelogix.phosphophyllite.blocks.blackholes;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyStorage;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 
 import javax.annotation.Nonnull;
@@ -19,7 +19,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "power_black_hole")
-public class PowerBlackHoleTile extends BlockEntity implements IPhosphophylliteEnergyStorage {
+public class PowerBlackHoleTile extends PhosphophylliteTile implements IPhosphophylliteEnergyStorage {
     
     @RegisterTileEntity.Type
     public static BlockEntityType<?> TYPE;
@@ -33,11 +33,11 @@ public class PowerBlackHoleTile extends BlockEntity implements IPhosphophylliteE
     
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
+    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
         if (cap == CapabilityEnergy.ENERGY) {
             return LazyOptional.of(() -> this).cast();
         }
-        return super.getCapability(cap, side);
+        return super.capability(cap, side);
     }
     
     @Override

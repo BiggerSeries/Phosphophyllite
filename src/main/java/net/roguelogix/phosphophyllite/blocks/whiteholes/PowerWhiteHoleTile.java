@@ -12,6 +12,7 @@ import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.roguelogix.phosphophyllite.energy.EnergyStorageWrapper;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyStorage;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
 
 import javax.annotation.Nonnull;
@@ -21,7 +22,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @RegisterTileEntity(name = "power_white_hole")
-public class PowerWhiteHoleTile extends BlockEntity implements IEnergyStorage {
+public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyStorage {
     
     @RegisterTileEntity.Type
     public static BlockEntityType<?> TYPE;
@@ -35,11 +36,11 @@ public class PowerWhiteHoleTile extends BlockEntity implements IEnergyStorage {
     
     @Nonnull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
+    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
         if (cap == CapabilityEnergy.ENERGY) {
             return LazyOptional.of(() -> this).cast();
         }
-        return super.getCapability(cap, side);
+        return super.capability(cap, side);
     }
     
     @Override
