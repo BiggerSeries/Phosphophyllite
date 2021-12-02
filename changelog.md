@@ -1,3 +1,6 @@
+# 1.18-0.6.0-alpha.8
+ - 1.18
+
 # 1.17.1-0.6.0-alpha.7.2
  - dont crash for quartz load failure due to an old forge version
  - fix issue with multiblock splitting
