@@ -5,11 +5,19 @@ import net.roguelogix.phosphophyllite.config.ConfigValue;
 public class PhosphophylliteConfig {
     
     @ConfigValue(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = true)
-    public final boolean bypassPerformantCheck = false;
+    public final boolean bypassPerformantCheck;
+    
+    {
+        bypassPerformantCheck = false;
+    }
     
     public static class GUI {
         @ConfigValue(range = "[50,)")
-        public final long UpdateIntervalMS = 200;
+        public final long UpdateIntervalMS;
+    
+        {
+            UpdateIntervalMS = 200;
+        }
     }
     
     @ConfigValue
