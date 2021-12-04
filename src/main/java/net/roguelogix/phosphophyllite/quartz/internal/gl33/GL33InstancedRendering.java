@@ -17,7 +17,6 @@ import net.roguelogix.phosphophyllite.quartz.internal.common.*;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -25,6 +24,7 @@ import java.util.Collection;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.*;
 import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -80,10 +80,7 @@ public class GL33InstancedRendering implements GLDeletable {
                 if (instanceCount == 0) {
                     return;
                 }
-                glUniform1i(program.WORLD_POSITION_ID_OFFSET_UNIFORM_LOCATION, worldPosBaseID);
-                glUniform1i(program.STATIC_MATRIX_BASE_ID_UNIFORM_LOCATION, staticMatrixBaseID);
-                glUniform1i(program.DYNAMIC_MATRIX_ID_OFFSET_UNIFORM_LOCATION, dynamicMatrixIdOffset);
-                glUniform1i(program.DYNAMIC_LIGHT_ID_OFFSET_UNIFORM_LOCATION, lightIDOffset);
+                program.setupDrawComponent(worldPosBaseID, staticMatrixBaseID, dynamicMatrixIdOffset, lightIDOffset);
                 if (QUAD) {
                     glDrawElementsInstancedBaseVertex(GL_TRIANGLES, elementCount, GL_UNSIGNED_INT, 0, instanceCount, baseVertex);
                 } else {
@@ -300,7 +297,7 @@ public class GL33InstancedRendering implements GLDeletable {
         if (renderPasses.containsKey(renderType)) {
             return;
         }
-        var renderPass = new GL33RenderPass(renderType, program);
+        var renderPass = new GL33RenderPass(renderType);
         renderPasses.put(renderType, renderPass);
         renderTypeDrawComponents.put(renderType, new ObjectArrayList<>());
     }
@@ -400,23 +397,20 @@ public class GL33InstancedRendering implements GLDeletable {
         
         glActiveTexture(GL33.ATLAS_TEXTURE_UNIT_GL);
         
-        glUseProgram(program.handle());
-        glUniformMatrix4fv(program.PROJECTION_MATRIX_UNIFORM_LOCATION, false, drawInfo.projectionMatrixFloatBuffer);
-        glUniform3i(program.PLAYER_BLOCK_UNIFORM_LOCATION, drawInfo.playerPosition.x, drawInfo.playerPosition.y, drawInfo.playerPosition.z);
-        glUniform3f(program.PLAYER_SUB_BLOCK_UNIFORM_LOCATION, drawInfo.playerSubBlock.x, drawInfo.playerSubBlock.y, drawInfo.playerSubBlock.z);
-        glUniform2f(program.FOG_START_END_UNIFORM_LOCATION, drawInfo.fogStart, drawInfo.fogEnd);
-        glUniform4f(program.FOG_COLOR_UNIFORM_LOCATION, drawInfo.fogColor.x, drawInfo.fogColor.y, drawInfo.fogColor.z, 1);
+        glUseProgram(0);
+        glBindProgramPipeline(program.pipelineHandle());
+        program.setupDrawInfo(drawInfo);
         glBindVertexArray(VAO);
         program.clearAtlas();
         for (var entry : renderTypeDrawComponents.entrySet()) {
-            renderPasses.get(entry.getKey()).setUniforms();
+            program.setupRenderPass(renderPasses.get(entry.getKey()));
             var drawComponents = entry.getValue();
             for (int i = 0; i < drawComponents.size(); i++) {
                 drawComponents.get(i).draw();
             }
         }
         glBindVertexArray(0);
-        glUseProgram(0);
+        glBindProgramPipeline(0);
         for (int i = 0; i < 16; i++) {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_BUFFER, 0);

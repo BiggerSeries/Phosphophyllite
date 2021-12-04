@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 
 import static org.lwjgl.opengl.GL32C.*;
+import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 import static org.lwjgl.opengl.GL43C.GL_COMPUTE_SHADER;
+import static org.lwjgl.opengl.GL43C.GL_COMPUTE_SHADER_BIT;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class Program implements GLObject, GLReloadable {
+public class Program implements GLDeletable, GLReloadable {
     private final ArrayList<Consumer<Program>> reloadCallbacks = new ArrayList<>();
     
     @Nullable
@@ -24,7 +26,10 @@ public class Program implements GLObject, GLReloadable {
     private final ResourceLocation fragmentShaderLocation;
     private final ResourceLocation computeShaderLocation;
     
-    private int programID = 0;
+    private int vertProgramID = 0;
+    private int fragProgramID = 0;
+    private int compProgramID = 0;
+    private int programPipelineID = 0;
     
     public Program(ResourceLocation location, @Nullable String prepend) {
         if (prepend != null && prepend.isEmpty()) {
@@ -45,14 +50,11 @@ public class Program implements GLObject, GLReloadable {
     }
     
     public void reload() {
-        
-        int vertexShader = 0;
-        int fragmentShader = 0;
-        int computeShader = 0;
-        int newProgramID = 0;
+        int vertexProgram = 0;
+        int fragmentProgram = 0;
+        int computeProgram = 0;
         
         try {
-            
             var vertexShaderCode = Util.readResourceLocation(vertexShaderLocation);
             var fragmentShaderCode = Util.readResourceLocation(fragmentShaderLocation);
             var computeShaderCode = Util.readResourceLocation(computeShaderLocation);
@@ -68,78 +70,75 @@ public class Program implements GLObject, GLReloadable {
                 throw new IllegalStateException("Unable to load any shader code from " + baseResourceLocation);
             }
             
-            
             if (prepend != null) {
-                if(vertexShaderCode != null) {
+                if (vertexShaderCode != null) {
                     vertexShaderCode = new StringBuilder(vertexShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, prepend).toString();
                     fragmentShaderCode = new StringBuilder(fragmentShaderCode).insert(fragmentShaderCode.indexOf('\n') + 1, prepend).toString();
                 }
-                if(computeShaderCode != null){
+                if (computeShaderCode != null) {
                     computeShaderCode = new StringBuilder(computeShaderCode).insert(computeShaderCode.indexOf('\n') + 1, prepend).toString();
                 }
             }
             
             if (vertexShaderCode != null) {
-                vertexShader = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vertexShader, vertexShaderCode);
-                glCompileShader(vertexShader);
-                int compileStatus = glGetShaderi(vertexShader, GL_COMPILE_STATUS);
-                if (compileStatus != GL_TRUE) {
-                    throw new IllegalStateException("Vertex shader compilation failed for " + vertexShaderLocation + "\n" + glGetShaderInfoLog(vertexShader));
-                }
+                vertexProgram = glCreateShaderProgramv(GL_VERTEX_SHADER, vertexShaderCode);
+                fragmentProgram = glCreateShaderProgramv(GL_FRAGMENT_SHADER, fragmentShaderCode);
                 
-                fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fragmentShader, fragmentShaderCode);
-                glCompileShader(fragmentShader);
-                compileStatus = glGetShaderi(fragmentShader, GL_COMPILE_STATUS);
-                if (compileStatus != GL_TRUE) {
-                    throw new IllegalStateException("Fragment shader compilation failed for " + fragmentShaderLocation + "\n" + glGetShaderInfoLog(fragmentShader));
+                int vertLinked = glGetProgrami(vertexProgram, GL_LINK_STATUS);
+                int fragLinked = glGetProgrami(fragmentProgram, GL_LINK_STATUS);
+                if (vertLinked != GL_TRUE && fragLinked != GL_TRUE) {
+                    throw new IllegalStateException("Vertex and fragment shader compilation failed for " + baseResourceLocation + "\n" +
+                            "Vertex program creation log:\n" + glGetProgramInfoLog(vertexProgram) + "\n\n" +
+                            "Fragment program creation log:\n" + glGetProgramInfoLog(fragmentProgram));
+                }
+                if (vertLinked != GL_TRUE) {
+                    throw new IllegalStateException("Vertex shader compilation failed for " + vertexShaderLocation + "\n" + glGetProgramInfoLog(vertexProgram));
+                }
+                if (fragLinked != GL_TRUE) {
+                    throw new IllegalStateException("Fragment shader compilation failed for " + fragmentShaderLocation + "\n" + glGetProgramInfoLog(fragmentProgram));
                 }
             }
             
             if (computeShaderCode != null) {
-                computeShader = glCreateShader(GL_COMPUTE_SHADER);
-                glShaderSource(computeShader, computeShaderCode);
-                glCompileShader(computeShader);
-                int compileStatus = glGetShaderi(computeShader, GL_COMPILE_STATUS);
+                computeProgram = glCreateShaderProgramv(GL_COMPUTE_SHADER, computeShaderCode);
+                int compileStatus = glGetProgrami(computeProgram, GL_LINK_STATUS);
                 if (compileStatus != GL_TRUE) {
-                    throw new IllegalStateException("Fragment shader compilation failed for " + computeShaderLocation + "\n" + glGetShaderInfoLog(computeShader));
+                    throw new IllegalStateException("Fragment shader compilation failed for " + computeShaderLocation + "\n" + glGetProgramInfoLog(computeProgram));
                 }
             }
             
-            newProgramID = glCreateProgram();
-            
-            if (vertexShader != 0 && fragmentShader != 0) {
-                glAttachShader(newProgramID, vertexShader);
-                glAttachShader(newProgramID, fragmentShader);
+            int newPipeline = glGenProgramPipelines();
+            if (vertexProgram != 0 && fragmentProgram != 0) {
+                glUseProgramStages(newPipeline, GL_VERTEX_SHADER_BIT, vertexProgram);
+                glUseProgramStages(newPipeline, GL_FRAGMENT_SHADER_BIT, fragmentProgram);
             }
-            if (computeShader != 0) {
-                glAttachShader(newProgramID, computeShader);
-            }
-            glLinkProgram(newProgramID);
-            int linkStatus = glGetProgrami(newProgramID, GL_LINK_STATUS);
-            if (linkStatus != GL_TRUE) {
-                throw new IllegalStateException("Program linking failed for " + baseResourceLocation + "\n" + glGetProgramInfoLog(newProgramID));
+            if (computeProgram != 0) {
+                glUseProgramStages(newPipeline, GL_COMPUTE_SHADER_BIT, computeProgram);
             }
             
-            if (vertexShader != 0 && fragmentShader != 0) {
-                glDetachShader(newProgramID, vertexShader);
-                glDetachShader(newProgramID, fragmentShader);
-            }
-            if (computeShader != 0) {
-                glDetachShader(newProgramID, computeShader);
-            }
-            int oldProgramID = programID;
-            programID = newProgramID;
-            newProgramID = oldProgramID;
+            programPipelineID ^= newPipeline;
+            newPipeline ^= programPipelineID;
+            programPipelineID ^= newPipeline;
+            
+            vertProgramID ^= vertexProgram;
+            vertexProgram ^= vertProgramID;
+            vertProgramID ^= vertexProgram;
+            
+            fragProgramID ^= fragmentProgram;
+            fragmentProgram ^= fragProgramID;
+            fragProgramID ^= fragmentProgram;
+            
+            compProgramID ^= computeProgram;
+            computeProgram ^= compProgramID;
+            compProgramID ^= computeProgram;
+            
+            glDeleteProgramPipelines(newPipeline);
             
             reloadCallbacks.forEach(c -> c.accept(this));
-            
         } finally {
-            glDeleteShader(vertexShader);
-            glDeleteShader(fragmentShader);
-            glDeleteShader(computeShader);
-            glDeleteProgram(newProgramID);
+            glDeleteProgram(vertexProgram);
+            glDeleteProgram(fragmentProgram);
+            glDeleteProgram(computeProgram);
         }
     }
     
@@ -148,14 +147,39 @@ public class Program implements GLObject, GLReloadable {
         reloadCallbacks.add(consumer);
     }
     
-    @Override
-    public int handle() {
-        return programID;
+    public int vertUniformLocation(String name) {
+        return glGetUniformLocation(vertProgramID, name);
+    }
+    
+    public int fragUniformLocation(String name) {
+        return glGetUniformLocation(vertProgramID, name);
+    }
+    
+    public int vertHandle() {
+        return vertProgramID;
+    }
+    
+    public int fragHandle() {
+        return fragProgramID;
+    }
+    
+    public int compHandle() {
+        return compProgramID;
+    }
+    
+    public int pipelineHandle() {
+        return programPipelineID;
     }
     
     @Override
     public void delete() {
-        glDeleteProgram(programID);
-        programID = 0;
+        glDeleteProgram(vertProgramID);
+        glDeleteProgram(fragProgramID);
+        glDeleteProgram(compProgramID);
+        glDeleteProgramPipelines(programPipelineID);
+        vertProgramID = 0;
+        fragProgramID = 0;
+        compProgramID = 0;
+        programPipelineID = 0;
     }
 }

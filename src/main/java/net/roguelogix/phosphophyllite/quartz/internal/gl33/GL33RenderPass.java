@@ -8,12 +8,14 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
-import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.quartz.internal.common.GLDeletable;
 import net.roguelogix.phosphophyllite.quartz.internal.common.ShaderInfo;
 
+import javax.annotation.Nullable;
+
 import static net.roguelogix.phosphophyllite.quartz.Quartz.EVENT_BUS;
-import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.GL33C.GL_LINE;
+import static org.lwjgl.opengl.GL33C.GL_TRIANGLES;
 
 public class GL33RenderPass implements GLDeletable {
     
@@ -26,13 +28,11 @@ public class GL33RenderPass implements GLDeletable {
     public final int GL_MODE;
     
     public final RenderType.CompositeRenderType renderType;
-    public final GL33MainProgram program;
     
     private final ResourceLocation textureResourceLocation;
     private AbstractTexture texture;
     
-    GL33RenderPass(RenderType rawRenderType, GL33MainProgram program) {
-        this.program = program;
+    GL33RenderPass(RenderType rawRenderType) {
         if (!(rawRenderType instanceof RenderType.CompositeRenderType)) {
             throw new IllegalArgumentException("RenderType must be composite type");
         }
@@ -78,27 +78,15 @@ public class GL33RenderPass implements GLDeletable {
         if (textureResourceLocation != null) {
             texture = Minecraft.getInstance().getTextureManager().getTexture(textureResourceLocation);
         }
-        try {
-            program.reload();
-        } catch (IllegalStateException e) {
-            QuartzCore.LOGGER.warn("Failed to reload shader " + program.baseResourceLocation);
-        }
     }
     
     @Override
     public void delete() {
         EVENT_BUS.unregister(this);
-        program.delete();
     }
     
-    void setUniforms() {
-        glUniform1i(program.ATLAS_TEXTURE_UNIFORM_LOCATION, 0);
-        glUniform1i(program.QUAD_UNIFORM_LOCATION, QUAD ? GL_TRUE : GL_FALSE);
-        glUniform1i(program.TEXTURE_UNIFORM_LOCATION, TEXTURE ? GL_TRUE : GL_FALSE);
-        glUniform1i(program.LIGHTING_UNIFORM_LOCATION, LIGHTING ? GL_TRUE : GL_FALSE);
-        glUniform1i(program.ALPHA_DISCARD_UNIFORM_LOCATION, ALPHA_DISCARD ? GL_TRUE : GL_FALSE);
-        if (texture != null) {
-            program.setAtlas(texture.getId());
-        }
+    @Nullable
+    public AbstractTexture texture(){
+        return texture;
     }
 }

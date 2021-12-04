@@ -2,12 +2,12 @@ package net.roguelogix.phosphophyllite.quartz.internal.gl33;
 
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
 import net.roguelogix.phosphophyllite.quartz.internal.common.Program;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.*;
-import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11C.glBindTexture;
-import static org.lwjgl.opengl.GL20C.*;
+import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 
 public class GL33MainProgram extends Program {
     public GL33MainProgram() {
@@ -42,64 +42,60 @@ public class GL33MainProgram extends Program {
     public int ATLAS_TEXTURE_UNIFORM_LOCATION;
     public int LIGHTMAP_TEXTURE_UNIFORM_LOCATION;
     
-    public int QUAD_UNIFORM_LOCATION;
+    public int VERT_QUAD_UNIFORM_LOCATION;
+    public int FRAG_QUAD_UNIFORM_LOCATION;
+    public int VERT_LIGHTING_UNIFORM_LOCATION;
+    public int FRAG_LIGHTING_UNIFORM_LOCATION;
     public int TEXTURE_UNIFORM_LOCATION;
-    public int LIGHTING_UNIFORM_LOCATION;
     public int ALPHA_DISCARD_UNIFORM_LOCATION;
     
     private void onReload(Program program) {
-        int programHandle = handle();
-    
-        PLAYER_BLOCK_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "playerBlock");
-        PLAYER_SUB_BLOCK_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "playerSubBlock");
-        PROJECTION_MATRIX_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "projectionMatrix");
-    
-        WORLD_POSITION_ID_OFFSET_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "worldPositionIDOffset");
-        WORLD_POSITIONS_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "worldPositions");
-    
-        DYNAMIC_MATRIX_ID_OFFSET_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "dynamicMatrixIDOffset");
-        DYNAMIC_MATRIX_IDS_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "dynamicMatrixIDs");
-        DYNAMIC_MATRICES_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "dynamicMatrices");
+        PLAYER_BLOCK_UNIFORM_LOCATION = vertUniformLocation("playerBlock");
+        PLAYER_SUB_BLOCK_UNIFORM_LOCATION = vertUniformLocation("playerSubBlock");
+        PROJECTION_MATRIX_UNIFORM_LOCATION = vertUniformLocation("projectionMatrix");
         
-        STATIC_MATRIX_BASE_ID_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "staticMatrixBaseID");
-        STATIC_MATRICES_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "staticMatrices");
+        WORLD_POSITION_ID_OFFSET_UNIFORM_LOCATION = vertUniformLocation("worldPositionIDOffset");
+        WORLD_POSITIONS_UNIFORM_LOCATION = vertUniformLocation("worldPositions");
         
-        DYNAMIC_LIGHT_ID_OFFSET_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "lightIDOffset");
-        DYNAMIC_LIGHT_IDS_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "lightIDs");
-        DYNAMIC_LIGHTS_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "lights");
-    
-        FOG_START_END_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "fogStartEnd");
-        FOG_COLOR_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "fogColor");
-        ATLAS_TEXTURE_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "atlasTexture");
-        LIGHTMAP_TEXTURE_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "lightmapTexture");
-    
-        QUAD_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "QUAD");
-        TEXTURE_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "TEXTURE");
-        LIGHTING_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "LIGHTING");
-        ALPHA_DISCARD_UNIFORM_LOCATION = glGetUniformLocation(programHandle, "ALPHA_DISCARD");
-    
-        glUseProgram(programHandle);
-    
-        glUniform1i(ATLAS_TEXTURE_UNIFORM_LOCATION, GL33.ATLAS_TEXTURE_UNIT);
-        glUniform1i(LIGHTMAP_TEXTURE_UNIFORM_LOCATION, GL33.LIGHTMAP_TEXTURE_UNIT);
+        DYNAMIC_MATRIX_ID_OFFSET_UNIFORM_LOCATION = vertUniformLocation("dynamicMatrixIDOffset");
+        DYNAMIC_MATRIX_IDS_UNIFORM_LOCATION = vertUniformLocation("dynamicMatrixIDs");
+        DYNAMIC_MATRICES_UNIFORM_LOCATION = vertUniformLocation("dynamicMatrices");
         
-        glUniform1i(WORLD_POSITIONS_UNIFORM_LOCATION, GL33.WORLD_POSITIONS_TEXTURE_UNIT);
+        STATIC_MATRIX_BASE_ID_UNIFORM_LOCATION = vertUniformLocation("staticMatrixBaseID");
+        STATIC_MATRICES_UNIFORM_LOCATION = vertUniformLocation("staticMatrices");
         
-        glUniform1i(DYNAMIC_MATRIX_IDS_UNIFORM_LOCATION, GL33.DYNAMIC_MATRIX_ID_TEXTURE_UNIT);
-        glUniform1i(DYNAMIC_MATRICES_UNIFORM_LOCATION, GL33.DYNAMIC_MATRIX_TEXTURE_UNIT);
-    
-        glUniform1i(DYNAMIC_LIGHT_IDS_UNIFORM_LOCATION, GL33.DYNAMIC_LIGHT_ID_TEXTURE_UNIT);
-        glUniform1i(DYNAMIC_LIGHTS_UNIFORM_LOCATION, GL33.DYNAMIC_LIGHT_TEXTURE_UNIT);
+        DYNAMIC_LIGHT_ID_OFFSET_UNIFORM_LOCATION = vertUniformLocation("lightIDOffset");
+        DYNAMIC_LIGHT_IDS_UNIFORM_LOCATION = vertUniformLocation("lightIDs");
+        DYNAMIC_LIGHTS_UNIFORM_LOCATION = vertUniformLocation("lights");
         
-        glUniform1i(STATIC_MATRICES_UNIFORM_LOCATION, GL33.STATIC_MATRIX_TEXTURE_UNIT);
+        FOG_START_END_UNIFORM_LOCATION = fragUniformLocation("fogStartEnd");
+        FOG_COLOR_UNIFORM_LOCATION = fragUniformLocation("fogColor");
+        ATLAS_TEXTURE_UNIFORM_LOCATION = fragUniformLocation("atlasTexture");
+        LIGHTMAP_TEXTURE_UNIFORM_LOCATION = fragUniformLocation("lightmapTexture");
         
-        glUseProgram(0);
+        VERT_QUAD_UNIFORM_LOCATION = vertUniformLocation("QUAD");
+        VERT_LIGHTING_UNIFORM_LOCATION = vertUniformLocation("LIGHTING");
+        FRAG_QUAD_UNIFORM_LOCATION = fragUniformLocation("QUAD");
+        FRAG_LIGHTING_UNIFORM_LOCATION = fragUniformLocation("LIGHTING");
+        TEXTURE_UNIFORM_LOCATION = fragUniformLocation("TEXTURE");
+        ALPHA_DISCARD_UNIFORM_LOCATION = fragUniformLocation("ALPHA_DISCARD");
+        
+        
+        glProgramUniform1i(fragHandle(), ATLAS_TEXTURE_UNIFORM_LOCATION, GL33.ATLAS_TEXTURE_UNIT);
+        glProgramUniform1i(fragHandle(), LIGHTMAP_TEXTURE_UNIFORM_LOCATION, GL33.LIGHTMAP_TEXTURE_UNIT);
+        
+        glProgramUniform1i(vertHandle(), WORLD_POSITIONS_UNIFORM_LOCATION, GL33.WORLD_POSITIONS_TEXTURE_UNIT);
+        glProgramUniform1i(vertHandle(), DYNAMIC_MATRIX_IDS_UNIFORM_LOCATION, GL33.DYNAMIC_MATRIX_ID_TEXTURE_UNIT);
+        glProgramUniform1i(vertHandle(), DYNAMIC_MATRICES_UNIFORM_LOCATION, GL33.DYNAMIC_MATRIX_TEXTURE_UNIT);
+        glProgramUniform1i(vertHandle(), DYNAMIC_LIGHT_IDS_UNIFORM_LOCATION, GL33.DYNAMIC_LIGHT_ID_TEXTURE_UNIT);
+        glProgramUniform1i(vertHandle(), DYNAMIC_LIGHTS_UNIFORM_LOCATION, GL33.DYNAMIC_LIGHT_TEXTURE_UNIT);
+        glProgramUniform1i(vertHandle(), STATIC_MATRICES_UNIFORM_LOCATION, GL33.STATIC_MATRIX_TEXTURE_UNIT);
     }
     
     private int currentAtlas = -1;
     
-    public void setAtlas(int textureHandle){
-        if(textureHandle == currentAtlas){
+    public void setAtlas(int textureHandle) {
+        if (textureHandle == currentAtlas) {
             return;
         }
         
@@ -107,7 +103,35 @@ public class GL33MainProgram extends Program {
         currentAtlas = textureHandle;
     }
     
-    public void clearAtlas(){
+    public void clearAtlas() {
         currentAtlas = -1;
+    }
+    
+    public void setupDrawInfo(DrawInfo drawInfo) {
+        glProgramUniformMatrix4fv(vertHandle(), PROJECTION_MATRIX_UNIFORM_LOCATION, false, drawInfo.projectionMatrixFloatBuffer);
+        glProgramUniform3i(vertHandle(), PLAYER_BLOCK_UNIFORM_LOCATION, drawInfo.playerPosition.x, drawInfo.playerPosition.y, drawInfo.playerPosition.z);
+        glProgramUniform3f(vertHandle(), PLAYER_SUB_BLOCK_UNIFORM_LOCATION, drawInfo.playerSubBlock.x, drawInfo.playerSubBlock.y, drawInfo.playerSubBlock.z);
+        glProgramUniform2f(fragHandle(), FOG_START_END_UNIFORM_LOCATION, drawInfo.fogStart, drawInfo.fogEnd);
+        glProgramUniform4f(fragHandle(), FOG_COLOR_UNIFORM_LOCATION, drawInfo.fogColor.x, drawInfo.fogColor.y, drawInfo.fogColor.z, 1);
+    }
+    
+    public void setupRenderPass(GL33RenderPass renderPass) {
+        glProgramUniform1i(vertHandle(), VERT_QUAD_UNIFORM_LOCATION, renderPass.QUAD ? GL_TRUE : GL_FALSE);
+        glProgramUniform1i(vertHandle(), VERT_LIGHTING_UNIFORM_LOCATION, renderPass.LIGHTING ? GL_TRUE : GL_FALSE);
+        glProgramUniform1i(fragHandle(), FRAG_QUAD_UNIFORM_LOCATION, renderPass.QUAD ? GL_TRUE : GL_FALSE);
+        glProgramUniform1i(fragHandle(), FRAG_LIGHTING_UNIFORM_LOCATION, renderPass.LIGHTING ? GL_TRUE : GL_FALSE);
+        glProgramUniform1i(fragHandle(), TEXTURE_UNIFORM_LOCATION, renderPass.TEXTURE ? GL_TRUE : GL_FALSE);
+        glProgramUniform1i(fragHandle(), ALPHA_DISCARD_UNIFORM_LOCATION, renderPass.ALPHA_DISCARD ? GL_TRUE : GL_FALSE);
+        var texture = renderPass.texture();
+        if (texture != null) {
+            setAtlas(texture.getId());
+        }
+    }
+    
+    public void setupDrawComponent(int worldPosBaseID, int staticMatrixBaseID, int dynamicMatrixIdOffset, int lightIDOffset) {
+        glProgramUniform1i(vertHandle(), WORLD_POSITION_ID_OFFSET_UNIFORM_LOCATION, worldPosBaseID);
+        glProgramUniform1i(vertHandle(), STATIC_MATRIX_BASE_ID_UNIFORM_LOCATION, staticMatrixBaseID);
+        glProgramUniform1i(vertHandle(), DYNAMIC_MATRIX_ID_OFFSET_UNIFORM_LOCATION, dynamicMatrixIdOffset);
+        glProgramUniform1i(vertHandle(), DYNAMIC_LIGHT_ID_OFFSET_UNIFORM_LOCATION, lightIDOffset);
     }
 }

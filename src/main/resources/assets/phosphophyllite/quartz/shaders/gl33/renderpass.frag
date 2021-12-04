@@ -1,6 +1,6 @@
 #version 330 core
 // gpuinfo says this is supported, so im using it
-#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_separate_shader_objects : require
 
 layout(location = 0) in float fragmentDistance;
 layout(location = 1) in vec4 vertexColor;
@@ -10,11 +10,10 @@ layout(location = 2) in vec2 texCoord;
 layout(location = 3) flat in vec3 fragmentNormal;
 #define LIGHTMAP_MULTIPLIER 0.015625 /* 1 / 64 (6 bit) */
 layout(location = 4) in vec2 lightmapCoord;
-layout(location = 5) in vec2 lightmapCoords[4];// locations 5 6 7 8
+layout(location = 5) in vec4 lightmapCoords[2];// locations 5 6
 
-layout(location = 9) in float diffuseMultiplier;
-layout(location = 10) in vec3 fragmentModelPos;
-layout(location = 11) flat in vec3[8] cornerLightLevels;// locations 11-18
+layout(location = 7) in vec4 fragmentModelPos;
+layout(location = 8) flat in vec3[8] cornerLightLevels;// locations 8-15
 
 uniform vec2 fogStartEnd;
 uniform vec4 fogColor;
@@ -30,7 +29,7 @@ uniform sampler2D lightmapTexture;
 layout(location = 0) out vec4 color;
 
 void main(){
-    color = vec4(vec3(diffuseMultiplier), 1);
+    color = vec4(vec3(fragmentModelPos.w), 1);
 
     color *= vertexColor;
 
@@ -41,8 +40,8 @@ void main(){
     if (LIGHTING){
         vec2 lightPos = lightmapCoord;
         if (QUAD) {
-            vec2 vert01Avg = lightmapCoords[0] * lightmapCoord.x + lightmapCoords[1] * (1 - lightmapCoord.x);
-            vec2 vert23Avg = lightmapCoords[2] * lightmapCoord.x + lightmapCoords[3] * (1 - lightmapCoord.x);
+            vec2 vert01Avg = lightmapCoords[0].xy * lightmapCoord.x + lightmapCoords[0].zw * (1 - lightmapCoord.x);
+            vec2 vert23Avg = lightmapCoords[1].xy * lightmapCoord.x + lightmapCoords[1].zw * (1 - lightmapCoord.x);
             lightPos = vert01Avg * lightmapCoord.y + vert23Avg * (1 - lightmapCoord.y);
         }
 
