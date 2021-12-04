@@ -1,3 +1,8 @@
+# 1.18-0.6.0-alpha.8.1
+ - Fix Quartz loading on mac
+ - Fix config
+   - Don't inline initialize the variables, JVM will inline those
+
 # 1.18-0.6.0-alpha.8
  - 1.18
 
