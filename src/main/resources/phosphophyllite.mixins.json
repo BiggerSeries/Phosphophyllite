@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_16",
   "refmap": "phosphophyllite.refmap.json",
   "mixins": [
+    "ChunkMapMixin"
   ],
   "client": [
     "NoVizFallbackMixin",
