@@ -429,15 +429,18 @@ public class MultiblockController<
                     this.cachedNBT = otherMultiblockController.cachedNBT;
                     otherMultiblockController.cachedNBT = null;
                 }
+                if(otherController.blocks.size() == 0){
+                    continue;
+                }
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
                     module.preExistingBlock = true;
                     attemptAttach(module);
                 });
                 otherController.blocks.clear();
+                updateExtremes = true;
+                updateAssemblyAtTick = Long.MIN_VALUE;
             }
-            updateExtremes = true;
-            updateAssemblyAtTick = Long.MIN_VALUE;
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
         }
