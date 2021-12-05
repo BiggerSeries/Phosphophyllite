@@ -7,7 +7,12 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.quartz.*;
 import net.roguelogix.phosphophyllite.quartz.internal.common.*;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.light.DynamicLightManager;
 import net.roguelogix.phosphophyllite.quartz.internal.common.light.LightEngine;
+import net.roguelogix.phosphophyllite.quartz.internal.common.mesh.StaticMesh;
+import net.roguelogix.phosphophyllite.quartz.internal.common.mesh.StaticMeshManager;
 import net.roguelogix.phosphophyllite.repack.org.joml.*;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 

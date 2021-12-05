@@ -4,6 +4,8 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.roguelogix.phosphophyllite.quartz.Quartz;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicMatrix;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;

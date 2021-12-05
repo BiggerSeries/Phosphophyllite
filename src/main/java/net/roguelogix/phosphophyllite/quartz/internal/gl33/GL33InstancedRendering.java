@@ -6,14 +6,16 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicLight;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicMatrix;
 import net.roguelogix.phosphophyllite.quartz.QuartzStaticMesh;
-import net.roguelogix.phosphophyllite.quartz.internal.common.StaticMesh;
+import net.roguelogix.phosphophyllite.quartz.internal.common.mesh.StaticMesh;
 import net.roguelogix.phosphophyllite.quartz.internal.common.*;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.light.DynamicLightManager;
+import net.roguelogix.phosphophyllite.quartz.internal.common.mesh.StaticMeshManager;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -24,7 +26,6 @@ import java.util.Collection;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.*;
 import static org.lwjgl.opengl.GL33C.*;
-import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault

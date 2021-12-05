@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common;
+package net.roguelogix.phosphophyllite.quartz.internal.common.gl;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.resources.ResourceLocation;

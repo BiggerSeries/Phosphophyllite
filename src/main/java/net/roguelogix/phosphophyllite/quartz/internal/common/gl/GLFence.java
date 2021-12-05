@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common;
+package net.roguelogix.phosphophyllite.quartz.internal.common.gl;
 
 import static org.lwjgl.opengl.GL33C.*;
 

@@ -7,7 +7,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.roguelogix.phosphophyllite.quartz.*;
 import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
-import net.roguelogix.phosphophyllite.quartz.internal.common.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
 import net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;

@@ -5,8 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicLight;
-import net.roguelogix.phosphophyllite.quartz.internal.common.DynamicLightManager;
-import net.roguelogix.phosphophyllite.quartz.internal.common.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 

@@ -4,8 +4,8 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.quartz.internal.common.B3DStateHelper;
-import net.roguelogix.phosphophyllite.quartz.internal.common.GLBuffer;
-import net.roguelogix.phosphophyllite.quartz.internal.common.GLFence;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLFence;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 

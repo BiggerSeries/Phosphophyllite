@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common;
+package net.roguelogix.phosphophyllite.quartz.internal.common.mesh;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

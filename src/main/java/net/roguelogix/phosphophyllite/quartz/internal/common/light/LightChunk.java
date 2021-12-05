@@ -6,7 +6,6 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
 import net.roguelogix.phosphophyllite.quartz.Quartz;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicLight;
-import net.roguelogix.phosphophyllite.quartz.internal.common.DynamicLightManager;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 

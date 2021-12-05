@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common;
+package net.roguelogix.phosphophyllite.quartz.internal.common.light;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
@@ -6,6 +6,9 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.roguelogix.phosphophyllite.quartz.Quartz;
 import net.roguelogix.phosphophyllite.quartz.QuartzDynamicLight;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;

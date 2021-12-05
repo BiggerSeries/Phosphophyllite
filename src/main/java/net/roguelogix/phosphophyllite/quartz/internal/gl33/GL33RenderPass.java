@@ -8,8 +8,8 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
-import net.roguelogix.phosphophyllite.quartz.internal.common.GLDeletable;
-import net.roguelogix.phosphophyllite.quartz.internal.common.ShaderInfo;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.ShaderInfo;
 
 import javax.annotation.Nullable;
 

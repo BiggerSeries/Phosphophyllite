@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common;
+package net.roguelogix.phosphophyllite.quartz.internal.common.mesh;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -9,6 +9,9 @@ import net.roguelogix.phosphophyllite.quartz.Quartz;
 import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
 import net.roguelogix.phosphophyllite.quartz.QuartzStaticMesh;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLFence;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;

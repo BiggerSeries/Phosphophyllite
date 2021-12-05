@@ -3,7 +3,7 @@ package net.roguelogix.phosphophyllite.quartz.internal.gl33;
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
-import net.roguelogix.phosphophyllite.quartz.internal.common.Program;
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.Program;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.*;
 import static org.lwjgl.opengl.GL33C.*;

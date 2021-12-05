@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.quartz.internal.common;
 
+import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
