@@ -12,6 +12,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.roguelogix.phosphophyllite.quartz.*;
 import net.roguelogix.phosphophyllite.quartz.internal.common.*;
+import net.roguelogix.phosphophyllite.quartz.internal.common.light.LightEngine;
 import net.roguelogix.phosphophyllite.quartz.internal.gl33.GL33Core;
 import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
@@ -119,7 +120,6 @@ public abstract class QuartzCore implements GLDeletable {
         glMode.quartCoreConstructor.run();
         instance.glMode = glMode;
         instance.capabilities = capabilities;
-        Quartz.EVENT_BUS.start();
         Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
         LOGGER.info("Quartz started up");
     }
@@ -138,6 +138,7 @@ public abstract class QuartzCore implements GLDeletable {
     private static final DrawInfo drawInfo = new DrawInfo();
     
     protected final DynamicMatrixManager dynamicMatrixManager;
+    protected final LightEngine lightEngine;
     protected final DynamicLightManager dynamicLightManager;
     protected final StaticMeshManager staticMeshManager;
     
@@ -145,7 +146,9 @@ public abstract class QuartzCore implements GLDeletable {
     
     protected QuartzCore() {
         instance = this;
+        Quartz.EVENT_BUS.register(this);
         dynamicMatrixManager = new DynamicMatrixManager();
+        lightEngine = new LightEngine();
         dynamicLightManager = new DynamicLightManager();
         DYNAMIC_MATRIX_0 = (DynamicMatrixManager.DynamicMatrix) dynamicMatrixManager.alloc(null, null);
         DYNAMIC_MATRIX_0.write(new Matrix4f().identity());
@@ -161,6 +164,7 @@ public abstract class QuartzCore implements GLDeletable {
         dynamicLightManager.delete();
         dynamicMatrixManager.delete();
         drawInfo.delete();
+        Quartz.EVENT_BUS.unregister(this);
     }
     
     public final QuartzDynamicMatrix createDynamicMatrix(@Nullable QuartzDynamicMatrix parent, @Nullable Quartz.DynamicMatrixUpdateFunc updateFunc) {
@@ -173,6 +177,10 @@ public abstract class QuartzCore implements GLDeletable {
     
     public QuartzDynamicLight createDynamicLight(@Nullable Quartz.DynamicLightUpdateFunc updateFunc) {
         return dynamicLightManager.alloc(updateFunc);
+    }
+    
+    public QuartzDynamicLight createDynamicLight(Vector3ic position, QuartzDynamicLight.Type lightType) {
+        return lightEngine.createLightForPos(position, dynamicLightManager, lightType);
     }
     
     private long lastTimeNano = 0;
@@ -202,11 +210,14 @@ public abstract class QuartzCore implements GLDeletable {
         drawInfo.fogStart = RenderSystem.getShaderFogStart();
         drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
         drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
+        drawInfo.deltaNano = deltaNano;
+        drawInfo.partialTicks = pPartialTicks;
         
         Quartz.EVENT_BUS.post(new QuartzEvent.FrameStart());
         
-        instance.dynamicMatrixManager.updateAll(deltaNano, pPartialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
-        instance.dynamicLightManager.updateAll();
+        instance.dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
+        assert Minecraft.getInstance().level != null;
+        instance.lightEngine.update(Minecraft.getInstance().level);
         instance.drawFirst(drawInfo);
     }
     
@@ -238,4 +249,7 @@ public abstract class QuartzCore implements GLDeletable {
     public abstract GLBuffer allocBuffer(boolean dynamic);
     
     public abstract GLBuffer allocBuffer(boolean dynamic, int size);
+    
+    public abstract QuartzDrawBatcher createDrawBatcher();
+    
 }

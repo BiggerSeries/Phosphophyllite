@@ -2,6 +2,13 @@ package net.roguelogix.phosphophyllite.quartz;
 
 public interface QuartzDynamicLight extends QuartzDisposable {
     
+    enum Type {
+        SMOOTH,
+        FLAT,
+        INTERNAL,
+//        AUTOMATIC, // TODO: query the MC settings
+    }
+    
     // [0, 64) range
     void write(int vertex, int vertexDirection, byte skyLight, byte blockLight, byte AO);
     

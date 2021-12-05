@@ -152,7 +152,7 @@ public class Program implements GLDeletable, GLReloadable {
     }
     
     public int fragUniformLocation(String name) {
-        return glGetUniformLocation(vertProgramID, name);
+        return glGetUniformLocation(fragProgramID, name);
     }
     
     public int vertHandle() {

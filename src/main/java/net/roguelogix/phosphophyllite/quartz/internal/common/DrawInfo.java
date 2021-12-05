@@ -10,6 +10,9 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 public class DrawInfo implements GLDeletable {
+    public long deltaNano;
+    public float partialTicks;
+    
     public final Vector3i playerPosition = new Vector3i();
     public final Vector3f playerSubBlock = new Vector3f();
     public final Matrix4f projectionMatrix = new Matrix4f();
@@ -19,6 +22,7 @@ public class DrawInfo implements GLDeletable {
     public float fogStart;
     public float fogEnd;
     public final Vector4f fogColor = new Vector4f();
+    
     
     public DrawInfo() {
     }

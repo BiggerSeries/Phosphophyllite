@@ -27,8 +27,6 @@ public class GL33RenderPass implements GLDeletable {
     public final int VERTICES_PER_PRIMITIVE;
     public final int GL_MODE;
     
-    public final RenderType.CompositeRenderType renderType;
-    
     private final ResourceLocation textureResourceLocation;
     private AbstractTexture texture;
     
@@ -36,7 +34,7 @@ public class GL33RenderPass implements GLDeletable {
         if (!(rawRenderType instanceof RenderType.CompositeRenderType)) {
             throw new IllegalArgumentException("RenderType must be composite type");
         }
-        this.renderType = (RenderType.CompositeRenderType) rawRenderType;
+        RenderType.CompositeRenderType renderType = (RenderType.CompositeRenderType) rawRenderType;
         
         var compositeState = renderType.state();
         var shaderInfo = ShaderInfo.get(compositeState.shaderState);

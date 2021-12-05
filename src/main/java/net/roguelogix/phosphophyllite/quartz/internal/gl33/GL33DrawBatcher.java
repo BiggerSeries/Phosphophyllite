@@ -1,36 +1,32 @@
 package net.roguelogix.phosphophyllite.quartz.internal.gl33;
 
-import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
-import net.roguelogix.phosphophyllite.quartz.QuartzDynamicLight;
-import net.roguelogix.phosphophyllite.quartz.QuartzDynamicMatrix;
-import net.roguelogix.phosphophyllite.quartz.QuartzStaticMesh;
-import net.roguelogix.phosphophyllite.quartz.internal.common.StaticMesh;
+import net.roguelogix.phosphophyllite.quartz.*;
 import net.roguelogix.phosphophyllite.quartz.internal.common.*;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.quartz.internal.common.light.LightEngine;
+import net.roguelogix.phosphophyllite.repack.org.joml.*;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.Collection;
+
+import java.util.function.Consumer;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.*;
 import static org.lwjgl.opengl.GL33C.*;
-import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@Deprecated(forRemoval = true)
-public class GL33InstancedRendering implements GLDeletable {
-    private class MeshDrawManager {
+public class GL33DrawBatcher implements QuartzDrawBatcher {
+    
+    private static final Matrix4fc IDENTITY_MATRIX = new Matrix4f();
+    private static final Matrix4f SCRATCH_NORMAL_MATRIX = new Matrix4f();
+    
+    private class MeshDrawManager implements GLDeletable {
         
         private final StaticMeshManager.TrackedMesh trackedMesh;
         private final ObjectArrayList<DrawComponent> components = new ObjectArrayList<>();
@@ -45,8 +41,7 @@ public class GL33InstancedRendering implements GLDeletable {
         private int lightIDOffset = 0;
         private int instanceCount = 0;
         
-        private final Int2IntMap idToLocationMap = new Int2IntOpenHashMap();
-        private final Int2IntMap locationToIDMap = new Int2IntOpenHashMap();
+        private final ObjectArrayList<Instance> liveInstances = new ObjectArrayList<>();
         
         private class DrawComponent implements GLDeletable {
             private final RenderType renderType;
@@ -59,7 +54,7 @@ public class GL33InstancedRendering implements GLDeletable {
             
             private DrawComponent(RenderType renderType, StaticMeshManager.TrackedMesh.Component component) {
                 this.renderType = renderType;
-                GL33RenderPass renderPass = renderPasses.get(renderType);
+                GL33RenderPass renderPass = renderPasses.computeIfAbsent(renderType, ignored -> new GL33RenderPass(renderType));
                 QUAD = renderPass.QUAD;
                 GL_MODE = renderPass.GL_MODE;
                 
@@ -71,7 +66,7 @@ public class GL33InstancedRendering implements GLDeletable {
                     ensureElementBufferLength(elementCountTemp / 6);
                 }
                 elementCount = elementCountTemp;
-                var drawComponents = renderTypeDrawComponents.get(renderType);
+                var drawComponents = renderTypeDrawComponents.computeIfAbsent(renderType, e -> new ObjectArrayList<>());
                 drawIndex = drawComponents.size();
                 drawComponents.add(this);
                 
@@ -118,8 +113,6 @@ public class GL33InstancedRendering implements GLDeletable {
             dynamicMatrixIDAllocation.addReallocCallback(this::dynamicMatrixIDMoved);
             worldPosAllocation.addReallocCallback(this::worldPosBaseIDMoved);
             lightIDAllocation.addReallocCallback(this::lightIDOffsetMoved);
-            idToLocationMap.defaultReturnValue(-1);
-            locationToIDMap.defaultReturnValue(-1);
             
             onRebuild();
             trackedMesh.addBuildCallback(this::onRebuild);
@@ -156,95 +149,156 @@ public class GL33InstancedRendering implements GLDeletable {
             lightIDOffset = allocation.offset() / INT_BYTE_SIZE;
         }
         
-        void addInstance(int id, Vector3ic worldPosition, int dynamicMatrixID, Matrix4fc staticMatrix, int lightID) {
-            idToLocationMap.put(id, instanceCount);
-            locationToIDMap.put(instanceCount, id);
+        Instance createInstance(Vector3ic worldPosition, int dynamicMatrixID, Matrix4fc staticMatrix, int lightID) {
             
             if (worldPosAllocation.size() < (instanceCount + 1) * VEC4_BYTE_SIZE) {
                 worldPosAllocation = worldPosBuffer.realloc(worldPosAllocation, worldPosAllocation.size() * 2, VEC4_BYTE_SIZE);
             }
             worldPosition.get(instanceCount * VEC4_BYTE_SIZE, worldPosAllocation.buffer());
-//            worldPosAllocation.flush();
             worldPosAllocation.flushRange(instanceCount * VEC4_BYTE_SIZE, VEC4_BYTE_SIZE);
             
             if (dynamicMatrixIDAllocation.size() < (instanceCount + 1) * INT_BYTE_SIZE) {
                 dynamicMatrixIDAllocation = dynamicMatrixIDBuffer.realloc(dynamicMatrixIDAllocation, dynamicMatrixIDAllocation.size() * 2, INT_BYTE_SIZE);
             }
             dynamicMatrixIDAllocation.buffer().putInt(instanceCount * INT_BYTE_SIZE, Integer.reverseBytes(dynamicMatrixID));
-//            dynamicMatrixIDAllocation.flush();
             dynamicMatrixIDAllocation.flushRange(instanceCount * INT_BYTE_SIZE, INT_BYTE_SIZE);
             
             if (staticMatrixAllocation.size() < (instanceCount + 1) * MATRIX_4F_BYTE_SIZE_2) {
                 staticMatrixAllocation = staticMatrixBuffer.realloc(staticMatrixAllocation, staticMatrixAllocation.size() * 2, MATRIX_4F_BYTE_SIZE_2);
             }
             staticMatrix.get(instanceCount * MATRIX_4F_BYTE_SIZE_2, staticMatrixAllocation.buffer());
-            staticMatrix.normal(new Matrix4f()).get(instanceCount * MATRIX_4F_BYTE_SIZE_2 + MATRIX_4F_BYTE_SIZE, staticMatrixAllocation.buffer());
-//            staticMatrixAllocation.flush();
+            staticMatrix.normal(SCRATCH_NORMAL_MATRIX).get(instanceCount * MATRIX_4F_BYTE_SIZE_2 + MATRIX_4F_BYTE_SIZE, staticMatrixAllocation.buffer());
             staticMatrixAllocation.flushRange(instanceCount * MATRIX_4F_BYTE_SIZE_2, MATRIX_4F_BYTE_SIZE_2);
             
             if (lightIDAllocation.size() < (instanceCount + 1) * INT_BYTE_SIZE) {
                 lightIDAllocation = lightIDBuffer.realloc(lightIDAllocation, lightIDAllocation.size() * 2, INT_BYTE_SIZE);
             }
             lightIDAllocation.buffer().putInt(instanceCount * INT_BYTE_SIZE, Integer.reverseBytes(lightID));
-//            lightIDAllocation.flush();
             lightIDAllocation.flushRange(instanceCount * INT_BYTE_SIZE, INT_BYTE_SIZE);
             
-            instanceCount++;
+            
+            Instance instance = new Instance();
+            instance.location = instanceCount++;
+            liveInstances.add(instance);
+            return instance;
         }
         
-        void removeInstance(int id) {
-            var location = idToLocationMap.remove(id);
-            if (location == -1) {
+        void removeInstance(Instance instance) {
+            if (instance.location == -1) {
                 return;
             }
             instanceCount--;
-            var endID = locationToIDMap.remove(instanceCount);
-            if (location == instanceCount) {
+            Instance endInstance = liveInstances.pop();
+            if (instance == endInstance) {
+                instance.location = -1;
                 return;
             }
             // swapping time!
-            locationToIDMap.put(location, endID);
-            idToLocationMap.put(endID, location);
-            worldPosAllocation.copy(instanceCount * VEC4_BYTE_SIZE, location * VEC4_BYTE_SIZE, VEC4_BYTE_SIZE);
-            staticMatrixAllocation.copy(instanceCount * MATRIX_4F_BYTE_SIZE_2, location * MATRIX_4F_BYTE_SIZE_2, MATRIX_4F_BYTE_SIZE_2);
-            dynamicMatrixIDAllocation.copy(instanceCount * INT_BYTE_SIZE, location * INT_BYTE_SIZE, INT_BYTE_SIZE);
-            lightIDAllocation.copy(instanceCount * INT_BYTE_SIZE, location * INT_BYTE_SIZE, INT_BYTE_SIZE);
+            worldPosAllocation.copy(instanceCount * VEC4_BYTE_SIZE, instance.location * VEC4_BYTE_SIZE, VEC4_BYTE_SIZE);
+            staticMatrixAllocation.copy(instanceCount * MATRIX_4F_BYTE_SIZE_2, instance.location * MATRIX_4F_BYTE_SIZE_2, MATRIX_4F_BYTE_SIZE_2);
+            dynamicMatrixIDAllocation.copy(instanceCount * INT_BYTE_SIZE, instance.location * INT_BYTE_SIZE, INT_BYTE_SIZE);
+            lightIDAllocation.copy(instanceCount * INT_BYTE_SIZE, instance.location * INT_BYTE_SIZE, INT_BYTE_SIZE);
+            endInstance.location = instance.location;
+            instance.location = -1;
+            liveInstances.set(endInstance.location, endInstance);
+        }
+        
+        @Override
+        public void delete() {
+            while (!liveInstances.isEmpty()) {
+                liveInstances.peek(0).dispose();
+            }
+        }
+        
+        private class Instance implements QuartzDrawBatcher.Instance {
+            
+            private int location = -1;
+            private DynamicLightManager.DynamicLight ownedLight;
+            
+            @Override
+            public void dispose() {
+                removeInstance(this);
+                if (ownedLight != null) {
+                    ownedLight.dispose();
+                    ownedLight = null;
+                }
+            }
+            
+            @Override
+            public void updateDynamicMatrix(@Nullable QuartzDynamicMatrix newDynamicMatrix) {
+                if (newDynamicMatrix instanceof DynamicMatrixManager.DynamicMatrix dynamicMatrix && dynamicMatrixManager.owns(dynamicMatrix)) {
+                    dynamicMatrixIDAllocation.buffer().putInt(location * INT_BYTE_SIZE, Integer.reverseBytes(dynamicMatrix.id()));
+                    dynamicMatrixIDAllocation.flushRange(location * INT_BYTE_SIZE, INT_BYTE_SIZE);
+                }
+            }
+            
+            @Override
+            public void updateStaticMatrix(Matrix4fc newStaticMatrix) {
+                newStaticMatrix.get(location * MATRIX_4F_BYTE_SIZE_2, staticMatrixAllocation.buffer());
+                newStaticMatrix.normal(SCRATCH_NORMAL_MATRIX).get(location * MATRIX_4F_BYTE_SIZE_2 + MATRIX_4F_BYTE_SIZE, staticMatrixAllocation.buffer());
+                staticMatrixAllocation.flushRange(location * MATRIX_4F_BYTE_SIZE_2, MATRIX_4F_BYTE_SIZE_2);
+            }
+            
+            @Override
+            public void updateDynamicLight(@Nullable QuartzDynamicLight newDynamicLight) {
+                int newLightID = -1;
+                if (newDynamicLight == null) {
+                    if (ownedLight == null) {
+                        newLightID = ZERO_LEVEL_LIGHT.id();
+                    } else {
+                        newLightID = ownedLight.id();
+                    }
+                } else if (newDynamicLight instanceof DynamicLightManager.DynamicLight dynamicLight && lightManager.owns(dynamicLight)) {
+                    newLightID = dynamicLight.id();
+                }
+                lightIDAllocation.buffer().putInt(location * INT_BYTE_SIZE, Integer.reverseBytes(newLightID));
+                lightIDAllocation.flushRange(location * INT_BYTE_SIZE, INT_BYTE_SIZE);
+            }
         }
     }
     
-    private final GL33MainProgram program;
-    private final DynamicMatrixManager dynamicMatrixManager;
     private final StaticMeshManager meshManager;
-    private final DynamicLightManager lightManager;
+    private final LightEngine lightEngine;
+    private final GL33MainProgram program;
+    private final Consumer<GL33DrawBatcher> deleteCallback;
+    
+    private final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager();
+    private final DynamicMatrixManager.DynamicMatrix identityDynamicMatrix = dynamicMatrixManager.alloc(null, (matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> matrix.write(IDENTITY_MATRIX));
+    private final DynamicLightManager lightManager = new DynamicLightManager();
+    private final DynamicLightManager.DynamicLight ZERO_LEVEL_LIGHT = lightManager.alloc((light, blockAndTintGetter) -> light.write((byte) 0, (byte) 0, (byte) 0));
     
     private final GLBuffer worldPosBuffer = new GL33Buffer(false);
     private final GLBuffer dynamicMatrixIDBuffer = new GL33Buffer(false);
     private final GLBuffer staticMatrixBuffer = new GL33Buffer(false);
     private final GLBuffer lightIDBuffer = new GL33Buffer(false);
+    
+    // TODO: global element buffer, they are all identical
+    private final GLBuffer elementBuffer = new GL33Buffer(false);
+    private GLBuffer.Allocation elementBufferAllocation;
+    
     private final int worldPosTexture;
     private final int dynamicMatrixIDTexture;
     private final int dynamicMatrixTexture;
     private final int staticMatrixTexture;
     private final int lightIDTexture;
     private final int lightsTexture;
-    private final GLBuffer elementBuffer = new GL33Buffer(false);
-    private GLBuffer.Allocation elementBufferAllocation;
     private final int VAO;
     
     private final Object2ObjectMap<StaticMesh, MeshDrawManager> drawManagers = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<RenderType, GL33RenderPass> renderPasses = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<RenderType, ObjectArrayList<MeshDrawManager.DrawComponent>> renderTypeDrawComponents = new Object2ObjectArrayMap<>();
-    private final Int2ObjectMap<MeshDrawManager> instanceDrawManagers = new Int2ObjectOpenHashMap<>();
-    private final IntArrayList freeIds = new IntArrayList();
-    private int nextID = 0;
     
-    public GL33InstancedRendering(StaticMeshManager meshManager, DynamicMatrixManager matrixManager, DynamicLightManager lightManager, GL33MainProgram program) {
+    private AABBi cullAABB = null;
+    private boolean enabled = true;
+    
+    public GL33DrawBatcher(StaticMeshManager meshManager, LightEngine lightEngine, GL33MainProgram program, Consumer<GL33DrawBatcher> deleteCallback) {
         this.meshManager = meshManager;
-        this.lightManager = lightManager;
-        dynamicMatrixManager = matrixManager;
+        this.lightEngine = lightEngine;
         this.program = program;
+        this.deleteCallback = deleteCallback;
+    
         elementBufferAllocation = elementBuffer.alloc(1);
-        
+    
         VAO = glGenVertexArrays();
         B3DStateHelper.bindVertexArray(VAO);
         B3DStateHelper.bindArrayBuffer(meshManager.vertexBuffer.handle());
@@ -287,63 +341,78 @@ public class GL33InstancedRendering implements GLDeletable {
     }
     
     @Override
-    public void delete() {
+    public void dispose() {
+        deleteCallback.accept(this);
+        enabled = false;
+        glDeleteTextures(lightsTexture);
+        glDeleteTextures(lightIDTexture);
         glDeleteTextures(staticMatrixTexture);
         glDeleteTextures(dynamicMatrixTexture);
         glDeleteTextures(dynamicMatrixIDTexture);
+        glDeleteTextures(worldPosTexture);
         glDeleteVertexArrays(VAO);
-        worldPosBuffer.delete();
-        dynamicMatrixIDBuffer.delete();
-        staticMatrixBuffer.delete();
-        lightIDBuffer.delete();
+        renderTypeDrawComponents.clear();
+        renderPasses.forEach((renderType, renderPass) -> renderPass.delete());
+        drawManagers.forEach((staticMesh, meshDrawManager) -> meshDrawManager.delete());
+        elementBufferAllocation.delete();
         elementBuffer.delete();
+        lightIDBuffer.delete();
+        staticMatrixBuffer.delete();
+        dynamicMatrixIDBuffer.delete();
+        worldPosBuffer.delete();
+        lightManager.delete();
+        identityDynamicMatrix.dispose();
+        dynamicMatrixManager.delete();
     }
     
-    public void registerRenderType(RenderType renderType) {
-        if (renderPasses.containsKey(renderType)) {
-            return;
-        }
-        var renderPass = new GL33RenderPass(renderType);
-        renderPasses.put(renderType, renderPass);
-        renderTypeDrawComponents.put(renderType, new ObjectArrayList<>());
-    }
-    
-    public Collection<RenderType> registeredRenderTypes() {
-        return renderTypeDrawComponents.keySet();
-    }
-    
-    public int addInstance(QuartzStaticMesh quartzMesh, Vector3ic worldPosition, QuartzDynamicMatrix quartzDynamicMatrix, Matrix4fc staticTransform, QuartzDynamicLight quartzDynamicLight) {
-        if (!(quartzDynamicMatrix instanceof DynamicMatrixManager.DynamicMatrix dynamicMatrix) || !(quartzMesh instanceof StaticMesh mesh) || !(quartzDynamicLight instanceof DynamicLightManager.DynamicLight light)) {
-            return -1;
-        }
-        
-        final int id = nextID();
-        
-        var meshManager = drawManagers.computeIfAbsent(mesh, MeshDrawManager::new);
-        meshManager.addInstance(id, worldPosition, dynamicMatrix.id(), staticTransform, light.id());
-        instanceDrawManagers.put(id, meshManager);
-        
-        return id;
-    }
-    
-    public void removeInstance(int id) {
-        var drawManager = freeID(id);
-        if (drawManager != null) {
-            drawManager.removeInstance(id);
-        }
-        freeIds.add(id);
-    }
-    
-    private int nextID() {
-        if (!freeIds.isEmpty()) {
-            return freeIds.popInt();
-        }
-        return nextID++;
-    }
-    
+    @Override
     @Nullable
-    private MeshDrawManager freeID(int id) {
-        return instanceDrawManagers.remove(id);
+    public Instance createInstance(Vector3ic position, QuartzStaticMesh quartzMesh, @Nullable QuartzDynamicMatrix quartzDynamicMatrix, Matrix4fc staticMatrix, @Nullable QuartzDynamicLight quartzDynamicLight, @Nullable QuartzDynamicLight.Type lightType) {
+        if (!(quartzMesh instanceof StaticMesh mesh)) {
+            return null;
+        }
+        if (quartzDynamicMatrix == null) {
+            quartzDynamicMatrix = identityDynamicMatrix;
+        }
+        if (!(quartzDynamicMatrix instanceof DynamicMatrixManager.DynamicMatrix dynamicMatrix) || !dynamicMatrixManager.owns(dynamicMatrix)) {
+            return null;
+        }
+        DynamicLightManager.DynamicLight ownedLight = null;
+        if (quartzDynamicLight == null) {
+            // cache and reuse these for each block
+            if(lightType == null){
+                lightType = QuartzDynamicLight.Type.SMOOTH; // TODO: automatic
+            }
+            quartzDynamicLight = ownedLight = lightEngine.createLightForPos(position, lightManager, lightType);
+        }
+        if (!(quartzDynamicLight instanceof DynamicLightManager.DynamicLight light) || !lightManager.owns(light)) {
+            return null;
+        }
+        var drawManager = drawManagers.computeIfAbsent(mesh, MeshDrawManager::new);
+        
+        var instance = drawManager.createInstance(position, dynamicMatrix.id(), staticMatrix, light.id());
+        instance.ownedLight = ownedLight;
+        return instance;
+    }
+    
+    @Override
+    public QuartzDynamicMatrix createDynamicMatrix(@Nullable QuartzDynamicMatrix parentTransform, @Nullable Quartz.DynamicMatrixUpdateFunc updateFunc) {
+        return dynamicMatrixManager.alloc(parentTransform, updateFunc);
+    }
+    
+    @Override
+    public QuartzDynamicLight createLight(Vector3ic lightPosition, QuartzDynamicLight.Type lightType) {
+        return lightEngine.createLightForPos(lightPosition, lightManager, lightType);
+    }
+    
+    @Override
+    public void setCullAABB(AABBi aabb) {
+        this.cullAABB = new AABBi(aabb);
+    }
+    
+    @Override
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
     
     void ensureElementBufferLength(int faceCount) {
@@ -369,18 +438,24 @@ public class GL33InstancedRendering implements GLDeletable {
         elementBufferAllocation.flush();
     }
     
-    public void draw() {
+    void drawOpaque(DrawInfo drawInfo) {
+        if (!enabled) {
+            return;
+        }
+    
+        dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
+    
         glActiveTexture(GL33.WORLD_POSITIONS_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_BUFFER, worldPosTexture);
-    
+        
         glActiveTexture(GL33.DYNAMIC_MATRIX_ID_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixIDTexture);
         glActiveTexture(GL33.DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
-    
+        
         glActiveTexture(GL33.STATIC_MATRIX_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_BUFFER, staticMatrixTexture);
-    
+        
         glActiveTexture(GL33.DYNAMIC_LIGHT_ID_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_BUFFER, lightIDTexture);
         glActiveTexture(GL33.DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
@@ -392,6 +467,7 @@ public class GL33InstancedRendering implements GLDeletable {
         for (var entry : renderTypeDrawComponents.entrySet()) {
             program.setupRenderPass(renderPasses.get(entry.getKey()));
             var drawComponents = entry.getValue();
+            //noinspection ForLoopReplaceableByForEach
             for (int i = 0; i < drawComponents.size(); i++) {
                 drawComponents.get(i).draw();
             }

@@ -100,7 +100,7 @@ public class DynamicMatrixManager implements GLDeletable {
         glBuffer.delete();
     }
     
-    public QuartzDynamicMatrix alloc(@Nullable QuartzDynamicMatrix parentTransform, @Nullable Quartz.DynamicMatrixUpdateFunc updateFunc) {
+    public DynamicMatrix alloc(@Nullable QuartzDynamicMatrix parentTransform, @Nullable Quartz.DynamicMatrixUpdateFunc updateFunc) {
         DynamicMatrix parentMatrix = null;
         if (parentTransform != null) {
             if (parentTransform instanceof DynamicMatrix parent && parent.manager() == this) {
@@ -130,5 +130,9 @@ public class DynamicMatrixManager implements GLDeletable {
     
     public GLBuffer buffer() {
         return glBuffer;
+    }
+    
+    public boolean owns(DynamicMatrix matrix) {
+        return matrix.manager() == this;
     }
 }

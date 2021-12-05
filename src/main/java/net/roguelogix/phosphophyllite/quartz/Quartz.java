@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 @MethodsReturnNonnullByDefault
 public final class Quartz {
     
-    public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false).startShutdown());
+    public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false));
     
     public static void registerRenderType(RenderType type) {
         QuartzCore.instance().registerRenderType(type);
@@ -40,14 +40,17 @@ public final class Quartz {
         void accept(QuartzDynamicMatrix matrix, long nanoSinceLastFrame, float partialTicks, Vector3ic playerBlock, Vector3fc playerPartialBlock);
     }
     
+    @Deprecated(forRemoval = true)
     public static QuartzDynamicMatrix createDynamicMatrix(@Nullable QuartzDynamicMatrix parent, @Nullable DynamicMatrixUpdateFunc updateFunc) {
         return QuartzCore.instance().createDynamicMatrix(parent, updateFunc);
     }
     
+    @Deprecated(forRemoval = true)
     public static QuartzDynamicMatrix createDynamicMatrix(@Nullable DynamicMatrixUpdateFunc updateFunc) {
         return createDynamicMatrix(null, updateFunc);
     }
     
+    @Deprecated(forRemoval = true)
     public static QuartzDynamicMatrix createDynamicMatrix() {
         return createDynamicMatrix(null, null);
     }
@@ -56,15 +59,27 @@ public final class Quartz {
         void accept(QuartzDynamicLight light, BlockAndTintGetter blockAndTintGetter);
     }
     
+    @Deprecated(forRemoval = true)
     public static QuartzDynamicLight createDynamicLight(@Nullable DynamicLightUpdateFunc updateFunc) {
         return QuartzCore.instance().createDynamicLight(updateFunc);
     }
     
+    @Deprecated(forRemoval = true)
+    public static QuartzDynamicLight createDynamicLight(Vector3ic position, QuartzDynamicLight.Type lightType) {
+        return QuartzCore.instance().createDynamicLight(position, lightType);
+    }
+    
+    @Deprecated(forRemoval = true)
     public static int registerStaticMeshInstance(QuartzStaticMesh mesh, Vector3ic position, @Nullable QuartzDynamicMatrix dynamicMatrix, Matrix4fc staticTransform, QuartzDynamicLight light) {
         return QuartzCore.instance().registerStaticMeshInstance(mesh, position, dynamicMatrix, staticTransform, light);
     }
     
+    @Deprecated(forRemoval = true)
     public static void unregisterStaticMeshInstance(int handle) {
         QuartzCore.instance().unregisterStaticMeshInstance(handle);
+    }
+    
+    public static QuartzDrawBatcher createDrawBatcher() {
+        return QuartzCore.instance().createDrawBatcher();
     }
 }

@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.mixinhelpers.LevelRenderStages;
+import net.roguelogix.phosphophyllite.quartz.internal.common.light.LightEngine;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,5 +25,15 @@ public class LevelRendererMixin {
     )
     public void renderFirst(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         LevelRenderStages.renderFirst(pMatrixStack, pPartialTicks, pFinishTimeNano, pDrawBlockOutline, pActiveRenderInfo, pGameRenderer, pLightmap, pProjection);
+    }
+    
+    @Inject(
+            method = "setSectionDirty(IIIZ)V",
+            at = @At("HEAD")
+    )
+    
+    public void setSectionDirty(int x, int y, int z, boolean updateNow, CallbackInfo ci){
+        // all rebuilds here are lazy, *fite me*
+        LightEngine.sectionDirty(x, y, z);
     }
 }

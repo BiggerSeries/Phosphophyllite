@@ -58,131 +58,8 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
             return;
         }
         if (mesh != null && level.isClientSide()) {
-            quartzLight = Quartz.createDynamicLight((light, blockAndTintGetter) -> {
-                // TODO: proper light tracking system
-                var lightVals = new int[3][3][3][2];
-                var mutableBlockPos = new BlockPos.MutableBlockPos();
-                for (int i = -1; i < 2; i++) {
-                    for (int j = -1; j < 2; j++) {
-                        for (int k = -1; k < 2; k++) {
-                            mutableBlockPos.set(getBlockPos());
-                            mutableBlockPos.move(i, j, k);
-                            mutableBlockPos.move(0, 1, 0);
-                            if (blockAndTintGetter.getBlockState(mutableBlockPos).isViewBlocking(blockAndTintGetter, mutableBlockPos)) {
-                                lightVals[i + 1][j + 1][k + 1][0] = -1;
-                                lightVals[i + 1][j + 1][k + 1][1] = -1;
-                            } else {
-                                lightVals[i + 1][j + 1][k + 1][0] = blockAndTintGetter.getBrightness(LightLayer.SKY, mutableBlockPos);
-                                lightVals[i + 1][j + 1][k + 1][1] = blockAndTintGetter.getBrightness(LightLayer.BLOCK, mutableBlockPos);
-                            }
-                        }
-                    }
-                }
-                for (int x = 0; x < 2; x++) {
-                    for (int y = 0; y < 2; y++) {
-                        for (int z = 0; z < 2; z++) {
-                            for (int i = 0; i < 2; i++) {
-                                {
-                                    int defaultVal;
-                                    int val;
-                                    
-                                    int skyLight = 0;
-                                    defaultVal = lightVals[x + 1 - i][1][1][0];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][0] : defaultVal;
-                                    val = lightVals[x + 1 - i][y][z][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y + 1][z][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y][z + 1][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y + 1][z + 1][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    
-                                    int blockLight = 0;
-                                    defaultVal = lightVals[x + 1 - i][1][1][1];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][1] : defaultVal;
-                                    val = lightVals[x + 1 - i][y][z][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y + 1][z][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y][z + 1][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1 - i][y + 1][z + 1][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    
-                                    byte AO = AOMode(lightVals[x + 1 - i][y * 2][1][1] == -1, lightVals[x + 1 - i][y * 2][z * 2][1] == -1, lightVals[x + 1 - i][1][z * 2][1] == -1);
-                                    
-                                    light.write(z * 4 + y * 2 + x, i * 3, (byte) skyLight, (byte) blockLight, AO);
-                                }
-                                {
-                                    int defaultVal;
-                                    int val;
-                                    
-                                    int skyLight = 0;
-                                    defaultVal = lightVals[1][y + 1 - i][1][0];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][0] : defaultVal;
-                                    val = lightVals[x][y + 1 - i][z][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1 - i][z][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x][y + 1 - i][z + 1][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1 - i][z + 1][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    
-                                    int blockLight = 0;
-                                    defaultVal = lightVals[1][y + 1 - i][1][1];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][1] : defaultVal;
-                                    val = lightVals[x][y + 1 - i][z][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1 - i][z][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x][y + 1 - i][z + 1][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1 - i][z + 1][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    
-                                    byte AO = AOMode(lightVals[x * 2][y + 1 - i][1][1] == -1, lightVals[x * 2][y + 1 - i][z * 2][1] == -1, lightVals[1][y + 1 - i][z * 2][1] == -1);
-                                    
-                                    light.write(z * 4 + y * 2 + x, 1 + i * 3, (byte) skyLight, (byte) blockLight, AO);
-                                }
-                                {
-                                    int defaultVal;
-                                    int val;
-                                    
-                                    int skyLight = 0;
-                                    defaultVal = lightVals[1][1][z + 1 - i][0];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][0] : defaultVal;
-                                    val = lightVals[x][y][z + 1 - i][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y][z + 1 - i][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x][y + 1][z + 1 - i][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1][z + 1 - i][0];
-                                    skyLight += val == -1 ? defaultVal : val;
-                                    
-                                    int blockLight = 0;
-                                    defaultVal = lightVals[1][1][z + 1 - i][1];
-                                    defaultVal = defaultVal == -1 ? lightVals[1][1][1][1] : defaultVal;
-                                    val = lightVals[x][y][z + 1 - i][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y][z + 1 - i][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x][y + 1][z + 1 - i][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    val = lightVals[x + 1][y + 1][z + 1 - i][1];
-                                    blockLight += val == -1 ? defaultVal : val;
-                                    
-                                    byte AO = AOMode(lightVals[x * 2][1][z + 1 - i][1] == -1, lightVals[x * 2][y * 2][z + 1 - i][1] == -1, lightVals[1][y * 2][z + 1 - i][1] == -1);
-                                    
-                                    light.write(z * 4 + y * 2 + x, 2 + i * 3, (byte) skyLight, (byte) blockLight, AO);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
+            var modelPos = new Vector3i(getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ());
+            quartzLight = Quartz.createDynamicLight(modelPos, QuartzDynamicLight.Type.SMOOTH);
             quartzMatrix = Quartz.createDynamicMatrix((matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> {
                 rotation += nanoSinceLastFrame / 1_000_000_000f;
                 spinMatrix.identity();
@@ -196,7 +73,7 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
 //                spinMatrix.translate(0, 2, 0);
                 matrix.write(spinMatrix);
             });
-            instanceID = Quartz.registerStaticMeshInstance(mesh, new Vector3i(getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ()), quartzMatrix, new Matrix4f().translate(0, 0, 0), quartzLight);
+            instanceID = Quartz.registerStaticMeshInstance(mesh, modelPos, quartzMatrix, new Matrix4f().translate(0, 0, 0), quartzLight);
         }
     }
     

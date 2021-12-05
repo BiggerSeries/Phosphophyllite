@@ -18,9 +18,11 @@ public class DynamicLightManager implements GLDeletable {
         final GLBuffer.Allocation allocation;
         ByteBuffer buffer;
         Consumer<BlockAndTintGetter> updateCall;
+        final Consumer<DynamicLight> deleteCallback;
         
-        private DynamicLight(GLBuffer.Allocation alloc) {
+        private DynamicLight(GLBuffer.Allocation alloc, Consumer<DynamicLight> deleteCallback) {
             this.allocation = alloc;
+            this.deleteCallback = deleteCallback;
             alloc.addBufferSliceCallback(newAlloc -> this.buffer = newAlloc.buffer());
         }
         
@@ -38,22 +40,38 @@ public class DynamicLightManager implements GLDeletable {
             buffer.put(vertex * 12 + vertexDirection * 2 + 1, skyLight);
         }
         
+        public void flush() {
+            allocation.flush();
+        }
+        
         @Override
         public void dispose() {
+            if(deleteCallback != null){
+                deleteCallback.accept(this);
+            }
             allocation.delete();
-            var removed = updateCalls.pop();
-            if (removed != updateCall) {
-                int index = updateCalls.indexOf(updateCall);
-                if (index != -1) {
-                    updateCalls.set(index, removed);
-                } else {
-                    updateCalls.add(removed);
+            if (updateCall != null) {
+                var removed = updateCalls.pop();
+                if (removed != updateCall) {
+                    int index = updateCalls.indexOf(updateCall);
+                    if (index != -1) {
+                        updateCalls.set(index, removed);
+                    } else {
+                        updateCalls.add(removed);
+                    }
                 }
             }
         }
         
         public int id() {
             return allocation.offset() / MagicNumbers.DYNAMIC_LIGHT_BYTE_SIZE;
+        }
+    
+        public void update(BlockAndTintGetter blockAndTintGetter) {
+            if(updateCall != null) {
+                updateCall.accept(blockAndTintGetter);
+                flush();
+            }
         }
     }
     
@@ -69,8 +87,12 @@ public class DynamicLightManager implements GLDeletable {
         glBuffer.delete();
     }
     
-    public QuartzDynamicLight alloc(@Nullable Quartz.DynamicLightUpdateFunc updateFunc) {
-        DynamicLight dynamicLight = new DynamicLight(glBuffer.alloc(MagicNumbers.DYNAMIC_LIGHT_BYTE_SIZE, MagicNumbers.DYNAMIC_LIGHT_BYTE_SIZE));
+    public DynamicLight alloc(@Nullable Quartz.DynamicLightUpdateFunc updateFunc) {
+        return alloc(updateFunc, null);
+    }
+    
+    public DynamicLight alloc(@Nullable Quartz.DynamicLightUpdateFunc updateFunc, @Nullable Consumer<DynamicLight> deleteCallback) {
+        DynamicLight dynamicLight = new DynamicLight(glBuffer.alloc(MagicNumbers.DYNAMIC_LIGHT_BYTE_SIZE, MagicNumbers.DYNAMIC_LIGHT_BYTE_SIZE), deleteCallback);
         if (updateFunc != null) {
             Consumer<BlockAndTintGetter> updateCall = level -> updateFunc.accept(dynamicLight, level);
             dynamicLight.updateCall = updateCall;
@@ -90,5 +112,9 @@ public class DynamicLightManager implements GLDeletable {
     
     public GLBuffer buffer() {
         return glBuffer;
+    }
+    
+    public boolean owns(DynamicLight light) {
+        return light.allocation.allocator() == glBuffer;
     }
 }
