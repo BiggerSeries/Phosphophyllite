@@ -159,9 +159,9 @@ public class ConfigManager {
                 }
             }
         }
-        
+
         void load() {
-            runPostLoads();
+            runPreLoads();
             if (actualFile == null) {
                 findFile();
             }
