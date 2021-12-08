@@ -19,7 +19,6 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.Objects;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -73,6 +72,7 @@ public class ConfigManager {
             baseFile = new File("config/" + annotation.folder() + "/" + name + "-" + annotation.type().toString().toLowerCase());
             
             loadReflections();
+            runRegistrations();
         }
         
         private Field enableAdvanced;
@@ -88,8 +88,8 @@ public class ConfigManager {
             }
         }
         
+        private final HashSet<Method> registrations = new HashSet<>();
         private final HashSet<Method> preLoads = new HashSet<>();
-        private final HashSet<Method> loads = new HashSet<>();
         private final HashSet<Method> postLoads = new HashSet<>();
         
         void loadReflections() {
@@ -115,13 +115,13 @@ public class ConfigManager {
                 if (!Modifier.isStatic(declaredMethod.getModifiers())) {
                     continue;
                 }
+                if (declaredMethod.isAnnotationPresent(RegisterConfig.Registration.class)) {
+                    declaredMethod.setAccessible(true);
+                    registrations.add(declaredMethod);
+                }
                 if (declaredMethod.isAnnotationPresent(RegisterConfig.PreLoad.class)) {
                     declaredMethod.setAccessible(true);
                     preLoads.add(declaredMethod);
-                }
-                if (declaredMethod.isAnnotationPresent(RegisterConfig.Load.class)) {
-                    declaredMethod.setAccessible(true);
-                    loads.add(declaredMethod);
                 }
                 if (declaredMethod.isAnnotationPresent(RegisterConfig.PostLoad.class)) {
                     declaredMethod.setAccessible(true);
@@ -140,8 +140,8 @@ public class ConfigManager {
             }
         }
         
-        void runLoads() {
-            for (Method load : loads) {
+        void runRegistrations() {
+            for (Method load : registrations) {
                 try {
                     load.invoke(null);
                 } catch (IllegalAccessException | InvocationTargetException e) {
@@ -161,22 +161,26 @@ public class ConfigManager {
         }
         
         void load() {
+            runPostLoads();
             if (actualFile == null) {
                 findFile();
             }
             if (!actualFile.exists()) {
                 generateFile();
                 // if we just generated the file, its default values, no need to do anything else
+                runPostLoads();
                 return;
             }
             Element tree = readFile();
             if (tree == null) {
                 LOGGER.error("No config data for " + modName + " loaded, leaving defaults");
+                runPostLoads();
                 return;
             }
             spec.writeElementTree(tree);
             tree = spec.trimAndRegenerateTree(tree, enableAdvanced());
             writeFile(tree);
+            runPostLoads();
         }
         
         void findFile() {

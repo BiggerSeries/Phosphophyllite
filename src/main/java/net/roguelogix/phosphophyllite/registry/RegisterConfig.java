@@ -30,16 +30,16 @@ public @interface RegisterConfig {
     
     ConfigType type() default COMMON;
     
-    boolean reloadable() default false;
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Registration {
+    }
     
+    boolean reloadable() default false;
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface PreLoad {
-    }
     
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Load {
     }
     
     @Target(ElementType.METHOD)
