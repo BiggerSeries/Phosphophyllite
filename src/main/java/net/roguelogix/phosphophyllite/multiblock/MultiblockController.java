@@ -424,13 +424,13 @@ public class MultiblockController<
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
                 otherController.controllersToMerge.clear();
+                if(otherController.blocks.size() == 0){
+                    continue;
+                }
                 this.onMerge(otherController);
                 if (this.cachedNBT == null && otherMultiblockController.cachedNBT != null) {
                     this.cachedNBT = otherMultiblockController.cachedNBT;
                     otherMultiblockController.cachedNBT = null;
-                }
-                if(otherController.blocks.size() == 0){
-                    continue;
                 }
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
