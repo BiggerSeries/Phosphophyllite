@@ -1,3 +1,9 @@
+# 1.18.1-0.6.0-alpha.9
+ - 1.18.1
+ - Quartz rev2, currently buggy
+ - ignore empty merging controllers earlier
+ - use separate client and server lists for phosphophyllite tiles
+
 # 1.18-0.6.0-alpha.8.1
  - Fix Quartz loading on mac
  - Fix config

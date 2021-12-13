@@ -37,6 +37,8 @@ if (!"${postfix}".isEmpty()) {
 group = 'net.roguelogix.phosphophyllite'
 archivesBaseName = "phosphophyllite-${mc_version}"
 
+// allows you to override phos's forge version, just have to use the same key i use
+forge_version = project.rootProject.property("forge_version")
 
 setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".${patchVersion}-alpha)")
 if (version.contains("alpha") || version.contains("beta")) {
