@@ -1,24 +1,14 @@
 package net.roguelogix.phosphophyllite.blocks;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.EventBus;
-import net.roguelogix.phosphophyllite.quartz.Quartz;
-import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
-import net.roguelogix.phosphophyllite.quartz.QuartzStaticMesh;
 import net.roguelogix.phosphophyllite.registry.CreativeTabBlock;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
-
-
-// "Ore"
-import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;

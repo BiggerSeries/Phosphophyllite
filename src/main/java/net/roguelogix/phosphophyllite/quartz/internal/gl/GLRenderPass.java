@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.gl33;
+package net.roguelogix.phosphophyllite.quartz.internal.gl;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
@@ -6,18 +6,15 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
-import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
-import net.roguelogix.phosphophyllite.quartz.internal.common.gl.ShaderInfo;
+import net.roguelogix.phosphophyllite.quartz.internal.common.ShaderInfo;
 
 import javax.annotation.Nullable;
 
-import static net.roguelogix.phosphophyllite.quartz.Quartz.EVENT_BUS;
-import static org.lwjgl.opengl.GL33C.GL_LINE;
-import static org.lwjgl.opengl.GL33C.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL32C.*;
 
-public class GL33RenderPass implements GLDeletable {
+public class GLRenderPass {
+    
+    public final RenderType renderType;
     
     public final boolean QUAD;
     public final boolean TEXTURE;
@@ -30,11 +27,11 @@ public class GL33RenderPass implements GLDeletable {
     private final ResourceLocation textureResourceLocation;
     private AbstractTexture texture;
     
-    GL33RenderPass(RenderType rawRenderType) {
-        if (!(rawRenderType instanceof RenderType.CompositeRenderType)) {
+    GLRenderPass(RenderType rawRenderType) {
+        this.renderType = rawRenderType;
+        if (!(rawRenderType instanceof RenderType.CompositeRenderType renderType)) {
             throw new IllegalArgumentException("RenderType must be composite type");
         }
-        RenderType.CompositeRenderType renderType = (RenderType.CompositeRenderType) rawRenderType;
         
         var compositeState = renderType.state();
         var shaderInfo = ShaderInfo.get(compositeState.shaderState);
@@ -68,23 +65,15 @@ public class GL33RenderPass implements GLDeletable {
             default -> throw new IllegalArgumentException("Unsupported primitive type");
         };
         
-        EVENT_BUS.register(this);
-    }
-    
-    @SubscribeEvent
-    public void reloadListener(QuartzEvent.ResourcesLoaded resourcesReloaded) {
-        if (textureResourceLocation != null) {
-            texture = Minecraft.getInstance().getTextureManager().getTexture(textureResourceLocation);
-        }
-    }
-    
-    @Override
-    public void delete() {
-        EVENT_BUS.unregister(this);
+        resourceReload();
     }
     
     @Nullable
-    public AbstractTexture texture(){
+    public AbstractTexture texture() {
         return texture;
+    }
+    
+    public void resourceReload() {
+        texture = Minecraft.getInstance().getTextureManager().getTexture(textureResourceLocation);
     }
 }

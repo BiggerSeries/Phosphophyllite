@@ -1,16 +1,18 @@
-package net.roguelogix.phosphophyllite.quartz.internal.gl33;
+package net.roguelogix.phosphophyllite.quartz.internal.gl;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.quartz.internal.common.B3DStateHelper;
-import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLBuffer;
-import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLFence;
+import net.roguelogix.phosphophyllite.quartz.internal.Buffer;
+import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -20,125 +22,130 @@ import static org.lwjgl.system.MemoryUtil.memAddress;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-public class GL33Buffer implements GLBuffer {
-    public class Allocation implements GLBuffer.Allocation, Comparable<Allocation> {
-        private final int offset;
-        private final int size;
-        private ByteBuffer byteBuffer;
-        private final ObjectArrayList<Consumer<GLBuffer.Allocation>> reallocCallbacks = new ObjectArrayList<>();
-        private final ObjectArrayList<Consumer<GLBuffer.Allocation>> sliceCallbacks = new ObjectArrayList<>();
-        
-        protected Allocation(int offset, int size) {
-            this.offset = offset;
-            this.size = size;
-            sliceByteBuffer();
+public class GLBuffer implements Buffer {
+    public class Allocation implements Buffer.Allocation {
+        private record Info(int offset, int size) implements Comparable<Info> {
+            @Override
+            public int compareTo(@Nonnull Info info) {
+                return Integer.compare(offset, info.offset);
+            }
+            
+            private Pair<Info, Info> split(int size) {
+                if (size > this.size) {
+                    throw new IllegalArgumentException("Cannot split allocation to larger size");
+                }
+                if (size == this.size) {
+                    return new Pair<>(new Info(this.offset, size), null);
+                }
+                return new Pair<>(new Info(this.offset, size), new Info(this.offset + size, this.size - size));
+            }
         }
         
-        @Override
+        private final Info info;
+        private final ByteBuffer[] byteBuffer;
+        private final ObjectArrayList<Consumer<Buffer.Allocation>> reallocCallbacks = new ObjectArrayList<>();
+        private final ObjectArrayList<Consumer<Buffer.Allocation>> sliceCallbacks;
+        
+        protected Allocation(Info info) {
+            this.info = info;
+            var allocator = GLBuffer.this;
+            final var byteBuffer = new ByteBuffer[1];
+            final var sliceCallbacks = new ObjectArrayList<Consumer<Buffer.Allocation>>();
+            final var weakRef = new WeakReference<>(this);
+            Runnable slicer = () -> {
+                byteBuffer[0] = allocator.byteBuffer[0].slice(info.offset, info.size);
+                final var alloc = weakRef.get();
+                if(alloc == null){
+                    return;
+                }
+                for (int i = 0; i < sliceCallbacks.size(); i++) {
+                    sliceCallbacks.get(i).accept(alloc);
+                }
+            };
+            QuartzCore.CLEANER.register(this, () -> GLCore.deletionQueue.enqueue(() -> {
+                allocator.free(info);
+                allocator.slicers.remove(slicer);
+            }));
+            slicer.run();
+            allocator.slicers.add(slicer);
+            this.byteBuffer = byteBuffer;
+            this.sliceCallbacks = sliceCallbacks;
+        }
+        
         public void delete() {
-            free(this);
+            free(info);
         }
         
-        @Override
         public ByteBuffer buffer() {
-            return byteBuffer.rewind();
+            return byteBuffer[0].rewind();
         }
         
-        @Override
         public int offset() {
-            return offset;
+            return info.offset;
         }
         
-        @Override
         public int size() {
-            return size;
+            return info.size;
         }
         
-        @Override
-        public void flush() {
-            flushRange(0, byteBuffer.limit());
+        public void dirty() {
+            dirtyRange(0, info.size);
         }
         
-        @Override
-        public void flushRange(int offset, int size) {
-            byteBuffer.rewind();
-            B3DStateHelper.bindArrayBuffer(buffer);
-            // generally shouldn't use the ngl calls, but this works better here because I can specify size separately
-            nglBufferSubData(GL_ARRAY_BUFFER, offset + this.offset, size, memAddress(byteBuffer) + offset);
+        public void dirtyRange(int offset, int size) {
+            GLBuffer.this.dirtyRange(info.offset + offset, info.offset + offset + size);
         }
         
-        @Override
         public GLBuffer allocator() {
-            return GL33Buffer.this;
+            return GLBuffer.this;
         }
         
-        @Override
         public void copy(int srcOffset, int dstOffset, int size) {
             // is this safe? *no*
             // is this the fastest option? *no*
             // does LWJGL give me a better option, *no, not really*
-            final long address = MemoryUtil.memAddress(byteBuffer);
+            final long address = MemoryUtil.memAddress(byteBuffer[0]);
             final long srcAddress = address + srcOffset;
             final long dstAddress = address + dstOffset;
             LibCString.nmemmove(dstAddress, srcAddress, size);
-            flushRange(dstOffset, size);
-//            if(
-//                    (srcAddress < dstAddress && srcAddress + size  > dstOffset) ||
-//                    (dstAddress < srcAddress && dstAddress + size  > srcAddress)
-//            ){
-//                LibCString.nmemmove(dstAddress, srcAddress, size);
-//                flushRange(dstOffset, size);
-//            } else {
-//                LibCString.nmemcpy(dstAddress, srcAddress, size);
-//                B3DStateHelper.bindArrayBuffer(buffer);
-//                glCopyBufferSubData(GL_ARRAY_BUFFER, GL_ARRAY_BUFFER, srcOffset, dstOffset, size);
-//            }
+            dirtyRange(dstOffset, size);
         }
         
-        @Override
-        public void addReallocCallback(Consumer<GLBuffer.Allocation> consumer) {
+        public void addReallocCallback(Consumer<Buffer.Allocation> consumer) {
             consumer.accept(this);
             reallocCallbacks.add(consumer);
         }
-    
-        @Override
-        public void addBufferSliceCallback(Consumer<GLBuffer.Allocation> consumer) {
+        
+        public void addBufferSliceCallback(Consumer<Buffer.Allocation> consumer) {
             consumer.accept(this);
             sliceCallbacks.add(consumer);
         }
-    
+        
         @Override
+        public void lock() {
+        
+        }
+        
+        @Override
+        public void unlock() {
+        
+        }
+        
         public int compareTo(Allocation other) {
-            return Integer.compare(offset, other.offset);
-        }
-        
-        private void sliceByteBuffer() {
-            byteBuffer = GL33Buffer.this.byteBuffer.slice(offset, size);
-            for (int i = 0; i < this.sliceCallbacks.size(); i++) {
-                sliceCallbacks.get(i).accept(this);
-            }
-        }
-        
-        private Pair<Allocation, Allocation> split(int size) {
-            if (size > this.size) {
-                throw new IllegalArgumentException("Cannot split allocation to larger size");
-            }
-            if (size == this.size) {
-                return new Pair<>(new Allocation(offset, size), null);
-            }
-            return new Pair<>(new Allocation(offset, size), new Allocation(offset + size, this.size - size));
+            return Integer.compare(info.offset, other.info.offset);
         }
     }
     
     private final int buffer;
     private final int usage;
     private int size;
-    private ByteBuffer byteBuffer;
+    private final ByteBuffer[] byteBuffer = new ByteBuffer[1];
     
-    final ObjectArrayList<GL33Buffer.Allocation> liveAllocations = new ObjectArrayList<>();
-    final ObjectArrayList<GL33Buffer.Allocation> freeAllocations = new ObjectArrayList<>() {
+    private final ObjectArrayList<Runnable> slicers = new ObjectArrayList<>();
+    private final ObjectArrayList<Allocation.Info> liveAllocations = new ObjectArrayList<>();
+    private final ObjectArrayList<Allocation.Info> freeAllocations = new ObjectArrayList<>() {
         @Override
-        public boolean add(@Nullable GL33Buffer.Allocation allocation) {
+        public boolean add(@Nullable Allocation.Info allocation) {
             if (allocation == null) {
                 return false;
             }
@@ -153,9 +160,9 @@ public class GL33Buffer implements GLBuffer {
         }
     };
     
-    final ObjectArrayList<Consumer<GLBuffer>> reallocCallbacks = new ObjectArrayList<>();
+    private final ObjectArrayList<Consumer<Buffer>> reallocCallbacks = new ObjectArrayList<>();
     
-    public GL33Buffer(boolean dynamic, int initialSize) {
+    public GLBuffer(boolean dynamic, int initialSize) {
         if (initialSize <= 0) {
             throw new IllegalArgumentException("Initial buffer size must be greater than 0");
         }
@@ -164,11 +171,17 @@ public class GL33Buffer implements GLBuffer {
         buffer = glGenBuffers();
         B3DStateHelper.bindArrayBuffer(buffer);
         glBufferData(GL_ARRAY_BUFFER, initialSize, usage);
-                byteBuffer = MemoryUtil.memAlloc(initialSize);
-        freeAllocations.add(new GL33Buffer.Allocation(0, initialSize));
+        byteBuffer[0] = MemoryUtil.memAlloc(initialSize);
+        freeAllocations.add(new Allocation.Info(0, initialSize));
+        var bufArray = byteBuffer;
+        int buffer = this.buffer;
+        QuartzCore.CLEANER.register(this, () -> {
+            MemoryUtil.memFree(bufArray[0]);
+            GLCore.deletionQueue.enqueue(() -> glDeleteBuffers(buffer));
+        });
     }
     
-    public GL33Buffer(boolean dynamic) {
+    public GLBuffer(boolean dynamic) {
         this(dynamic, 1);
     }
     
@@ -176,7 +189,10 @@ public class GL33Buffer implements GLBuffer {
         return size;
     }
     
-    @Override
+    public Allocation alloc(int size) {
+        return alloc(size, 1);
+    }
+    
     public Allocation alloc(final int size, final int alignment) {
         final int alignmentBitmask = alignment - 1;
         collapseFreeAllocations();
@@ -203,7 +219,7 @@ public class GL33Buffer implements GLBuffer {
             }
             
             liveAllocations.add(freeAlloc);
-            return freeAlloc;
+            return new Allocation(freeAlloc);
         }
         
         int endOffset = this.size;
@@ -232,44 +248,56 @@ public class GL33Buffer implements GLBuffer {
             freeAllocations.add(newAllocs.getSecond());
         }
         liveAllocations.add(alloc);
-        return alloc;
+        return new Allocation(alloc);
+    }
+    
+    public Allocation realloc(@Nullable Allocation allocation, int newSize) {
+        return realloc(allocation, newSize, 1);
     }
     
     @Override
-    public GLBuffer.Allocation realloc(@Nullable GLBuffer.Allocation glAllocation, int newSize, int alignment) {
-        if (glAllocation == null) {
+    public Buffer.Allocation realloc(@Nullable Buffer.Allocation bufAlloc, int newSize, int alignment) {
+        if (!(bufAlloc instanceof Allocation alloc)) {
+            throw new IllegalArgumentException("Cannot realloc allocation from another buffer");
+        }
+        return realloc(alloc, newSize, alignment);
+    }
+    
+    public Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment) {
+        if (allocation == null) {
             return alloc(newSize, alignment);
         }
-        if (!(glAllocation instanceof GL33Buffer.Allocation allocation) || glAllocation.allocator() != this) {
+        if (allocation.allocator() != this) {
             // not an allocation from this buffer
             throw new IllegalArgumentException("Cannot realloc allocation from another buffer");
         }
         final int alignmentBitmask = alignment - 1;
         
-        var liveIndex = liveAllocations.indexOf(allocation);
+        var liveIndex = liveAllocations.indexOf(allocation.info);
         if (liveIndex == -1) {
             throw new IllegalArgumentException("Cannot realloc non-live allocation");
         }
-        if (newSize <= allocation.size && (allocation.offset & alignmentBitmask) == 0) {
+        if (newSize <= allocation.info.size && (allocation.info.offset & alignmentBitmask) == 0) {
             // this allocation already meets size and alignment requirements
-            if (newSize == allocation.size) {
+            if (newSize == allocation.info.size) {
                 return allocation;
             }
-            var newAllocs = allocation.split(newSize);
-            var newAlloc = newAllocs.getFirst();
-            var freeAlloc = newAllocs.getSecond();
-            freeAllocations.add(freeAlloc);
             var removed = liveAllocations.pop();
             if (liveIndex != liveAllocations.size()) {
                 liveAllocations.set(liveIndex, removed);
             }
-            liveAllocations.add(newAlloc);
-            long dstAddress = memAddress(newAlloc.byteBuffer);
-            long srcAddress = memAddress(allocation.byteBuffer);
-            int size = Math.min(newAlloc.byteBuffer.remaining(), allocation.byteBuffer.remaining());
+            var newAllocInfos = allocation.info.split(newSize);
+            var newAllocInfo = newAllocInfos.getFirst();
+            var freeAllocInfo = newAllocInfos.getSecond();
+            var newAlloc = new Allocation(newAllocInfo);
+            freeAllocations.add(freeAllocInfo);
+            liveAllocations.add(newAllocInfo);
+            long dstAddress = memAddress(newAlloc.byteBuffer[0]);
+            long srcAddress = memAddress(allocation.byteBuffer[0]);
+            int size = Math.min(newAlloc.byteBuffer[0].remaining(), allocation.byteBuffer[0].remaining());
             if (srcAddress != dstAddress) {
                 LibCString.nmemmove(dstAddress, srcAddress, size);
-                newAlloc.flush();
+                newAlloc.dirty();
             }
             for (int i = 0; i < allocation.reallocCallbacks.size(); i++) {
                 newAlloc.addReallocCallback(allocation.reallocCallbacks.get(i));
@@ -281,31 +309,31 @@ public class GL33Buffer implements GLBuffer {
         }
         
         collapseFreeAllocations();
-        Allocation precedingAlloc = null;
-        Allocation followingAlloc = null;
+        Allocation.Info precedingAlloc = null;
+        Allocation.Info followingAlloc = null;
         for (int i = 0; i < freeAllocations.size(); i++) {
             var freeAllocation = freeAllocations.get(i);
-            if (freeAllocation.offset + freeAllocation.size == allocation.offset) {
+            if (freeAllocation.offset + freeAllocation.size == allocation.info.offset) {
                 precedingAlloc = freeAllocation;
                 continue;
             }
-            if (freeAllocation.offset == allocation.offset + allocation.size) {
+            if (freeAllocation.offset == allocation.info.offset + allocation.info.size) {
                 followingAlloc = freeAllocation;
                 break;
             }
-            if (freeAllocation.offset > allocation.offset) {
+            if (freeAllocation.offset > allocation.info.offset) {
                 break;
             }
         }
-        int fullBlockOffset = precedingAlloc == null ? allocation.offset : precedingAlloc.offset;
+        int fullBlockOffset = precedingAlloc == null ? allocation.info.offset : precedingAlloc.offset;
         int alignmentWaste = fullBlockOffset & alignmentBitmask;
-        int fullBlockSize = allocation.size;
+        int fullBlockSize = allocation.info.size;
         if (precedingAlloc != null) {
             fullBlockSize += precedingAlloc.size;
         }
         if (followingAlloc != null) {
             fullBlockSize += followingAlloc.size;
-        } else if (allocation.offset + allocation.size == size) {
+        } else if (allocation.info.offset + allocation.info.size == size) {
             // end allocation, so I can resize it to whatever is needed
             freeAllocations.remove(precedingAlloc);
             int minSize = fullBlockOffset + alignmentWaste + newSize;
@@ -318,28 +346,29 @@ public class GL33Buffer implements GLBuffer {
             // ok, available memory exists around where the data currently is
             freeAllocations.remove(precedingAlloc);
             freeAllocations.remove(followingAlloc);
-            var newAlloc = new Allocation(fullBlockOffset, fullBlockSize);
+            var newAllocInfo = new Allocation.Info(fullBlockOffset, fullBlockSize);
             if (alignmentWaste > 0) {
-                final var newAllocs = newAlloc.split(alignmentWaste);
+                final var newAllocs = newAllocInfo.split(alignmentWaste);
                 freeAllocations.add(newAllocs.getFirst());
-                newAlloc = newAllocs.getSecond();
+                newAllocInfo = newAllocs.getSecond();
             }
-            if (newAlloc.size > newSize) {
-                final var newAllocs = newAlloc.split(newSize);
-                newAlloc = newAllocs.getFirst();
+            if (newAllocInfo.size > newSize) {
+                final var newAllocs = newAllocInfo.split(newSize);
+                newAllocInfo = newAllocs.getFirst();
                 freeAllocations.add(newAllocs.getSecond());
             }
+            var newAlloc = new Allocation(newAllocInfo);
             var removed = liveAllocations.pop();
             if (liveIndex != liveAllocations.size()) {
                 liveAllocations.set(liveIndex, removed);
             }
-            liveAllocations.add(newAlloc);
-            long dstAddress = memAddress(newAlloc.byteBuffer);
-            long srcAddress = memAddress(allocation.byteBuffer);
-            int size = Math.min(newAlloc.byteBuffer.remaining(), allocation.byteBuffer.remaining());
+            liveAllocations.add(newAllocInfo);
+            long dstAddress = memAddress(newAlloc.byteBuffer[0]);
+            long srcAddress = memAddress(allocation.byteBuffer[0]);
+            int size = Math.min(newAlloc.byteBuffer[0].remaining(), allocation.byteBuffer[0].remaining());
             if (srcAddress != dstAddress) {
                 LibCString.nmemmove(dstAddress, srcAddress, size);
-                newAlloc.flush();
+                newAlloc.dirty();
             }
             for (int i = 0; i < allocation.reallocCallbacks.size(); i++) {
                 newAlloc.addReallocCallback(allocation.reallocCallbacks.get(i));
@@ -352,11 +381,11 @@ public class GL33Buffer implements GLBuffer {
         
         // SOL, allocate a new block and use that
         var newAlloc = alloc(newSize, alignment);
-        long dstAddress = memAddress(newAlloc.byteBuffer);
-        long srcAddress = memAddress(allocation.byteBuffer);
-        int size = Math.min(newAlloc.byteBuffer.remaining(), allocation.byteBuffer.remaining());
+        long dstAddress = memAddress(newAlloc.byteBuffer[0]);
+        long srcAddress = memAddress(allocation.byteBuffer[0]);
+        int size = Math.min(newAlloc.byteBuffer[0].remaining(), allocation.byteBuffer[0].remaining());
         LibCString.nmemcpy(dstAddress, srcAddress, size);
-        newAlloc.flush();
+        newAlloc.dirty();
         free(allocation);
         for (int i = 0; i < allocation.reallocCallbacks.size(); i++) {
             newAlloc.addReallocCallback(allocation.reallocCallbacks.get(i));
@@ -368,51 +397,65 @@ public class GL33Buffer implements GLBuffer {
     }
     
     @Override
-    public void free(GLBuffer.Allocation glAllocation) {
-        if (glAllocation instanceof GL33Buffer.Allocation allocation) {
-            var index = liveAllocations.indexOf(allocation);
-            if (index == -1) {
-                return;
-            }
-            var removed = liveAllocations.pop();
-            if (index != liveAllocations.size()) {
-                liveAllocations.set(index, removed);
-            }
-            freeAllocations.add(allocation);
-            index = freeAllocations.indexOf(allocation);
-            collapseFreeAllocationWithNext(index - 1);
-            collapseFreeAllocationWithNext(index);
+    public void addGPUReallocCallback(Consumer<Buffer> consumer) {
+        // GL doesnt realloc on the GPU
+    }
+    
+    @Override
+    public void free(Buffer.Allocation allocation) {
+        if (allocation instanceof Allocation alloc) {
+            free(alloc);
         }
     }
     
-    @Override
-    public void flushAll() {
-        B3DStateHelper.bindArrayBuffer(buffer);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, byteBuffer);
-            }
-    
-    @Override
-    public GLFence createFence() {
-        return GLFence.DUMMY_FENCE;
+    public void free(Allocation allocation) {
+        free(allocation.info);
     }
     
+    public void free(Allocation.Info allocation) {
+        var index = liveAllocations.indexOf(allocation);
+        if (index == -1) {
+            return;
+        }
+        var removed = liveAllocations.pop();
+        if (index != liveAllocations.size()) {
+            liveAllocations.set(index, removed);
+        }
+        freeAllocations.add(allocation);
+        index = freeAllocations.indexOf(allocation);
+        collapseFreeAllocationWithNext(index - 1);
+        collapseFreeAllocationWithNext(index);
+    }
+    
+    private int minDirty = Integer.MAX_VALUE;
+    private int maxDirty = 0;
+    
     @Override
-    public void addCPUReallocCallback(Consumer<GLBuffer> consumer) {
+    public void dirtyAll() {
+        minDirty = 0;
+        maxDirty = size;
+    }
+    
+    public void dirtyRange(int min, int max) {
+        minDirty = Math.min(min, minDirty);
+        maxDirty = Math.max(max, maxDirty);
+    }
+    
+    public void flush() {
+        if (minDirty >= maxDirty) {
+            return;
+        }
+        // TODO: maybe smaller blocks?
+        B3DStateHelper.bindArrayBuffer(buffer);
+        nglBufferSubData(GL_ARRAY_BUFFER, minDirty, maxDirty - minDirty, memAddress(byteBuffer[0]) + minDirty);
+        minDirty = Integer.MAX_VALUE;
+        maxDirty = 0;
+    }
+    
+    public void addCPUReallocCallback(Consumer<Buffer> consumer) {
         reallocCallbacks.add(consumer);
     }
     
-    @Override
-    public void addGPUReallocCallback(Consumer<GLBuffer> consumer) {
-        // GL buffer handle never changes with GL33
-    }
-    
-    @Override
-    public void delete() {
-        MemoryUtil.memFree(byteBuffer);
-        glDeleteBuffers(buffer);
-    }
-    
-    @Override
     public int handle() {
         return buffer;
     }
@@ -428,16 +471,15 @@ public class GL33Buffer implements GLBuffer {
             size <<= 1;
         }
         
-        byteBuffer = MemoryUtil.memRealloc(byteBuffer, size);
+        byteBuffer[0] = MemoryUtil.memRealloc(byteBuffer[0], size);
         B3DStateHelper.bindArrayBuffer(buffer);
-        glBufferData(GL_ARRAY_BUFFER, byteBuffer, usage);
-                
-        freeAllocations.add(new GL33Buffer.Allocation(oldSize, size - oldSize));
+        glBufferData(GL_ARRAY_BUFFER, byteBuffer[0], usage);
+        
+        freeAllocations.add(new Allocation.Info(oldSize, size - oldSize));
         
         collapseFreeAllocationWithNext(freeAllocations.size() - 2);
         
-        liveAllocations.forEach(GL33Buffer.Allocation::sliceByteBuffer);
-        freeAllocations.forEach(GL33Buffer.Allocation::sliceByteBuffer);
+        slicers.forEach(Runnable::run);
         reallocCallbacks.forEach(c -> c.accept(this));
     }
     
@@ -451,7 +493,7 @@ public class GL33Buffer implements GLBuffer {
             // neighboring allocations, collapse them
             freeAllocations.remove(freeAllocationIndex + 1);
             freeAllocations.remove(freeAllocationIndex);
-            freeAllocations.add(new Allocation(allocA.offset, allocA.size + allocB.size));
+            freeAllocations.add(new Allocation.Info(allocA.offset, allocA.size + allocB.size));
             return true;
         }
         return false;

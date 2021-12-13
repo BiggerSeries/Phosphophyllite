@@ -1,6 +1,10 @@
 package net.roguelogix.phosphophyllite.quartz;
 
-public interface QuartzDynamicLight extends QuartzDisposable {
+import net.minecraft.world.level.BlockAndTintGetter;
+
+import javax.annotation.Nullable;
+
+public interface DynamicLight {
     
     enum Type {
         SMOOTH,
@@ -18,5 +22,17 @@ public interface QuartzDynamicLight extends QuartzDisposable {
                 write(i, j, skyLight, blockLight, AO);
             }
         }
+    }
+    
+    void update(BlockAndTintGetter blockAndTintGetter);
+    
+    interface UpdateFunc {
+        void accept(DynamicLight light, BlockAndTintGetter blockAndTintGetter);
+    }
+    
+    interface Manager {
+        DynamicLight createLight(UpdateFunc updateFunc);
+    
+        boolean owns(@Nullable DynamicLight dynamicLight);
     }
 }

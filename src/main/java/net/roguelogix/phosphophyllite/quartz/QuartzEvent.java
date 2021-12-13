@@ -2,9 +2,6 @@ package net.roguelogix.phosphophyllite.quartz;
 
 import net.minecraftforge.eventbus.api.Event;
 
-/**
- * Fired on MinecraftForge.EVENT_BUS
- */
 public abstract class QuartzEvent extends Event {
     public QuartzEvent() {
     }

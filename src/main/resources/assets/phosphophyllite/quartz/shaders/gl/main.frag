@@ -1,6 +1,8 @@
-#version 330 core
+#version 150 core
+#line 2 // shader loader inserts #defines between the version and this line
 // gpuinfo says this is supported, so im using it
 #extension GL_ARB_separate_shader_objects : require
+#extension GL_ARB_explicit_attrib_location : require
 
 layout(location = 0) in float fragmentDistance;
 layout(location = 1) in vec4 vertexColor;
@@ -21,7 +23,6 @@ uniform vec4 fogColor;
 uniform bool LIGHTING;
 uniform bool QUAD;
 uniform bool TEXTURE;
-uniform bool ALPHA_DISCARD;
 
 uniform sampler2D atlasTexture;
 uniform sampler2D lightmapTexture;
@@ -65,12 +66,12 @@ void main(){
     float fogValue = clamp(smoothstep(fogStartEnd.x, fogStartEnd.y, fragmentDistance) * fogColor.a, 0.0, 1.0);
     color = vec4(mix(color.rgb, fogColor.rgb, fogValue), color.a);
 
-    if (ALPHA_DISCARD) {
+    #ifdef ALPHA_DISCARD
         #ifndef MIN_ALPHA
         #define MIN_ALPHA 0.5
         #endif
         if (color.a < MIN_ALPHA){
             discard;
         }
-    }
+    #endif
 }

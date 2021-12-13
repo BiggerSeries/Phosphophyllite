@@ -161,23 +161,28 @@ public class WorkQueue {
         return item.waitEvent;
     }
     
-    public void runOne() {
+    public boolean runOne() {
         if (!dequeueThreads.isEmpty()) {
-            return;
+            return false;
         }
         Runnable toRun = queue.poll();
         if (toRun != null) {
             toRun.run();
+            return true;
         }
+        return false;
     }
     
-    public void runAll() {
+    public boolean runAll() {
         if (!dequeueThreads.isEmpty()) {
-            return;
+            return false;
         }
         Runnable toRun;
+        boolean ranSomething = false;
         while ((toRun = queue.poll()) != null) {
             toRun.run();
+            ranSomething = true;
         }
+        return ranSomething;
     }
 }

@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.quartz.internal.common;
 
-import net.roguelogix.phosphophyllite.quartz.internal.common.gl.GLDeletable;
+import net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers;
+import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -10,7 +11,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public class DrawInfo implements GLDeletable {
+public class DrawInfo {
     public long deltaNano;
     public float partialTicks;
     
@@ -26,10 +27,7 @@ public class DrawInfo implements GLDeletable {
     
     
     public DrawInfo() {
-    }
-    
-    @Override
-    public void delete() {
-        MemoryUtil.memFree(projectionMatrixByteBuffer);
+        ByteBuffer projectionMatrixByteBuffer = this.projectionMatrixByteBuffer;
+        QuartzCore.CLEANER.register(this, () -> MemoryUtil.memFree(projectionMatrixByteBuffer));
     }
 }

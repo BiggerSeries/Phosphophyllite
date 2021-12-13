@@ -1,18 +1,37 @@
-#version 330 core
+#version 150 core
+#line 2 // shader loader inserts #defines between the version and this line
 // gpuinfo says this is supported, so im using it
 #extension GL_ARB_separate_shader_objects : require
+#extension GL_ARB_explicit_attrib_location : require
 
 #ifndef POSITION_LOCATION
 #define POSITION_LOCATION 0
-#define COLOR_LOCATION 2
+#define COLOR_LOCATION 1
 #define TEX_COORD_LOCATION 2
 #define LIGHTINFO_LOCATION 3
+#define WORLD_POSITION_LOCATION 4
+#define DYNAMIC_MATRIX_ID_LOCATION 5
+#define DYNAMIC_LIGHT_ID_LOCATION 6
+// location 7 open
+#define STATIC_MATRIX_LOCATION 8
+#define STATIC_NORMAL_MATRIX_LOCATION 12
+// 16 locations available, so, none left, if more are needed, will need to pack values
+// lightInfo and colorIn could be packed together
+// light/matrix IDs could be packed together
 #endif
 
+// per vertex
 layout(location = POSITION_LOCATION) in vec3 position;
 layout(location = COLOR_LOCATION) in int colorIn;
 layout(location = TEX_COORD_LOCATION) in vec2 texCoordIn;
 layout(location = LIGHTINFO_LOCATION) in uvec2 lightingInfo;
+
+// per instance
+layout(location = WORLD_POSITION_LOCATION) in ivec3 worldPosition;
+layout(location = DYNAMIC_MATRIX_ID_LOCATION) in int dynamicMatrixID;
+layout(location = DYNAMIC_LIGHT_ID_LOCATION) in int dynamicLightID;
+layout(location = STATIC_MATRIX_LOCATION) in mat4 staticMatrix;
+layout(location = STATIC_NORMAL_MATRIX_LOCATION) in mat4 staticNormalMatrix;
 
 uniform ivec3 playerBlock;
 uniform vec3 playerSubBlock;
@@ -21,19 +40,8 @@ uniform mat4 projectionMatrix;
 uniform bool LIGHTING;
 uniform bool QUAD;
 
-uniform int worldPositionIDOffset;
-uniform isamplerBuffer worldPositions;
-
-uniform int dynamicMatrixIDOffset;
-uniform isamplerBuffer dynamicMatrixIDs;
 uniform samplerBuffer dynamicMatrices;
-
-uniform int staticMatrixBaseID;
-uniform samplerBuffer staticMatrices;
-
-uniform int lightIDOffset;
-uniform isamplerBuffer lightIDs;
-uniform usamplerBuffer lights;
+uniform usamplerBuffer dynamicLights;
 
 layout(location = 0) out float vertexDistance;
 layout(location = 1) out vec4 vertexColor;
@@ -63,14 +71,6 @@ int extractInt(uint packedint, uint pos, uint width);
 uint extractUInt(uint packedint, uint pos, uint width);
 
 void main() {
-    int staticMatrixID = staticMatrixBaseID + gl_InstanceID;
-    int dynamicMatrixID = texelFetch(dynamicMatrixIDs, dynamicMatrixIDOffset + gl_InstanceID).x;
-
-    mat4 staticModelMatrix = mat4(0);
-    staticModelMatrix[0] = texelFetch(staticMatrices, staticMatrixID * 8 + 0);
-    staticModelMatrix[1] = texelFetch(staticMatrices, staticMatrixID * 8 + 1);
-    staticModelMatrix[2] = texelFetch(staticMatrices, staticMatrixID * 8 + 2);
-    staticModelMatrix[3] = texelFetch(staticMatrices, staticMatrixID * 8 + 3);
 
     mat4 dynamicModelMatrix = mat4(0);
     dynamicModelMatrix[0] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 0);
@@ -78,12 +78,9 @@ void main() {
     dynamicModelMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 2);
     dynamicModelMatrix[3] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 3);
 
-    ivec3 worldPosition = texelFetch(worldPositions, worldPositionIDOffset + gl_InstanceID).xyz;
-    worldPosition -= playerBlock;
-    vec3 floatWorldPosition = worldPosition;
-    floatWorldPosition -= playerSubBlock;
+    vec3 floatWorldPosition = vec3(worldPosition - playerBlock) - playerSubBlock;
 
-    mat4 modelMatrix = dynamicModelMatrix * staticModelMatrix;
+    mat4 modelMatrix = dynamicModelMatrix * staticMatrix;
 
     vec4 vertexPosition = modelMatrix * vec4(position, 1.0);
     vertexModelPos.xyz = vertexPosition.xyz;
@@ -113,20 +110,15 @@ void main() {
             lightmapCoords[1].zw = vec2((lightingInfo.y >> 12) & 0x3Fu, (lightingInfo.y >> 18) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
         }
 
-        mat3 staticNormalMatrix = mat3(0);
-        staticNormalMatrix[0] = texelFetch(staticMatrices, staticMatrixID * 8 + 4).xyz;
-        staticNormalMatrix[1] = texelFetch(staticMatrices, staticMatrixID * 8 + 5).xyz;
-        staticNormalMatrix[2] = texelFetch(staticMatrices, staticMatrixID * 8 + 6).xyz;
         mat3 dynamicNormalMatrix = mat3(0);
         dynamicNormalMatrix[0] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 4).xyz;
         dynamicNormalMatrix[1] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 5).xyz;
         dynamicNormalMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 6).xyz;
-        mat3 normalMatrix = dynamicNormalMatrix * staticNormalMatrix;
+        mat3 normalMatrix = dynamicNormalMatrix * mat3(staticNormalMatrix);
 
         vertexNormal = normalize(normalMatrix * vertexNormal);
         vertexModelPos.w = calcuateDiffuseMultiplier(vertexNormal);
 
-        int lightID = texelFetch(lightIDs, lightIDOffset + gl_InstanceID).x;
         //            vec3 clampedPosition = clamp(position, vec3(0), vec3(1)); // maybe clamp it? its extrapolating right now instead
         for (int i = 0; i < 8; i++) {
             cornerLightLevels[i] = vec3(0);
@@ -136,7 +128,7 @@ void main() {
                 multiplier *= float(multiplier > 0);
                 multiplier *= multiplier;
 
-                uvec2 udirectionLight = texelFetch(lights, lightID * 64 + i * 6 + j).rg;
+                uvec2 udirectionLight = texelFetch(dynamicLights, dynamicLightID * 64 + i * 6 + j).rg;
                 vec2 directionLight = udirectionLight & 0x3Fu;
                 float AO = udirectionLight.x >> 6 & 0x3u;
                 cornerLightLevels[i] += vec3(directionLight * LIGHTMAP_MULTIPLIER, AO) * multiplier;

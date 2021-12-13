@@ -1,51 +1,49 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common.mesh;
+package net.roguelogix.phosphophyllite.quartz.internal.common;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.phosphophyllite.quartz.QuartzStaticMesh;
+import net.roguelogix.phosphophyllite.quartz.StaticMesh;
+import net.roguelogix.phosphophyllite.quartz.internal.Buffer;
+import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static net.roguelogix.phosphophyllite.quartz.internal.common.MagicNumbers.VERTEX_BYTE_SIZE;
+import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.VERTEX_BYTE_SIZE;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class StaticMesh implements QuartzStaticMesh {
+public class Mesh implements StaticMesh {
     
-    public Consumer<QuartzStaticMesh.Builder> buildFunc;
-    public Consumer<StaticMesh> disposeFunc;
+    public Consumer<StaticMesh.Builder> buildFunc;
     
-    public StaticMesh(Consumer<QuartzStaticMesh.Builder> buildFunc, Consumer<StaticMesh> disposeFunc) {
+    public Mesh(Consumer<StaticMesh.Builder> buildFunc) {
         this.buildFunc = buildFunc;
-        this.disposeFunc = disposeFunc;
     }
     
-    public Object2LongArrayMap<RenderType> build(Function<Integer, ByteBuffer> bufferCreator, Collection<RenderType> renderTypes) {
-        Builder builder = new Builder(renderTypes);
+    public Object2LongArrayMap<RenderType> build(Function<Integer, ByteBuffer> bufferCreator) {
+        Builder builder = new Builder();
         buildFunc.accept(builder);
         var buffer = bufferCreator.apply(builder.bytesRequired());
         return builder.build(buffer);
     }
     
-    @Override
-    public void dispose() {
-        disposeFunc.accept(this);
-    }
-    
-    private static class Builder implements QuartzStaticMesh.Builder, MultiBufferSource {
+    private static class Builder implements StaticMesh.Builder, MultiBufferSource {
         private static class Vertex {
             
             Vertex() {
@@ -151,12 +149,9 @@ public class StaticMesh implements QuartzStaticMesh {
         }
         
         private final PoseStack poseStack = new PoseStack();
-        private final Map<RenderType, BufferBuilder> buffers = new HashMap<>();
+        private final HashMap<RenderType, BufferBuilder> buffers = new HashMap<>();
         
-        Builder(Collection<RenderType> renderTypes) {
-            for (RenderType renderType : renderTypes) {
-                buffers.put(renderType, new BufferBuilder());
-            }
+        Builder() {
         }
         
         @Override
@@ -171,11 +166,7 @@ public class StaticMesh implements QuartzStaticMesh {
         
         @Override
         public VertexConsumer getBuffer(RenderType renderType) {
-            var buffer = buffers.get(renderType);
-            if (buffer == null) {
-                throw new IllegalArgumentException("Unsupported RenderType " + renderType);
-            }
-            return buffer;
+            return buffers.computeIfAbsent(renderType, e -> new BufferBuilder());
         }
         
         int bytesRequired() {
@@ -307,7 +298,7 @@ public class StaticMesh implements QuartzStaticMesh {
             returnVal |= (value >> (32 - width)) & signBitMask;
             return returnVal << position;
         }
-    
+        
         private static int extractInt(int packed, int pos, int width) {
             packed >>= pos;
             int signBitMask = 1 << (width - 1);
@@ -317,4 +308,127 @@ public class StaticMesh implements QuartzStaticMesh {
             return val;
         }
     }
+    
+    public static class Manager {
+        public static class TrackedMesh {
+            public record Component(int vertexOffset, int vertexCount) {
+            }
+            
+            public final WeakReference<Mesh> meshRef;
+            private final Buffer vertexBuffer;
+            private Buffer.Allocation vertexAllocation;
+            private final Object2ObjectArrayMap<RenderType, Component> drawInfo = new Object2ObjectArrayMap<>();
+            private final ObjectArrayList<Consumer<TrackedMesh>> buildCallbacks = new ObjectArrayList<>();
+            
+            public TrackedMesh(WeakReference<Mesh> meshRef, Buffer vertexBuffer) {
+                this.meshRef = meshRef;
+                this.vertexBuffer = vertexBuffer;
+            }
+            
+            void rebuild() {
+                var mesh = meshRef.get();
+                if (mesh == null) {
+                    return;
+                }
+                Object2LongArrayMap<RenderType> rawDrawInfo;
+                drawInfo.clear();
+                try {
+                    rawDrawInfo = mesh.build(this::allocBuffer);
+                    vertexAllocation.dirty();
+                } finally {
+                    if (vertexAllocation != null) {
+                        vertexAllocation.unlock();
+                    }
+                }
+                for (var renderTypeEntry : rawDrawInfo.object2LongEntrySet()) {
+                    var renderType = renderTypeEntry.getKey();
+                    var drawLong = renderTypeEntry.getLongValue();
+                    var drawComponent = new Component((int) (drawLong >> 32) + vertexAllocation.offset() / VERTEX_BYTE_SIZE, (int) drawLong);
+                    drawInfo.put(renderType, drawComponent);
+                }
+                for (int i = 0; i < buildCallbacks.size(); i++) {
+                    buildCallbacks.get(i).accept(this);
+                }
+            }
+            
+            private ByteBuffer allocBuffer(int size) {
+                if (vertexAllocation != null) {
+                    vertexAllocation = vertexBuffer.realloc(vertexAllocation, size, VERTEX_BYTE_SIZE);
+                } else {
+                    vertexAllocation = vertexBuffer.alloc(size, VERTEX_BYTE_SIZE);
+                }
+                vertexAllocation.lock();
+                return vertexAllocation.buffer();
+            }
+            
+            public Collection<RenderType> usedRenderTypes() {
+                return drawInfo.keySet();
+            }
+            
+            @Nullable
+            public Component renderTypeComponent(RenderType renderType) {
+                return drawInfo.get(renderType);
+            }
+            
+            public void addBuildCallback(Consumer<TrackedMesh> consumer) {
+                buildCallbacks.add(consumer);
+            }
+            
+            public void addBuildCallback(Runnable runnable) {
+                addBuildCallback(e -> runnable.run());
+            }
+        }
+        
+        private final ObjectArrayList<TrackedMesh> trackedMeshes = new ObjectArrayList<TrackedMesh>();
+        public final Buffer vertexBuffer;
+        
+        public Manager(Buffer vertexBuffer) {
+            this.vertexBuffer = vertexBuffer;
+        }
+        
+        public Mesh createMesh(Consumer<StaticMesh.Builder> buildFunc) {
+            final var staticMesh = new Mesh(buildFunc);
+            final var trackedMesh = new TrackedMesh(new WeakReference<>(staticMesh), vertexBuffer);
+            synchronized (trackedMeshes) {
+                trackedMeshes.add(trackedMesh);
+            }
+            QuartzCore.CLEANER.register(staticMesh, () -> {
+                synchronized (trackedMeshes) {
+                    trackedMeshes.remove(trackedMesh);
+                }
+            });
+            return staticMesh;
+        }
+        
+        @Nullable
+        public TrackedMesh getMeshInfo(StaticMesh mesh) {
+            for (int i = 0; i < trackedMeshes.size(); i++) {
+                var trackedMesh = trackedMeshes.get(i);
+                if (trackedMesh.meshRef.get() == mesh) {
+                    return trackedMesh;
+                }
+            }
+            return null;
+        }
+        
+        public void buildAllMeshes() {
+            for (TrackedMesh value : trackedMeshes) {
+                buildTrackedMesh(value);
+            }
+        }
+        
+        public void buildMesh(StaticMesh mesh) {
+            var trackedMesh = getMeshInfo(mesh);
+            if (trackedMesh != null) {
+                buildTrackedMesh(trackedMesh);
+            }
+        }
+        
+        private void buildTrackedMesh(TrackedMesh trackedMesh) {
+            trackedMesh.rebuild();
+        }
+        
+    }
+    
 }
+

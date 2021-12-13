@@ -111,6 +111,16 @@ minecraft {
     }
 }
 
+configurations {
+    library
+    implementation.extendsFrom library
+}
+minecraft.runs.all {
+    lazyToken('minecraft_classpath') {
+        configurations.library.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
+    }
+}
+
 mixin {
     add sourceSets.main, "phosphophyllite.refmap.json"
     config 'phosphophyllite.mixins.json'
@@ -138,6 +148,8 @@ dependencies {
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
 //
 //    compileOnly "mekanism:Mekanism:${mekanism_mc_version}-${mekanism_version}:api"
+
+    compileOnly "org.lwjgl:lwjgl-vulkan:3.2.2"
 }
 
 jar {

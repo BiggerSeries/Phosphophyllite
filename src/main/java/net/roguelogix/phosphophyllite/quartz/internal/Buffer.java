@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.quartz.internal.common.gl;
+package net.roguelogix.phosphophyllite.quartz.internal;
 
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
@@ -7,14 +7,21 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
+/**
+ * Generic GPU side buffer
+ * use GL or VK specific implementations for more details
+ * GL implementation is NOT thread safe, and may alter GL state
+ * VK is unimplemented
+ */
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public interface GLBuffer extends GLObject {
+public interface Buffer {
     
-    interface Allocation extends GLDeletable {
+    interface Allocation {
         
         /**
-         * @apiNote bytebuffer is write only, reading is undefined
+         * @apiNote byte buffer reflects CPU side of allocation, not GPU side, does not reflect GPU writes
+         *          reading is allowed
          *
          * @return sliced bytebuffer for this allocation only
          */
@@ -31,33 +38,33 @@ public interface GLBuffer extends GLObject {
         int size();
         
         /**
-         * flush the buffer section to OpenGL
-         * May change OpenGL state, potentially writes to GL_ARRAY_BUFFER
-         * writes not visible to GL until this is called
+         * marks entire allocation as dirty
          */
-        void flush();
+        void dirty();
         
         /**
-         * flush the buffer section to OpenGL
-         * May change OpenGL state, potentially writes to GL_ARRAY_BUFFER
-         * writes not visible to GL until this is called
+         * marks range in allocation as dirty
+         * writes are not visible until API specific flush is called
          */
-        void flushRange(int offset, int size);
+        void dirtyRange(int offset, int size);
         
         /**
          * @return allocator used to allocate this allocation
          */
-        GLBuffer allocator();
+        Buffer allocator();
         
         /**
          * Copies buffer data internally
-         * May change OpenGL state, potentially writes to GL_ARRAY_BUFFER
+         * CPU side only, marks range dirty for next flush
          */
         void copy(int srcOffset, int dstOffset, int size);
         
         /**
          * Called when this allocation is reallocated, allocation fed to consumer is the new allocation
          * Callback is fed this allocation immediately at add when added
+         *
+         * WARNING: these callbacks must only weakly refer to this allocation object, else you will cause a memory leak
+         *
          * @param consumer: callback
          */
         void addReallocCallback(Consumer<Allocation> consumer);
@@ -65,9 +72,16 @@ public interface GLBuffer extends GLObject {
         /**
          * Called when this allocation's ByteBuffer is re-sliced, ByteBuffer fed to consumer is new ByteBuffer
          * Callback is fed current ByteBuffer immediately at add when added
+         *
+         * WARNING: these callbacks must only weakly refer to this allocation object, else you will cause a memory leak
+         *
          * @param consumer: callback
          */
-        void addBufferSliceCallback(Consumer<GLBuffer.Allocation> consumer);
+        void addBufferSliceCallback(Consumer<Allocation> consumer);
+        
+        void lock();
+        
+        void unlock();
     }
     
     /**
@@ -113,25 +127,29 @@ public interface GLBuffer extends GLObject {
     
     void free(Allocation allocation);
     
-    void flushAll();
-    
-    /**
-     * Creates a fence for sync
-     * returns DUMMY_FENCE if syncing is not required
-     * @return created fence
-     */
-    GLFence createFence();
-    
+    void dirtyAll();
+
     /**
      * Called when the CPU side buffer is changed
+     *
+     * WARNING: these callbacks must only weakly refer to this buffer object, else you will cause a memory leak
+     *
      * @param consumer: callback
      */
-    void addCPUReallocCallback(Consumer<GLBuffer> consumer);
+    void addCPUReallocCallback(Consumer<Buffer> consumer);
     
     /**
      * Called when a new GL buffer is allocated, changing the result of calling handle()
+     *
+     *      * WARNING: these callbacks must only weakly refer to this buffer object, else you will cause a memory leak
+     *
      * @param consumer: callback
      */
-    void addGPUReallocCallback(Consumer<GLBuffer> consumer);
+    void addGPUReallocCallback(Consumer<Buffer> consumer);
+    
+    default <T extends Buffer> T as(Class<T> ignored){
+        //noinspection unchecked
+        return (T)this;
+    }
 }
 

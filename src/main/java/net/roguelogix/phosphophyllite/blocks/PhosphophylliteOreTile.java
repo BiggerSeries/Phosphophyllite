@@ -2,10 +2,7 @@ package net.roguelogix.phosphophyllite.blocks;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,19 +31,15 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
         Quartz.EVENT_BUS.addListener(PhosphophylliteOreTile::onQuartzStartup);
     }
     
-    private static QuartzStaticMesh mesh;
+    private static StaticMesh mesh;
     
     static void onQuartzStartup(QuartzEvent.Startup quartzStartup) {
-        Quartz.registerRenderType(RenderType.solid());
-        Quartz.registerRenderType(RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS));
         mesh = Quartz.createStaticMesh((builder) -> {
             Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.STONE.defaultBlockState(), builder.matrixStack(), builder.bufferSource(), 0, 0x00000, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
         });
     }
     
-    int instanceID = -1;
-    QuartzDynamicMatrix quartzMatrix;
-    QuartzDynamicLight quartzLight;
+    DrawBatch.Instance instance = null;
     Matrix4f spinMatrix = new Matrix4f();
     float rotation = 0;
     
@@ -59,8 +52,8 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
         }
         if (mesh != null && level.isClientSide()) {
             var modelPos = new Vector3i(getBlockPos().getX(), getBlockPos().getY() + 1, getBlockPos().getZ());
-            quartzLight = Quartz.createDynamicLight(modelPos, QuartzDynamicLight.Type.SMOOTH);
-            quartzMatrix = Quartz.createDynamicMatrix((matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> {
+            var batcher = Quartz.getDrawBatcherForBlock(modelPos);
+            var quartzMatrix = batcher.createDynamicMatrix((matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> {
                 rotation += nanoSinceLastFrame / 1_000_000_000f;
                 spinMatrix.identity();
 //                spinMatrix.scale(1.5f);
@@ -73,7 +66,7 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
 //                spinMatrix.translate(0, 2, 0);
                 matrix.write(spinMatrix);
             });
-            instanceID = Quartz.registerStaticMeshInstance(mesh, modelPos, quartzMatrix, new Matrix4f().translate(0, 0, 0), quartzLight);
+            instance = batcher.createInstance(modelPos, mesh, quartzMatrix, null, null, null);
         }
     }
     
@@ -94,10 +87,8 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
     public void onRemoved(boolean chunkUnload) {
         assert level != null;
         if (mesh != null && level.isClientSide()) {
-            Quartz.unregisterStaticMeshInstance(instanceID);
-            instanceID = -1;
-            quartzMatrix.dispose();
-            quartzLight.dispose();
+            instance.delete();
+            instance = null;
         }
     }
 }
