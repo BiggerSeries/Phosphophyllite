@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
@@ -38,7 +39,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     
     public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
     
-    private final Int2ObjectOpenHashMap<TileModule<?>> modules = new Int2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<Class<?>, TileModule<?>> modules = new Object2ObjectOpenHashMap<>();
     private final ArrayList<TileModule<?>> moduleList = new ArrayList<>();
     private final List<TileModule<?>> moduleListRO = Collections.unmodifiableList(moduleList);
     
@@ -48,14 +49,14 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         ModuleRegistry.forEachTileModule((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
                 TileModule<?> module = constructor.apply(this);
-                modules.put(clazz.hashCode(), module);
+                modules.put(clazz, module);
                 moduleList.add(module);
             }
         });
     }
     
     public TileModule<?> module(Class<?> interfaceClazz) {
-        return modules.get(interfaceClazz.hashCode());
+        return modules.get(interfaceClazz);
     }
     
     @Override
@@ -68,15 +69,18 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         super.clearRemoved();
     }
     
-    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> worldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> clientWorldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> serverWorldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
+//    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> worldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
     private int index = 0;
     
     static {
+        MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::serverStopEvent);
         MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
     }
     
     private static void worldUnloadEvent(WorldEvent.Unload unload) {
-        var removed = worldUnloadEventTiles.remove((Level) unload.getWorld());
+        var removed = (unload.getWorld().isClientSide() ? clientWorldUnloadEventTiles :serverWorldUnloadEventTiles).remove((Level) unload.getWorld());
         if (removed != null) {
             for (int i = 0; i < removed.size(); i++) {
                 removed.get(i).remove(true);
@@ -84,12 +88,17 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         }
     }
     
+    private static void serverStopEvent(ServerStoppedEvent stoppedEvent) {
+        serverWorldUnloadEventTiles.clear();
+    }
+    
     @Override
     public final void onLoad() {
+        assert level != null;
         super.onLoad();
         moduleList.forEach(TileModule::onAdded);
         onAdded();
-        var worldUnloadTiles = worldUnloadEventTiles.computeIfAbsent(level, __ -> new ObjectArrayList<>());
+        var worldUnloadTiles = (level.isClientSide() ? clientWorldUnloadEventTiles :serverWorldUnloadEventTiles).computeIfAbsent(level, __ -> new ObjectArrayList<>());
         index = worldUnloadTiles.size();
         worldUnloadTiles.add(this);
     }
@@ -110,9 +119,13 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     }
     
     private void remove(boolean chunkUnload) {
+        assert level != null;
         onRemoved(chunkUnload);
         moduleList.forEach(module -> module.onRemoved(chunkUnload));
-        var worldUnloadTiles = worldUnloadEventTiles.get(level);
+        if(index == -1){
+            return;
+        }
+        var worldUnloadTiles = (level.isClientSide() ? clientWorldUnloadEventTiles :serverWorldUnloadEventTiles).get(level);
         if (worldUnloadTiles != null) {
             var arrayTile = worldUnloadTiles.get(index);
             if (arrayTile == this) {
@@ -121,6 +134,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
                     removed.index = index;
                     worldUnloadTiles.set(index, removed);
                 }
+                this.index = -1;
             }
         }
     }
