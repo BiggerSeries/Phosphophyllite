@@ -1,7 +1,9 @@
 package net.roguelogix.phosphophyllite.quartz;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.eventbus.EventBus;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
@@ -17,6 +19,12 @@ import java.util.function.Consumer;
 public final class Quartz {
     
     public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false));
+    
+    public static StaticMesh createStaticMesh(BlockState blockState) {
+        return createStaticMesh(builder -> {
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(blockState, builder.matrixStack(), builder.bufferSource(), 0, 0x00000, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
+        });
+    }
     
     public static StaticMesh createStaticMesh(Consumer<StaticMesh.Builder> buildFunc) {
         return QuartzCore.INSTANCE.meshManager.createMesh(buildFunc);
@@ -35,6 +43,6 @@ public final class Quartz {
     }
     
     public static DrawBatch getDrawBatcherForAABB(AABBi aabb) {
-        return null;
+        return QuartzCore.INSTANCE.getWorldEngine().getBatcherForAABB(aabb);
     }
 }
