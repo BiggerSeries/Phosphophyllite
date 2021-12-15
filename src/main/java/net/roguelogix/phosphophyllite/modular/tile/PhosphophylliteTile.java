@@ -207,6 +207,8 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         return new CompoundTag();
     }
     
+    private static final CompoundTag EMPTY_TAG = new CompoundTag();
+    
     @Override
     public final void handleUpdateTag(CompoundTag compound) {
         super.handleUpdateTag(compound);
@@ -217,9 +219,18 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         CompoundTag subNBTs = compound.getCompound("sub");
         for (var module : moduleList) {
             String key = module.saveKey();
-            if (key != null && subNBTs.contains(key)) {
-                CompoundTag nbt = subNBTs.getCompound(key);
+            if (key != null) {
+                CompoundTag nbt = EMPTY_TAG;
+                if (subNBTs.contains(key)) {
+                    nbt = subNBTs.getCompound(key);
+                }
                 module.handleDataNBT(nbt);
+                if (!nbt.isEmpty()) {
+                    LOGGER.warn("Module " + key + " wrote to NBT in read!");
+                    for (var str : EMPTY_TAG.getAllKeys().toArray(new String[0])) {
+                        EMPTY_TAG.remove(str);
+                    }
+                }
             }
         }
     }
