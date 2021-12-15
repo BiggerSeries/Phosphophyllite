@@ -34,9 +34,7 @@ public class PhosphophylliteOreTile extends PhosphophylliteTile {
     private static StaticMesh mesh;
     
     static void onQuartzStartup(QuartzEvent.Startup quartzStartup) {
-        mesh = Quartz.createStaticMesh((builder) -> {
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(Blocks.STONE.defaultBlockState(), builder.matrixStack(), builder.bufferSource(), 0, 0x00000, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
-        });
+        mesh = Quartz.createStaticMesh(Blocks.STONE.defaultBlockState());
     }
     
     DrawBatch.Instance instance = null;
