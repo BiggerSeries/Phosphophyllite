@@ -153,9 +153,6 @@ public class MultiblockTileModule<
         if (compound.contains("controllerData")) {
             controllerData = compound.getCompound("controllerData");
         }
-        if (compound.contains("userdata")) {
-            readNBT(compound.getCompound("userdata"));
-        }
         isSaveDelegate = compound.getBoolean("isSaveDelegate");
         preExistingBlock = true;
     }
