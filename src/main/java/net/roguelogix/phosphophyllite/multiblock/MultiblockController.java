@@ -26,6 +26,8 @@ public class MultiblockController<
         ControllerType extends MultiblockController<TileType, ControllerType>
         > implements IDebuggable {
     
+    private MultiblockController<?, ?> mergedInto = null;
+    
     protected final Level world;
     
     private boolean hasSaveDelegate = false;
@@ -37,7 +39,7 @@ public class MultiblockController<
     private boolean checkForDetachments = false;
     private boolean updateExtremes = true;
     private long updateAssemblyAtTick = Long.MAX_VALUE;
-    protected final Set<ControllerType> controllersToMerge = new LinkedHashSet<>();
+    protected final Set<MultiblockController<?, ?>> controllersToMerge = new LinkedHashSet<>();
     protected final List<BlockPos> removedBlocks = new LinkedList<>();
     
     private final Vector3i minCoord = new Vector3i();
@@ -415,22 +417,27 @@ public class MultiblockController<
             }
             checkForDetachments = false;
         }
-        if (!controllersToMerge.isEmpty()) {
-            HashSet<ControllerType> newToMerge = new HashSet<>();
-            for (ControllerType otherController : controllersToMerge) {
-                var otherMultiblockController = (MultiblockController<?, ?>) otherController;
-                otherMultiblockController.disassembledBlockStates();
+        while (!controllersToMerge.isEmpty()) {
+            HashSet<MultiblockController<?, ?>> newToMerge = new HashSet<>();
+            for (MultiblockController<?, ?> otherController : controllersToMerge) {
+                otherController.disassembledBlockStates();
                 Phosphophyllite.removeController(otherController);
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
                 otherController.controllersToMerge.clear();
-                if(otherController.blocks.size() == 0){
+                if (otherController.mergedInto != null && otherController.mergedInto != this) {
+                    newToMerge.add(otherController.mergedInto);
+                    otherController.mergedInto.controllersToMerge.add(this);
                     continue;
                 }
-                this.onMerge(otherController);
-                if (this.cachedNBT == null && otherMultiblockController.cachedNBT != null) {
-                    this.cachedNBT = otherMultiblockController.cachedNBT;
-                    otherMultiblockController.cachedNBT = null;
+                if (otherController.blocks.size() == 0) {
+                    continue;
+                }
+                //noinspection unchecked
+                this.onMerge((ControllerType) otherController);
+                if (this.cachedNBT == null && otherController.cachedNBT != null) {
+                    this.cachedNBT = otherController.cachedNBT;
+                    otherController.cachedNBT = null;
                 }
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
@@ -440,6 +447,7 @@ public class MultiblockController<
                 otherController.blocks.clear();
                 updateExtremes = true;
                 updateAssemblyAtTick = Long.MIN_VALUE;
+                otherController.mergedInto = this;
             }
             controllersToMerge.clear();
             controllersToMerge.addAll(newToMerge);
