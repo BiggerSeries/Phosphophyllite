@@ -448,7 +448,6 @@ public class MultiblockController<
                     attemptAttach(module);
                 });
                 otherController.blocks.clear();
-                updateExtremes = true;
                 updateAssemblyAtTick = Long.MIN_VALUE;
                 otherController.mergedInto = this;
             }

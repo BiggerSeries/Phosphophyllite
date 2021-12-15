@@ -3,8 +3,10 @@ package net.roguelogix.phosphophyllite.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortIterator;
@@ -147,6 +149,13 @@ public class Util {
                 chunk.setUnsaved(true);
             }
         }
+    }
+    
+    private static final Long2ObjectOpenHashMap<BlockState> endOfTickStates = new Long2ObjectOpenHashMap<>(4096, Hash.DEFAULT_LOAD_FACTOR);
+    
+    public static void setBlockStateWithoutUpdate(BlockPos pos, BlockState state) {
+        long longPos = pos.asLong();
+        endOfTickStates.put(longPos, state);
     }
     
     public static void setBlockStates(Map<BlockPos, BlockState> newStates, Level world) {
@@ -337,6 +346,10 @@ public class Util {
     }
     
     public static void worldTickEndEvent(Level level) {
+        if(!endOfTickStates.isEmpty()){
+            setBlockStates(endOfTickStates, level);
+            endOfTickStates.clear();
+        }
         if (updateArrays.isEmpty()) {
             return;
         }

@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -13,6 +14,7 @@ import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
+import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -119,7 +121,7 @@ public class MultiblockTileModule<
             return;
         }
         if (ASSEMBLY_STATE) {
-            iface.getLevel().setBlockAndUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
+            Util.setBlockStateWithoutUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
         }
         if (controller != null) {
             controller.detach(this);
@@ -127,12 +129,18 @@ public class MultiblockTileModule<
         }
         // at this point, i need to get or create a controller
         BlockPos.MutableBlockPos possibleTilePos = new BlockPos.MutableBlockPos();
+        ChunkAccess lastChunk = null;
+        long lastChunkPos = 0;
         for (Direction value : Direction.values()) {
             possibleTilePos.set(iface.getBlockPos());
             possibleTilePos.move(value);
-            ChunkAccess chunk = iface.getLevel().getChunk(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4, ChunkStatus.FULL, false);
-            if (chunk != null) {
-                BlockEntity possibleTile = chunk.getBlockEntity(possibleTilePos);
+            long currentChunkPos = ChunkPos.asLong(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4);
+            if(lastChunk == null || currentChunkPos != lastChunkPos) {
+                lastChunkPos = currentChunkPos;
+                lastChunk = iface.getLevel().getChunk(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4, ChunkStatus.FULL, false);
+            }
+            if (lastChunk != null) {
+                BlockEntity possibleTile = lastChunk.getBlockEntity(possibleTilePos);
                 if (possibleTile instanceof IMultiblockTile) {
                     if (((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller != null) {
                         ((IMultiblockTile<?, ?>) possibleTile).multiblockModule().controller.attemptAttach(this);
