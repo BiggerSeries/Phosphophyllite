@@ -20,15 +20,14 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import org.lwjgl.opengl.GL;
 
 import javax.annotation.Nullable;
-
 import java.lang.ref.WeakReference;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.GL.*;
 import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.*;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawArraysInstancedBaseInstance;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawElementsInstancedBaseVertexBaseInstance;
+import static org.lwjgl.opengl.ARBInstancedArrays.glVertexAttribDivisorARB;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
-import static org.lwjgl.opengl.ARBInstancedArrays.*;
 import static org.lwjgl.opengl.GL32C.*;
 
 public class GLDrawBatch implements DrawBatch {
@@ -123,15 +122,20 @@ public class GLDrawBatch implements DrawBatch {
             if (trackedMesh == null) {
                 throw new IllegalArgumentException("Unable to find mesh in mesh registry");
             }
-            
+    
             onRebuild();
-            trackedMesh.addBuildCallback(this::onRebuild);
             instanceDataAlloc = instanceDataBuffer.alloc(INSTANCE_DATA_BYTE_SIZE);
             final var ref = new WeakReference<>(this);
-            instanceDataAlloc.addReallocCallback(alloc ->{
+            trackedMesh.addBuildCallback(() -> {
                 final var manager = ref.get();
                 if (manager != null) {
-                    manager.instanceDataOffset = manager.instanceDataAlloc.offset();
+                    manager.onRebuild();
+                }
+            });
+            instanceDataAlloc.addReallocCallback(alloc -> {
+                final var manager = ref.get();
+                if (manager != null) {
+                    manager.instanceDataOffset = alloc.offset();
                 }
             });
         }
@@ -242,6 +246,7 @@ public class GLDrawBatch implements DrawBatch {
                     componentMap.remove(renderPass);
                 }
             }
+            components.clear();
             instanceManagers.remove(staticMesh);
         }
         

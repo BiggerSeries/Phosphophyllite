@@ -45,6 +45,7 @@ public class GLBuffer implements Buffer {
         private final ByteBuffer[] byteBuffer;
         private final ObjectArrayList<Consumer<Buffer.Allocation>> reallocCallbacks = new ObjectArrayList<>();
         private final ObjectArrayList<Consumer<Buffer.Allocation>> sliceCallbacks;
+        private final Runnable slicer;
         
         protected Allocation(Info info) {
             this.info = info;
@@ -70,10 +71,12 @@ public class GLBuffer implements Buffer {
             allocator.slicers.add(slicer);
             this.byteBuffer = byteBuffer;
             this.sliceCallbacks = sliceCallbacks;
+            this.slicer = slicer;
         }
         
         public void delete() {
             free(info);
+            slicers.remove(slicer);
         }
         
         public ByteBuffer buffer() {
