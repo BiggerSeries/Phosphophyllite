@@ -36,9 +36,9 @@ public class MultiblockController<
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
     protected final Set<IOnAssemblyTile> onAssemblyTiles = new LinkedHashSet<>();
     protected final Set<IOnDisassemblyTile> onDisassemblyTiles = new LinkedHashSet<>();
-    private boolean checkForDetachments = false;
     private boolean updateExtremes = true;
     private long updateAssemblyAtTick = Long.MAX_VALUE;
+    private long checkForDetachmentsAtTick = Long.MAX_VALUE;
     protected final Set<MultiblockController<?, ?>> controllersToMerge = new LinkedHashSet<>();
     protected final List<BlockPos> removedBlocks = new LinkedList<>();
     
@@ -315,7 +315,10 @@ public class MultiblockController<
         BlockPos toDetachPos = toDetachTile.getBlockPos();
         
         if (checkForDetachments) {
-            this.checkForDetachments = true;
+            this.checkForDetachmentsAtTick = Phosphophyllite.tickNumber() + 2;
+            if(!onChunkUnload){
+                this.checkForDetachmentsAtTick = Long.MIN_VALUE;
+            }
             removedBlocks.add(toDetachPos);
         }
         
@@ -368,10 +371,10 @@ public class MultiblockController<
         if (blocks.isEmpty()) {
             // why are we being ticked?
             Phosphophyllite.removeController(this);
-            checkForDetachments = false;
+            checkForDetachmentsAtTick = Long.MAX_VALUE;
         }
         
-        if (checkForDetachments) {
+        if (checkForDetachmentsAtTick <= Phosphophyllite.tickNumber()) {
             AStarList<MultiblockTileModule<?, ?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
             
             BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
@@ -415,7 +418,7 @@ public class MultiblockController<
                     updateAssemblyAtTick = Long.MIN_VALUE;
                 }
             }
-            checkForDetachments = false;
+            checkForDetachmentsAtTick = Long.MAX_VALUE;
         }
         while (!controllersToMerge.isEmpty()) {
             HashSet<MultiblockController<?, ?>> newToMerge = new HashSet<>();
