@@ -59,7 +59,7 @@ public class ModuleMap<ModuleType extends TileModule<TileType>, TileType extends
     public boolean removeModule(final ModuleType module) {
         final TileType tile = module.iface;
         final long posLong = tile.getBlockPos().asLong();
-        final int index = indexMap.put(posLong, -1);
+        final int index = indexMap.remove(posLong);
         if (index == -1) {
             return false;
         }
