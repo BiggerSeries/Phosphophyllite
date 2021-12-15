@@ -19,6 +19,7 @@ import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Locale;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -69,7 +70,7 @@ public class ConfigManager {
             modName = name;
             annotation = field.getAnnotation(RegisterConfig.class);
             spec = new ConfigSpec(field, configObject);
-            baseFile = new File("config/" + annotation.folder() + "/" + name + "-" + annotation.type().toString().toLowerCase());
+            baseFile = new File("config/" + annotation.folder() + "/" + name + "-" + annotation.type().toString().toLowerCase(Locale.US));
             
             loadReflections();
             runRegistrations();
@@ -187,7 +188,7 @@ public class ConfigManager {
             File file = null;
             ConfigFormat format = null;
             for (ConfigFormat value : ConfigFormat.values()) {
-                File fullFile = new File(baseFile + "." + value.toString().toLowerCase());
+                File fullFile = new File(baseFile + "." + value.toString().toLowerCase(Locale.US));
                 if (fullFile.exists()) {
                     if (file != null) {
                         // why the fuck are there multiple?
@@ -204,7 +205,7 @@ public class ConfigManager {
             }
             
             if (file == null) {
-                file = new File(baseFile + "." + annotation.format().toString().toLowerCase());
+                file = new File(baseFile + "." + annotation.format().toString().toLowerCase(Locale.US));
                 format = annotation.format();
             }
             

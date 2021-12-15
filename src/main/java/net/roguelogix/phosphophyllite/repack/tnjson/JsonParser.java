@@ -1,10 +1,7 @@
 package net.roguelogix.phosphophyllite.repack.tnjson;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Parsing JSON string to Map object with JSON5
@@ -315,7 +312,7 @@ class JsonParser {
       }
     }
 
-    String literal = b.toString().trim().toLowerCase();
+    String literal = b.toString().trim().toLowerCase(Locale.US);
 
     switch (literal) {
       case NULL:

@@ -5,6 +5,7 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Locale;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -21,7 +22,7 @@ public enum AxisPosition implements StringRepresentable {
     
     @Override
     public String getSerializedName() {
-        return toString().toLowerCase();
+        return toString().toLowerCase(Locale.US);
     }
     
     @Override
