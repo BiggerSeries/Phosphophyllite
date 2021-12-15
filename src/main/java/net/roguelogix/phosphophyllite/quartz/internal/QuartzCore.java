@@ -32,6 +32,7 @@ public abstract class QuartzCore {
         if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
             throw new IllegalStateException("Attempt to init quartz before it is ready");
         }
+        LOGGER.info("Quartz Init");
         var instance = createCore(QuartzConfig.INSTANCE.mode);
         if (instance == null) {
             throw new IllegalStateException();
@@ -60,10 +61,23 @@ public abstract class QuartzCore {
     }
     
     static void init() {
-        Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
     }
     
+    private static boolean wasInit = false;
+    
+    static void startup() {
+        INSTANCE.startupInternal();
+        Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
+        wasInit = true;
+    }
+    
+    protected abstract void startupInternal();
+    
     public static void shutdown() {
+        if(!wasInit){
+            return;
+        }
+        Quartz.EVENT_BUS.post(new QuartzEvent.Shutdown());
         INSTANCE.shutdownInternal();
     }
     

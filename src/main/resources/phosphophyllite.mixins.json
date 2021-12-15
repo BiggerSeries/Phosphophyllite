@@ -8,6 +8,7 @@
     "ChunkMapMixin"
   ],
   "client": [
+    "QuartzStartupMixin",
     "NoVizFallbackMixin",
     "LevelRendererMixin",
     "MinecraftShutdownMixin",

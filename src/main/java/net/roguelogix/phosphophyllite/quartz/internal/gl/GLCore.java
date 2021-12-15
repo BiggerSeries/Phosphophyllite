@@ -74,6 +74,10 @@ public class GLCore extends QuartzCore {
     private long lastTimeNano = 0;
     
     @Override
+    protected void startupInternal() {
+    }
+    
+    @Override
     protected void shutdownInternal() {
         // *everything is final*
         // OH NO, anyway

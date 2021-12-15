@@ -147,6 +147,11 @@ public class VKCore extends QuartzCore {
     }
     
     @Override
+    protected void startupInternal() {
+    
+    }
+    
+    @Override
     protected void shutdownInternal() {
     
     }

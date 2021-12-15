@@ -11,12 +11,15 @@ public class EventListener {
     private static void onModLoad() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(EventListener::clientSetup);
     }
-    
+
     private static void clientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(EventListener::initQuartz);
+        event.enqueueWork(QuartzCore::startup);
     }
     
-    private static void initQuartz() {
+    public static void initQuartz() {
+    }
+    
+    static {
         try {
             QuartzCore.init();
         } catch (Throwable e) {
