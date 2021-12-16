@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.quartz.internal;
 
 import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.roguelogix.phosphophyllite.registry.ClientOnly;
@@ -22,10 +23,12 @@ public class EventListener {
     }
     
     static {
-        try {
-            QuartzCore.init();
-        } catch (Throwable e) {
-            Minecraft.crash(new CrashReport("Quartz failed to startup", e));
+        if (!DatagenModLoader.isRunningDataGen()) {
+            try {
+                QuartzCore.init();
+            } catch (Throwable e) {
+                Minecraft.crash(new CrashReport("Quartz failed to startup", e));
+            }
         }
     }
 }
