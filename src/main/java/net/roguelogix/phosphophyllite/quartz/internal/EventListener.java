@@ -4,8 +4,10 @@ import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 
+@ClientOnly
 public class EventListener {
     @OnModLoad
     private static void onModLoad() {
