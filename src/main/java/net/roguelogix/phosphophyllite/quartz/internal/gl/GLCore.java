@@ -160,6 +160,8 @@ public class GLCore extends QuartzCore {
             deltaNano = 0;
         }
         
+        vertexBuffer.flush();
+    
         var playerPosition = pActiveRenderInfo.getPosition();
         drawInfo.playerPosition.set((int) playerPosition.x, (int) playerPosition.y, (int) playerPosition.z);
         drawInfo.playerSubBlock.set(playerPosition.x - (int) playerPosition.x, playerPosition.y - (int) playerPosition.y, playerPosition.z - (int) playerPosition.z);
@@ -168,15 +170,8 @@ public class GLCore extends QuartzCore {
         pMatrixStack.last().pose().store(drawInfo.projectionMatrixFloatBuffer);
         drawInfo.projectionMatrix.mul(new net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f().set(drawInfo.projectionMatrixFloatBuffer));
         drawInfo.projectionMatrix.get(drawInfo.projectionMatrixFloatBuffer);
-        drawInfo.fogStart = RenderSystem.getShaderFogStart();
-        drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
-        drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
         drawInfo.deltaNano = deltaNano;
         drawInfo.partialTicks = pPartialTicks;
-        
-        mainProgram.setupDrawInfo(drawInfo);
-        
-        vertexBuffer.flush();
     }
     
     @Override
@@ -186,6 +181,12 @@ public class GLCore extends QuartzCore {
     
     @Override
     public void preTerrainSetup() {
+        drawInfo.fogStart = RenderSystem.getShaderFogStart();
+        drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
+        drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
+    
+        mainProgram.setupDrawInfo(drawInfo);
+    
         for (int i = 0; i < batchers.size(); i++) {
             var batch = batchers.get(i).get();
             if (batch != null) {
