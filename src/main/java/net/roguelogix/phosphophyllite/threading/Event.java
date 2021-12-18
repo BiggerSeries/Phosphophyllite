@@ -5,15 +5,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Event {
     private final ArrayList<Runnable> callbacks = new ArrayList<>();
-    private final AtomicBoolean wasTriggered = new AtomicBoolean(false);
+    private volatile boolean wasTriggered = false;
     
     public boolean ready() {
-        return wasTriggered.get();
+        return wasTriggered;
     }
     
     @SuppressWarnings("unused")
     public synchronized void join() {
-        if (wasTriggered.get()) {
+        if (wasTriggered) {
             return;
         }
         try {
@@ -24,7 +24,7 @@ public class Event {
     
     @SuppressWarnings("unused")
     public synchronized boolean join(int timeout) {
-        if (wasTriggered.get()) {
+        if (wasTriggered) {
             return true;
         }
         try {
@@ -32,20 +32,20 @@ public class Event {
         } catch (InterruptedException ignored) {
         }
         
-        return wasTriggered.get();
+        return wasTriggered;
     }
     
     public synchronized void trigger() {
-        if (wasTriggered.get()) {
+        if (wasTriggered) {
             return;
         }
-        wasTriggered.set(true);
+        wasTriggered = true;
         callbacks.forEach(Runnable::run);
         notifyAll();
     }
     
     public synchronized void registerCallback(Runnable runnable) {
-        if (wasTriggered.get()) {
+        if (wasTriggered) {
             runnable.run();
             return;
         }
