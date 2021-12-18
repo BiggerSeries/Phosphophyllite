@@ -1,3 +1,17 @@
+# 1.18.1-0.6.0-alpha.9.1
+ - use US locale with toLowerCase and toUpperCase, should fix loading with some system languages
+ - always run read data for module, even if data is null, mimics vanilla tile behavior
+ - fix multi-way same tick merging issue
+ - optimizations
+   - unload disconnection check deferred until next tick without changes
+ - Quartz
+   - init immediately after window creation, should make launch error logs correct again 
+   - fix two memory leaks
+   - print error log with GL info when unable to init
+   - fix fogging, and update function for 1.18.1
+   - add config option for base_instance and attrib_binding extensions
+     - also fix a bug with they are both disabled
+
 # 1.18.1-0.6.0-alpha.9
  - 1.18.1
  - Quartz rev2, currently buggy
