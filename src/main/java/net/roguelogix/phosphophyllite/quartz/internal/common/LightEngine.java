@@ -10,11 +10,13 @@ import net.minecraft.world.level.LightLayer;
 import net.roguelogix.phosphophyllite.quartz.DynamicLight;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.LongConsumer;
 
 import static net.roguelogix.phosphophyllite.repack.org.joml.Math.abs;
@@ -23,32 +25,55 @@ import static net.roguelogix.phosphophyllite.repack.org.joml.Math.abs;
 @MethodsReturnNonnullByDefault
 public class LightEngine {
     
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Long2ObjectOpenHashMap<SoftReference<Chunk>> liveChunks = new Long2ObjectOpenHashMap<>();
     
     public LightEngine() {
     }
     
     private Chunk getChunkFor(long longPos) {
-        synchronized (liveChunks) {
-            Chunk chunk = null;
+        boolean readLocked = false;
+        boolean writeLocked = false;
+        try {
+            readLocked = true;
+            lock.readLock().lock();
             var chunkRef = liveChunks.get(longPos);
+            lock.readLock().unlock();
+            readLocked = false;
+        
+            Chunk chunk = null;
             if (chunkRef != null) {
                 chunk = chunkRef.get();
             }
             if (chunk == null) {
                 chunk = new Chunk(longPos, lonk -> {
-                    synchronized (liveChunks) {
+                    try {
+                        lock.writeLock().lock();
                         liveChunks.remove(lonk);
+                    } finally {
+                        lock.writeLock().unlock();
                     }
                 });
+                writeLocked = true;
+                lock.writeLock().lock();
                 liveChunks.put(longPos, new SoftReference<>(chunk));
+                lock.writeLock().unlock();
+                writeLocked = false;
             }
             return chunk;
+        } finally {
+            if (writeLocked) {
+                lock.writeLock().unlock();
+            }
+            if (readLocked) {
+                lock.readLock().unlock();
+            }
         }
     }
     
     public void update(BlockAndTintGetter blockAndTintGetter) {
-        synchronized (liveChunks) {
+        try {
+            lock.readLock().lock();
             liveChunks.forEach(((aLong, lightChunk) -> {
                 var chunk = lightChunk.get();
                 if (chunk == null) {
@@ -56,14 +81,19 @@ public class LightEngine {
                 }
                 chunk.runUpdate(blockAndTintGetter);
             }));
+        } finally {
+            lock.readLock().unlock();
         }
     }
     
     public void sectionDirty(int x, int y, int z) {
         long pos = SectionPos.asLong(x, y, z);
         SoftReference<Chunk> chunkRef;
-        synchronized (liveChunks) {
+        try {
+            lock.readLock().lock();
             chunkRef = liveChunks.get(pos);
+        } finally {
+            lock.readLock().unlock();
         }
         Chunk chunk = null;
         if (chunkRef != null) {
@@ -82,6 +112,7 @@ public class LightEngine {
     }
     
     private static class Chunk {
+        private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         private final ObjectArrayList<WeakReference<DynamicLight>> lights = new ObjectArrayList<>();
         
         private boolean dirty = true; // this may need to be volatile
@@ -106,19 +137,40 @@ public class LightEngine {
                 return;
             }
             dirty = false;
-            synchronized (lights) {
-                for (int i = 0; i < lights.size(); i++) {
-                    var light = lights.get(i).get();
-                    while (light == null) {
-                        var end = lights.pop();
-                        var endLight = end.get();
-                        if (endLight != null) {
-                            light = endLight;
-                            lights.set(i, end);
-                        }
+            boolean hasNullElement = false;
+            try {
+                lock.readLock().lock();
+                for (final var dynamicLightWeakReference : lights) {
+                    var light = dynamicLightWeakReference.get();
+                    if (light == null) {
+                        hasNullElement = true;
+                        continue;
                     }
                     light.update(blockAndTintGetter);
                 }
+            } finally {
+                lock.readLock().unlock();
+            }
+            if (hasNullElement) {
+                Queues.offThread.enqueue(() -> {
+                    try {
+                        lock.writeLock().lock();
+                        for (int i = 0; i < lights.size(); i++) {
+                            final var lightRef = lights.get(i);
+                            var light = lightRef.get();
+                            while (light == null) {
+                                var end = lights.pop();
+                                var endLight = end.get();
+                                if (endLight != null) {
+                                    light = endLight;
+                                    lights.set(i, end);
+                                }
+                            }
+                        }
+                    } finally {
+                        lock.writeLock().unlock();
+                    }
+                });
             }
         }
         
@@ -126,17 +178,23 @@ public class LightEngine {
             var light = lightManager.createLight(createLightUpdateFunc(pos, lightType));
             var lightRef = new WeakReference<>(light);
             QuartzCore.CLEANER.register(light, () -> this.onLightDeleted(lightRef));
-            synchronized (lights) {
+            try {
+                lock.writeLock().lock();
                 lights.add(lightRef);
                 //  mojang directly uses the level as a light engine on multiple threads, so, im going to assume this is safe on multiple threads too
                 light.update(Minecraft.getInstance().level);
+            } finally {
+                lock.writeLock().unlock();
             }
             return light;
         }
         
         private void onLightDeleted(WeakReference<DynamicLight> lightRef) {
-            synchronized (lights) {
+            try {
+                lock.writeLock().lock();
                 lights.remove(lightRef);
+            } finally {
+                lock.writeLock().unlock();
             }
         }
         
