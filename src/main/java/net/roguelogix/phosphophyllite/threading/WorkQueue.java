@@ -5,11 +5,8 @@ import net.minecraft.client.Minecraft;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -116,9 +113,7 @@ public class WorkQueue {
             for (Event event : waitEvents) {
                 if (event == null) {
                     if (unTriggeredWaitEvents.decrementAndGet() == 0) {
-                        synchronized (readyEvent) {
-                            readyEvent.trigger();
-                        }
+                        readyEvent.trigger();
                     }
                 }
                 assert event != null;
