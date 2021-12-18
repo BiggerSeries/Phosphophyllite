@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -108,6 +109,10 @@ public class MultiblockTileModule<
         return state;
     }
     
+    private static Level lastLevel;
+    private static ChunkAccess lastChunk;
+    private static long lastChunkPos;
+    
     public void attachToNeighbors() {
         assert iface.getLevel() != null;
         controller = null;
@@ -117,11 +122,20 @@ public class MultiblockTileModule<
         if (!allowAttach) {
             return;
         }
-        if (iface.getLevel().getBlockEntity(iface.getBlockPos()) != iface) {
+        final var pos = iface.getBlockPos();
+        if (iface.getLevel().getBlockEntity(pos) != iface) {
             return;
         }
         if (ASSEMBLY_STATE) {
-            Util.setBlockStateWithoutUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
+            final var level = iface.getLevel();
+            final var chunkPos = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+            if (lastLevel != level || chunkPos != lastChunkPos) {
+                lastLevel = iface.getLevel();
+                lastChunkPos = chunkPos;
+                lastChunk = level.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
+            }
+            lastChunk.setBlockState(pos, iface.getBlockState().setValue(ASSEMBLED, false), false);
+//            Util.setBlockStateWithoutUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
         }
         if (controller != null) {
             controller.detach(this);
@@ -132,7 +146,7 @@ public class MultiblockTileModule<
         ChunkAccess lastChunk = null;
         long lastChunkPos = 0;
         for (Direction value : Direction.values()) {
-            possibleTilePos.set(iface.getBlockPos());
+            possibleTilePos.set(pos);
             possibleTilePos.move(value);
             long currentChunkPos = ChunkPos.asLong(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4);
             if(lastChunk == null || currentChunkPos != lastChunkPos) {

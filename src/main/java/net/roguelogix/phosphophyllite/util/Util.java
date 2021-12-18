@@ -154,8 +154,15 @@ public class Util {
     private static final Long2ObjectOpenHashMap<BlockState> endOfTickStates = new Long2ObjectOpenHashMap<>(4096, Hash.DEFAULT_LOAD_FACTOR);
     
     public static void setBlockStateWithoutUpdate(BlockPos pos, BlockState state) {
-        long longPos = pos.asLong();
-        endOfTickStates.put(longPos, state);
+        setBlockStateWithoutUpdate(pos.asLong(), state);
+    }
+    
+    public static void setBlockStateWithoutUpdate(long pos, BlockState state) {
+        endOfTickStates.put(pos, state);
+    }
+    
+    public static void setBlockStateWithoutUpdate(Long2ObjectOpenHashMap<BlockState> map) {
+        endOfTickStates.putAll(map);
     }
     
     public static void setBlockStates(Map<BlockPos, BlockState> newStates, Level world) {
@@ -342,6 +349,13 @@ public class Util {
         
         public void fadd(short val) {
             elements[size++] = val;
+        }
+    }
+    
+    public static void updateBlockStates(Level level) {
+        if(!endOfTickStates.isEmpty()){
+            setBlockStates(endOfTickStates, level);
+            endOfTickStates.clear();
         }
     }
     
