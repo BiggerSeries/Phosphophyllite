@@ -64,6 +64,8 @@ out gl_PerVertex
     vec4 gl_Position;
 };
 
+float cylindrical_distance(vec3 cameraRelativePos);
+
 float calcuateDiffuseMultiplier(vec3 normal);
 
 int extractInt(uint packedint, uint pos, uint width);
@@ -85,7 +87,7 @@ void main() {
     vec4 vertexPosition = modelMatrix * vec4(position, 1.0);
     vertexModelPos.xyz = vertexPosition.xyz;
     vertexPosition += vec4(floatWorldPosition, 0);
-    vertexDistance = length(vertexPosition.xyz);
+    vertexDistance = cylindrical_distance(vertexPosition.xyz);
     gl_Position = projectionMatrix * vertexPosition;
 
     int r = (colorIn >> 24) & 0xFF;
@@ -135,6 +137,12 @@ void main() {
             }
         }
     }
+}
+
+float cylindrical_distance(vec3 cameraRelativePos) {
+    float distXZ = length(cameraRelativePos.xz);
+    float distY = abs(cameraRelativePos.y);
+    return max(distXZ, distY);
 }
 
 float calcuateDiffuseMultiplier(vec3 normal) {
