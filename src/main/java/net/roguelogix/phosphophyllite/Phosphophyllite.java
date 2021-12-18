@@ -158,6 +158,7 @@ public class Phosphophyllite {
         if (!(e.world instanceof ServerLevel)) {
             return;
         }
+        Util.updateBlockStates(e.world);
         if (e.phase != TickEvent.Phase.END) {
             return;
         }
