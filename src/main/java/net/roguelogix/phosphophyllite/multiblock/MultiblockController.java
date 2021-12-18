@@ -545,8 +545,9 @@ public class MultiblockController<
                 entity.setBlockState(newState);
             }
         }
-        
-        Util.setBlockStates(newStates, world);
+        if (!newStates.isEmpty()) {
+            Util.setBlockStates(newStates, world);
+        }
     }
     
     private void disassembledBlockStates() {
@@ -569,7 +570,9 @@ public class MultiblockController<
                 entity.setBlockState(newState);
             }
         }
-        Util.setBlockStates(newStates, world);
+        if (!newStates.isEmpty()) {
+            Util.setBlockStates(newStates, world);
+        }
     }
     
     /**
