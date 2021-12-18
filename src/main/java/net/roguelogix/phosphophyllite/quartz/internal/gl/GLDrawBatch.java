@@ -72,7 +72,7 @@ public class GLDrawBatch implements DrawBatch {
                     if (ATTRIB_BINDING) {
                         glBindVertexBuffer(1, instanceDataBuffer.handle(), instanceDataOffset, INSTANCE_DATA_BYTE_SIZE);
                     } else {
-                        int offset = 0;
+                        int offset = instanceDataOffset;
                         glVertexAttribIPointer(WORLD_POSITION_LOCATION, 3, GL_INT, INSTANCE_DATA_BYTE_SIZE, offset);
                         offset += IVEC4_BYTE_SIZE;
                         glVertexAttribIPointer(DYNAMIC_MATRIX_ID_LOCATION, 1, GL_INT, INSTANCE_DATA_BYTE_SIZE, offset);
@@ -345,8 +345,8 @@ public class GLDrawBatch implements DrawBatch {
     private final int dynamicMatrixTexture;
     private final int dynamicLightTexture;
     
-    private final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance; // TODO: Config disable
-    private final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding; // TODO: Config disable
+    private final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance && GLConfig.INSTANCE.ALLOW_BASE_INSTANCE;
+    private final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
     
     private final Object2ObjectMap<Mesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
     private final Object2ObjectMap<RenderType, GLRenderPass> renderPasses = new Object2ObjectOpenHashMap<>();
