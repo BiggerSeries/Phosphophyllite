@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -25,14 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glBindProgramPipeline;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL11C.GL_LEQUAL;
-import static org.lwjgl.opengl.GL12C.GL_CLAMP_TO_EDGE;
-import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13C.glActiveTexture;
-import static org.lwjgl.opengl.GL20C.glUseProgram;
-import static org.lwjgl.opengl.GL30C.glBindVertexArray;
-import static org.lwjgl.opengl.GL31C.GL_TEXTURE_BUFFER;
+import static org.lwjgl.opengl.GL32C.*;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -47,17 +41,32 @@ public class GLCore extends QuartzCore {
     public static GLCore attemptCreate() {
         var capabilities = GL.getCapabilities();
         if (!capabilities.OpenGL32) {
+            LOGGER.error("Unable to initialize Quartz GLCore due to missing GL 3.2 capabilities, this shouldn't be possible");
             return null;
         }
-        if (!capabilities.GL_ARB_separate_shader_objects) {
+        if (!capabilities.GL_ARB_separate_shader_objects || !capabilities.GL_ARB_explicit_attrib_location || !capabilities.GL_ARB_instanced_arrays) {
+            final var builder = new StringBuilder();
+            builder.append("Unable to initialize Quartz GLCore due to missing GL extension, report this error!\n");
+            builder.append("ISSUE URL -> https://github.com/BiggerSeries/Phosphophyllite/issues\n");
+            builder.append("GL_ARB_separate_shader_objects : ").append(capabilities.GL_ARB_separate_shader_objects).append('\n');
+            builder.append("GL_ARB_explicit_attrib_location : ").append(capabilities.GL_ARB_explicit_attrib_location).append('\n');
+            builder.append("GL_ARB_instanced_arrays : ").append(capabilities.GL_ARB_instanced_arrays).append('\n');
+            builder.append("GL_VENDOR : ").append(glGetString(GL_VENDOR)).append('\n');
+            builder.append("GL_RENDERER : ").append(glGetString(GL_RENDERER)).append('\n');
+            builder.append("GL_VERSION : ").append(glGetString(GL_VERSION)).append('\n');
+            builder.append("GL_SHADING_LANGUAGE_VERSION : ").append(glGetString(GL_SHADING_LANGUAGE_VERSION)).append('\n');
+            
+            final var extensionCount = glGetInteger(GL_NUM_EXTENSIONS);
+            builder.append("Supported OpenGL Extensions : " ).append(extensionCount).append('\n');
+            for (int i = 0; i < extensionCount; i++) {
+                builder.append(glGetStringi(GL_EXTENSIONS, i)).append('\n');
+            }
+        
+            // this is the backup impl, so this is ok to do
+            Minecraft.crash(new CrashReport("Quartz startup failed", new IllegalStateException(builder.toString())));
             return null;
         }
-        if (!capabilities.GL_ARB_explicit_attrib_location) {
-            return null;
-        }
-        if (!capabilities.GL_ARB_instanced_arrays) {
-            return null;
-        }
+        LOGGER.info("Quartz initializing GLCore");
         return new GLCore();
     }
     
