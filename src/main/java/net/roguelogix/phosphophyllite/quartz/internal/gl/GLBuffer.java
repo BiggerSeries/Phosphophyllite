@@ -2,10 +2,10 @@ package net.roguelogix.phosphophyllite.quartz.internal.gl;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.roguelogix.phosphophyllite.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.phosphophyllite.quartz.internal.Buffer;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 

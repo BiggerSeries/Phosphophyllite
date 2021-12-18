@@ -1,14 +1,18 @@
 package net.roguelogix.phosphophyllite.quartz.internal.common;
 
 import net.minecraft.client.renderer.RenderStateShard;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
 import java.util.Map;
 
 import static net.minecraft.client.renderer.RenderStateShard.*;
 import static net.minecraft.client.renderer.RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class ShaderInfo {
     
     private static final Map<RenderStateShard.ShaderStateShard, ShaderInfo> infos = new HashMap<>();

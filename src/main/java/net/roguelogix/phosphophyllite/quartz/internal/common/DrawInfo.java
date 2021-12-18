@@ -6,11 +6,15 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector4f;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class DrawInfo {
     public long deltaNano;
     public float partialTicks;

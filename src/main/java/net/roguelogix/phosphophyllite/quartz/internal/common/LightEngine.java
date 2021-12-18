@@ -10,13 +10,17 @@ import net.minecraft.world.level.LightLayer;
 import net.roguelogix.phosphophyllite.quartz.DynamicLight;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.function.LongConsumer;
 
 import static net.roguelogix.phosphophyllite.repack.org.joml.Math.abs;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class LightEngine {
     
     private final Long2ObjectOpenHashMap<SoftReference<Chunk>> liveChunks = new Long2ObjectOpenHashMap<>();

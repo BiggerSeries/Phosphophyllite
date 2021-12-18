@@ -7,11 +7,15 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.quartz.internal.common.ShaderInfo;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import static org.lwjgl.opengl.GL32C.*;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class GLRenderPass {
     
     public final RenderType renderType;

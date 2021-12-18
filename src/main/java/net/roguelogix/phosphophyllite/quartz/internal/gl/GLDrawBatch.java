@@ -17,9 +17,11 @@ import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import org.lwjgl.opengl.GL;
 
 import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.GL.*;
@@ -30,6 +32,8 @@ import static org.lwjgl.opengl.ARBInstancedArrays.glVertexAttribDivisorARB;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
 import static org.lwjgl.opengl.GL32C.*;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class GLDrawBatch implements DrawBatch {
     
     private class MeshInstanceManager {

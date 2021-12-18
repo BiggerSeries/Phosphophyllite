@@ -1,12 +1,17 @@
 package net.roguelogix.phosphophyllite.quartz.internal.common;
 
 import com.mojang.blaze3d.vertex.BufferUploader;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;
 
 import static org.lwjgl.opengl.GL33C.*;
 
 /**
  * Blaze3d caches some state, sometimes i override this state, so, need to make sure it will set it back after i modify it
  */
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class B3DStateHelper {
     public static void bindArrayBuffer(int buffer) {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
