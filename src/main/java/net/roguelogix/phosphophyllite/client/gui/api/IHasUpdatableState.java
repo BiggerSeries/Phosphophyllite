@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.gui.client.api;
+package net.roguelogix.phosphophyllite.client.gui.api;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 

@@ -1,69 +1,71 @@
-package net.roguelogix.phosphophyllite.gui.client.elements;
+package net.roguelogix.phosphophyllite.client.gui.elements;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
-import net.roguelogix.phosphophyllite.gui.client.api.ICallback;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.roguelogix.phosphophyllite.client.gui.screens.PhosphophylliteScreen;
+import net.roguelogix.phosphophyllite.client.gui.ScreenCallbacks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Base button element.
+ * An interactive screen element, used for controlling logic. Useful if you have something that needs control, such as a
+ * button or switch.
  *
- * @param <T> Elements must belong to a Container or ContainerScreen.
+ * @param <T> Elements must be parented to a screen implementing {@link net.minecraft.world.inventory.AbstractContainerMenu AbstractContainerMenu}.
  */
-public class Button<T extends AbstractContainerMenu> extends Symbol<T> implements GuiEventListener {
+@OnlyIn(Dist.CLIENT)
+public class InteractiveElement<T extends AbstractContainerMenu> extends RenderedElement<T> implements GuiEventListener {
 
     /**
-     * Used to enable or disable interaction with this element.
+     * Used to enable or disable interactions.
      */
     public boolean actionEnable;
 
     /**
      * Callback for mouse movement.
      */
-    public ICallback.OnMouseMoved onMouseMoved;
+    public ScreenCallbacks.OnMouseMoved onMouseMoved;
 
     /**
      * Callback for mouse button clicks.
      */
-    public ICallback.OnMouseClicked onMouseClicked;
+    public ScreenCallbacks.OnMouseClicked onMouseClicked;
 
     /**
      * Callback for mouse button releases.
      */
-    public ICallback.OnMouseReleased onMouseReleased;
+    public ScreenCallbacks.OnMouseReleased onMouseReleased;
 
     /**
      * Callback for mouse dragging.
      */
-    public ICallback.OnMouseDragged onMouseDragged;
+    public ScreenCallbacks.OnMouseDragged onMouseDragged;
 
     /**
      * Callback for mouse scrolling.
      */
-    public ICallback.OnMouseScrolled onMouseScrolled;
+    public ScreenCallbacks.OnMouseScrolled onMouseScrolled;
 
     /**
      * Callback for key presses.
      */
-    public ICallback.OnKeyPressed onKeyPressed;
+    public ScreenCallbacks.OnKeyPressed onKeyPressed;
 
     /**
      * Callback for key releases.
      */
-    public ICallback.OnKeyReleased onKeyReleased;
+    public ScreenCallbacks.OnKeyReleased onKeyReleased;
 
     /**
      * Callback for typed characters.
      */
-    public ICallback.OnCharTyped onCharTyped;
+    public ScreenCallbacks.OnCharTyped onCharTyped;
 
     /**
      * Default constructor.
@@ -75,9 +77,9 @@ public class Button<T extends AbstractContainerMenu> extends Symbol<T> implement
      * @param height  The height of this element.
      * @param u       The u offset to use when rendering this element (starting from the left, and moving right).
      * @param v       The v offset to use when rendering this element (starting from the top, and moving down).
-     * @param tooltip The tooltip for this element. If null, a tooltip will not render. If you set a tooltip later, use StringTextComponent.EMPTY.
+     * @param tooltip The tooltip to display. If null, a tooltip will not render.
      */
-    public Button(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height, int u, int v, @Nullable Component tooltip) {
+    public InteractiveElement(@Nonnull PhosphophylliteScreen<T> parent, int x, int y, int width, int height, int u, int v, @Nullable Component tooltip) {
         super(parent, x, y, width, height, u, v, tooltip);
         this.actionEnable = true;
     }
@@ -88,7 +90,7 @@ public class Button<T extends AbstractContainerMenu> extends Symbol<T> implement
      * @param sound The sound to play.
      */
     public void playSound(SoundEvent sound) {
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
+        this.parent.getMinecraft().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F));
     }
 
     /**
@@ -98,7 +100,7 @@ public class Button<T extends AbstractContainerMenu> extends Symbol<T> implement
      * @param volume How loud to play the sound.
      */
     public void playSound(SoundEvent sound, float volume) {
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F, volume));
+        this.parent.getMinecraft().getSoundManager().play(SimpleSoundInstance.forUI(sound, 1.0F, volume));
     }
 
 
@@ -238,7 +240,7 @@ public class Button<T extends AbstractContainerMenu> extends Symbol<T> implement
     }
 
     /**
-     * Enable all "config" booleans for this element, effectively making this element visible.
+     * Enable interactions, as well as any associated rendered elements or tooltips.
      */
     @Override
     public void enable() {
@@ -247,7 +249,7 @@ public class Button<T extends AbstractContainerMenu> extends Symbol<T> implement
     }
 
     /**
-     * Disable all "config" booleans for this element, effectively making this element hidden.
+     * Disable interactions, as well as any associated rendered elements or tooltips.
      */
     @Override
     public void disable() {

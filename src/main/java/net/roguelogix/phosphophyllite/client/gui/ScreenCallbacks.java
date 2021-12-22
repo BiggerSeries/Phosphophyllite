@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.gui.client.api;
+package net.roguelogix.phosphophyllite.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -10,13 +10,13 @@ import javax.annotation.Nonnull;
  * Screen callbacks used for hooking functions to screens.
  */
 @OnlyIn(Dist.CLIENT)
-public interface ICallback {
+public interface ScreenCallbacks {
 
     /**
      * Callback for custom rendering.
      */
     interface OnRender {
-        void trigger(@Nonnull PoseStack mStack, int mouseX, int mouseY);
+        void trigger(@Nonnull PoseStack poseStack, int mouseX, int mouseY);
     }
 
     /**

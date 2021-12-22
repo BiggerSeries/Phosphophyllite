@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.gui;
+package net.roguelogix.phosphophyllite.client.gui;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -35,7 +35,6 @@ public class GuiSync {
         
         @Nullable
         IGUIPacket getGuiPacket();
-        
         
         /**
          * DO NOT OVERRIDE THIS METHOD!

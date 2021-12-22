@@ -1,24 +1,28 @@
-package net.roguelogix.phosphophyllite.gui.client.elements;
+package net.roguelogix.phosphophyllite.client.gui.elements;
 
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.roguelogix.phosphophyllite.gui.client.ScreenBase;
-import net.roguelogix.phosphophyllite.gui.client.api.ICallback;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.roguelogix.phosphophyllite.client.gui.screens.PhosphophylliteScreen;
+import net.roguelogix.phosphophyllite.client.gui.ScreenCallbacks;
 
 import javax.annotation.Nonnull;
 
 /**
- * Base element, used by all other elements. Custom elements must, at some point, extend this class.
+ * Basic screen element, used by all other elements in Phosphophyllite's screen system.
+ * Custom elements, at some point, must extend this class, or they may not be renderable in a {@link PhosphophylliteScreen PhosphophylliteScreen}.
  *
- * @param <T> Elements must belong to a Container or ContainerScreen.
+ * @param <T> Elements must be parented to a screen implementing {@link net.minecraft.world.inventory.AbstractContainerMenu AbstractContainerMenu}.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractElement<T extends AbstractContainerMenu> implements Tickable, GuiEventListener {
 
     /**
      * The parent screen of this element.
      */
-    protected ScreenBase<T> parent;
+    protected PhosphophylliteScreen<T> parent;
 
     /**
      * The position of this element.
@@ -31,14 +35,16 @@ public abstract class AbstractElement<T extends AbstractContainerMenu> implement
     public int width, height;
 
     /**
-     * Free state enable boolean for usage by any child classes.
+     * Used to enable or disable the element entirely.
+     * This is a generic state toggle and can be used for whatever.
+     * TODO: remove this, migrate logic to whatever uses it.
      */
     public boolean stateEnable;
 
     /**
      * Callback for ticks/updates.
      */
-    public ICallback.OnTick onTick;
+    public ScreenCallbacks.OnTick onTick;
 
     /**
      * Default constructor.
@@ -49,7 +55,7 @@ public abstract class AbstractElement<T extends AbstractContainerMenu> implement
      * @param width  The width of this element.
      * @param height The height of this element.
      */
-    public AbstractElement(@Nonnull ScreenBase<T> parent, int x, int y, int width, int height) {
+    public AbstractElement(@Nonnull PhosphophylliteScreen<T> parent, int x, int y, int width, int height) {
         this.parent = parent;
         this.x = x;
         this.y = y;
@@ -69,12 +75,14 @@ public abstract class AbstractElement<T extends AbstractContainerMenu> implement
     }
 
     /**
-     * Enable all "config" booleans for this element, effectively making this element visible.
+     * Enable all "config" booleans for this element.
+     * What this does is entirely up to the implementing element.
      */
     public abstract void enable();
 
     /**
-     * Disable all "config" booleans for this element, effectively making this element hidden.
+     * Disable all "config" booleans for this element.
+     * What this does is entirely up to the implementing element.
      */
     public abstract void disable();
 

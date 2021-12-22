@@ -1,13 +1,10 @@
-package net.roguelogix.phosphophyllite.gui.client;
+package net.roguelogix.phosphophyllite.client.gui.screens;
 
 import com.google.common.collect.Lists;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -15,21 +12,24 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.roguelogix.phosphophyllite.gui.client.api.IRender;
-import net.roguelogix.phosphophyllite.gui.client.api.ITooltip;
-import net.roguelogix.phosphophyllite.gui.client.elements.AbstractElement;
+import net.roguelogix.phosphophyllite.client.gui.RenderHelper;
+import net.roguelogix.phosphophyllite.client.gui.api.IRender;
+import net.roguelogix.phosphophyllite.client.gui.api.ITooltip;
+import net.roguelogix.phosphophyllite.client.gui.elements.AbstractElement;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * Base screen.
+ * Basic screen. This may be used to build your own GUIs for mods, or can be safely ignored if you'd rather roll your own.
+ * This abstraction also assumes you are working with GUIs that have an associated container. If not, then you are advised
+ * to use the vanilla system for containerless GUIs (which, for the most part, is pretty alright).
  *
- * @param <T> Screens must belong to a Container.
+ * @param <T> Screens must have a screen container implementing {@link net.minecraft.world.inventory.AbstractContainerMenu AbstractContainerMenu}.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("rawtypes")
-public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MenuAccess<T> {
+public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MenuAccess<T> {
 
     /**
      * The list of elements that are a part of this screen.
@@ -40,7 +40,7 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
      * The texture map this screen accesses.
      */
     protected ResourceLocation textureAtlas;
-    
+
     /**
      * Player inventory
      */
@@ -49,7 +49,7 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
     /**
      * This constructor makes no assumptions.
      */
-    public ScreenBase(T screenContainer, Inventory playerInventory, Component title, ResourceLocation textureAtlas, int width, int height) {
+    public PhosphophylliteScreen(T screenContainer, Inventory playerInventory, Component title, ResourceLocation textureAtlas, int width, int height) {
         super(screenContainer, playerInventory, title);
         this.inventory = playerInventory;
         this.textureAtlas = textureAtlas;
@@ -59,11 +59,11 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
     }
 
     /**
-     * Register a screen element with this screen.
+     * Register an element with this screen.
      *
      * @param element The element to register.
      */
-    public void addElement(AbstractElement element) {
+    public void addScreenElement(AbstractElement element) {
         if (element != null) {
             this.screenElements.add(element);
         }
@@ -109,22 +109,22 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
     /**
      * Draw the screen.
      *
-     * @param mStack       The current matrix stack.
+     * @param poseStack    The current pose stack.
      * @param mouseX       The x position of the mouse.
      * @param mouseY       The y position of the mouse.
      * @param partialTicks Partial ticks.
      */
     @Override
-    public void render(@Nonnull PoseStack mStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(mStack);
-        super.render(mStack, mouseX, mouseY, partialTicks);
+    public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
+        super.render(poseStack, mouseX, mouseY, partialTicks);
 
-        // Draw tooltips for all of the elements that belong to this screen.
-        this.renderTooltip(mStack, mouseX, mouseY);
+        // Draw tooltips for all the elements that belong to this screen.
+        this.renderTooltip(poseStack, mouseX, mouseY);
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and render.
             if (element instanceof ITooltip) {
-                ((ITooltip) element).renderTooltip(mStack, mouseX, mouseY);
+                ((ITooltip) element).renderTooltip(poseStack, mouseX, mouseY);
             }
         }
     }
@@ -132,53 +132,53 @@ public class ScreenBase<T extends AbstractContainerMenu> extends AbstractContain
     /**
      * Draw the foreground.
      *
-     * @param mStack The current matrix stack.
-     * @param mouseX The x position of the mouse.
-     * @param mouseY The y position of the mouse.
+     * @param poseStack The current pose stack.
+     * @param mouseX    The x position of the mouse.
+     * @param mouseY    The y position of the mouse.
      */
     @Override
-    protected void renderLabels(@Nonnull PoseStack mStack, int mouseX, int mouseY) {
+    protected void renderLabels(@Nonnull PoseStack poseStack, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-        // Draw all of the elements that belong to this screen.
+        // Draw all the elements that belong to this screen.
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and render.
             if (element instanceof IRender) {
-                ((IRender) element).render(mStack, mouseX, mouseY);
+                ((IRender) element).render(poseStack, mouseX, mouseY);
             }
         }
 
         // Draw title.
-        this.font.draw(mStack, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
+        this.font.draw(poseStack, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
     }
 
     /**
      * Draw the background.
      *
-     * @param mStack       The current matrix stack.
+     * @param poseStack    The current pose stack.
      * @param partialTicks Partial ticks.
      * @param mouseX       The x position of the mouse.
      * @param mouseY       The y position of the mouse.
      */
     @Override
-    protected void renderBg(@Nonnull PoseStack mStack, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(@Nonnull PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         // Draw background.
-        this.blit(mStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.getXSize(), this.getYSize());
+        this.blit(poseStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.getXSize(), this.getYSize());
     }
-    
+
     /**
      * Returns whether the mouse is over the desired area.
      *
-     * @param mouseX The x position of the mouse.
-     * @param mouseY The y position of the mouse.
-     * @param areaX  The x position of the area you want to check for.
-     * @param areaY  The y position of the area you want to check for.
+     * @param mouseX     The x position of the mouse.
+     * @param mouseY     The y position of the mouse.
+     * @param areaX      The x position of the area you want to check for.
+     * @param areaY      The y position of the area you want to check for.
      * @param areaWidth  The width of the area to check.
      * @param areaHeight The height of the area to check.
      * @return True if the mouse is over the desired area, false otherwise.
