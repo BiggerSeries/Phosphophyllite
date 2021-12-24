@@ -1,9 +1,6 @@
 package net.roguelogix.phosphophyllite.quartz.internal.gl;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.quartz.DrawBatch;
@@ -125,8 +122,9 @@ public class GLDrawBatch implements DrawBatch {
             }
         }
         
-        private final Mesh staticMesh;
-        private final Mesh.Manager.TrackedMesh trackedMesh;
+        private final boolean autoDelete;
+        private Mesh staticMesh;
+        private Mesh.Manager.TrackedMesh trackedMesh;
         private final Consumer<Mesh.Manager.TrackedMesh> meshBuildCallback;
         private final ObjectArrayList<DrawComponent> components = new ObjectArrayList<>();
         private Buffer.Allocation instanceDataAlloc;
@@ -135,15 +133,9 @@ public class GLDrawBatch implements DrawBatch {
         private final ObjectArrayList<Instance.Location> liveInstances = new ObjectArrayList<>();
         private int instanceCount = 0;
         
-        private MeshInstanceManager(Mesh mesh) {
-            staticMesh = mesh;
-            trackedMesh = QuartzCore.INSTANCE.meshManager.getMeshInfo(mesh);
-            if (trackedMesh == null) {
-                throw new IllegalArgumentException("Unable to find mesh in mesh registry");
-            }
-            
-            onRebuild();
-            instanceDataAlloc = instanceDataBuffer.alloc(INSTANCE_DATA_BYTE_SIZE);
+        private MeshInstanceManager(Mesh mesh, boolean autoDelete) {
+            this.autoDelete = autoDelete;
+            updateMesh(mesh);
             final var ref = new WeakReference<>(this);
             meshBuildCallback = ignored -> {
                 final var manager = ref.get();
@@ -151,14 +143,32 @@ public class GLDrawBatch implements DrawBatch {
                     manager.onRebuild();
                 }
             };
-            trackedMesh.addBuildCallback(meshBuildCallback);
+            
+            instanceDataAlloc = instanceDataBuffer.alloc(INSTANCE_DATA_BYTE_SIZE);
             instanceDataAlloc.addReallocCallback(alloc -> {
                 final var manager = ref.get();
                 if (manager != null) {
                     manager.instanceDataOffset = alloc.offset();
                 }
             });
-            indirectDrawInfoDirty = rebuildIndirectBlocks = true;
+        }
+        
+        public void updateMesh(StaticMesh quartzMesh) {
+            if (!(quartzMesh instanceof Mesh mesh)) {
+                return;
+            }
+            if (trackedMesh != null) {
+                trackedMesh.removeBuildCallback(meshBuildCallback);
+            }
+            
+            staticMesh = mesh;
+            trackedMesh = QuartzCore.INSTANCE.meshManager.getMeshInfo(mesh);
+            if (trackedMesh == null) {
+                throw new IllegalArgumentException("Unable to find mesh in mesh registry");
+            }
+            
+            onRebuild();
+            trackedMesh.addBuildCallback(meshBuildCallback);
         }
         
         private void onRebuild() {
@@ -192,10 +202,30 @@ public class GLDrawBatch implements DrawBatch {
                 var drawComponent = new DrawComponent(renderType, component);
                 components.add(drawComponent);
             }
+            indirectDrawInfoDirty = rebuildIndirectBlocks = true;
         }
         
-        private void instanceDataMoved(Buffer.Allocation allocation) {
-            instanceDataOffset = allocation.offset();
+        @Nullable
+        public DrawBatch.Instance createInstance(Vector3ic position, @Nullable DynamicMatrix quartzDynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight quartzLight, @Nullable DynamicLight.Type lightType) {
+            if (quartzDynamicMatrix == null) {
+                quartzDynamicMatrix = IDENTITY_DYNAMIC_MATRIX;
+            }
+            if (!(quartzDynamicMatrix instanceof DynamicMatrixManager.Matrix dynamicMatrix) || !dynamicMatrixManager.owns(dynamicMatrix)) {
+                return null;
+            }
+            if (quartzLight == null) {
+                if (lightType == null) {
+                    lightType = DynamicLight.Type.SMOOTH;
+                }
+                quartzLight = QuartzCore.INSTANCE.lightEngine.createLightForPos(position, lightManager, lightType);
+            }
+            if (!(quartzLight instanceof DynamicLightManager.Light light) || !lightManager.owns(light)) {
+                return null;
+            }
+            if (staticMatrix == null) {
+                staticMatrix = IDENTITY_MATRIX;
+            }
+            return createInstance(position, dynamicMatrix, staticMatrix, light);
         }
         
         Instance createInstance(Vector3ic worldPosition, DynamicMatrixManager.Matrix dynamicMatrix, Matrix4fc staticMatrix, DynamicLightManager.Light dynamicLight) {
@@ -236,7 +266,7 @@ public class GLDrawBatch implements DrawBatch {
                 endInstance.location = instance.location;
             }
             instance.location = -1;
-            if (instanceCount == 0) {
+            if (instanceCount == 0 && autoDelete) {
                 delete();
             }
             indirectDrawInfoDirty = true;
@@ -268,7 +298,8 @@ public class GLDrawBatch implements DrawBatch {
                 }
             }
             components.clear();
-            instanceManagers.remove(staticMesh);
+            instanceManagers.remove(staticMesh, this);
+            instanceBatches.remove(this);
             indirectDrawInfoDirty = rebuildIndirectBlocks = true;
             trackedMesh.removeBuildCallback(meshBuildCallback);
         }
@@ -284,6 +315,7 @@ public class GLDrawBatch implements DrawBatch {
             }
             
             private final Location location;
+            private MeshInstanceManager.InstanceBatch batch;
             private DynamicMatrixManager.Matrix dynamicMatrix;
             private DynamicLightManager.Light dynamicLight;
             
@@ -344,6 +376,31 @@ public class GLDrawBatch implements DrawBatch {
             @Override
             public void delete() {
                 removeInstance(location);
+            }
+        }
+        
+        private static class InstanceBatch implements DrawBatch.InstanceBatch {
+            private final MeshInstanceManager instanceManager;
+    
+            public InstanceBatch(MeshInstanceManager instanceManager) {
+                this.instanceManager = instanceManager;
+                QuartzCore.CLEANER.register(this, instanceManager::delete);
+            }
+    
+            @Override
+            public void updateMesh(StaticMesh mesh) {
+                instanceManager.updateMesh(mesh);
+            }
+            
+            @Nullable
+            @Override
+            public DrawBatch.Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType) {
+                final var instance = instanceManager.createInstance(position, dynamicMatrix, staticMatrix, light, lightType);
+                if (!(instance instanceof MeshInstanceManager.Instance instance1)) {
+                    return null;
+                }
+                instance1.batch = this;
+                return instance;
             }
         }
     }
@@ -412,6 +469,7 @@ public class GLDrawBatch implements DrawBatch {
     private final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
     
     private final Object2ObjectMap<Mesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
+    private final ObjectOpenHashSet<MeshInstanceManager> instanceBatches = new ObjectOpenHashSet<>();
     private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> opaqueDrawComponents = new Object2ObjectArrayMap<>();
     private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> cutoutDrawComponents = new Object2ObjectArrayMap<>();
     
@@ -573,6 +631,18 @@ public class GLDrawBatch implements DrawBatch {
         this.dynamicLightTexture = dynamicLightTexture;
     }
     
+    @Override
+    @Nullable
+    public InstanceBatch createInstanceBatch(StaticMesh quartzMesh) {
+        if (!(quartzMesh instanceof Mesh mesh)) {
+            return null;
+        }
+        var instanceManager = new MeshInstanceManager(mesh, false);
+        var instanceBatch = new MeshInstanceManager.InstanceBatch(instanceManager);
+        instanceBatches.add(instanceManager);
+        return instanceBatch;
+    }
+    
     @Nullable
     @Override
     public Instance createInstance(Vector3ic position, StaticMesh quartzMesh, @Nullable DynamicMatrix quartzDynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight quartzLight, @Nullable DynamicLight.Type lightType) {
@@ -594,7 +664,7 @@ public class GLDrawBatch implements DrawBatch {
         if (!(quartzLight instanceof DynamicLightManager.Light light) || !lightManager.owns(light)) {
             return null;
         }
-        var instanceManager = instanceManagers.computeIfAbsent(mesh, MeshInstanceManager::new);
+        var instanceManager = instanceManagers.computeIfAbsent(mesh, (Mesh m) -> new MeshInstanceManager(m, true));
         if (staticMatrix == null) {
             staticMatrix = IDENTITY_MATRIX;
         }
@@ -623,7 +693,7 @@ public class GLDrawBatch implements DrawBatch {
     
     @Override
     public boolean isEmpty() {
-        return instanceManagers.isEmpty();
+        return instanceManagers.isEmpty() && instanceBatches.isEmpty();
     }
     
     void updateAndCull(DrawInfo drawInfo) {

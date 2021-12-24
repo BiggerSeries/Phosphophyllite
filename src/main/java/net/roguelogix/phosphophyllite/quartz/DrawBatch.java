@@ -24,6 +24,16 @@ public interface DrawBatch {
     @Nullable
     Instance createInstance(Vector3ic position, StaticMesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
     
+    interface InstanceBatch {
+        void updateMesh(StaticMesh mesh);
+        
+        @Nullable
+        Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
+    }
+    
+    @Nullable
+    InstanceBatch createInstanceBatch(StaticMesh mesh);
+    
     DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc);
     
     default DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix.UpdateFunc updateFunc) {
