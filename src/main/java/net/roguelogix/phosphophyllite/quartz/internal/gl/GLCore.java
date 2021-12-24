@@ -156,7 +156,7 @@ public class GLCore extends QuartzCore {
         deletionQueue.runAll();
         
         long timeNanos = System.nanoTime();
-        long deltaNano = lastTimeNano - timeNanos;
+        long deltaNano = timeNanos - lastTimeNano;
         lastTimeNano = timeNanos;
         if (lastTimeNano == 0) {
             deltaNano = 0;
