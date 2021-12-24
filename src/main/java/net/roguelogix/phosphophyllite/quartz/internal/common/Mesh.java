@@ -376,8 +376,8 @@ public class Mesh implements StaticMesh {
                 buildCallbacks.add(consumer);
             }
             
-            public void addBuildCallback(Runnable runnable) {
-                addBuildCallback(e -> runnable.run());
+            public void removeBuildCallback(Consumer<TrackedMesh> consumer) {
+                buildCallbacks.remove(consumer);
             }
         }
         

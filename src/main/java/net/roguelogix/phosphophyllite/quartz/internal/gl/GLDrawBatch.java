@@ -23,6 +23,7 @@ import org.lwjgl.opengl.GL;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
+import java.util.function.Consumer;
 
 import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.GL.*;
 import static net.roguelogix.phosphophyllite.quartz.internal.MagicNumbers.*;
@@ -126,6 +127,7 @@ public class GLDrawBatch implements DrawBatch {
         
         private final Mesh staticMesh;
         private final Mesh.Manager.TrackedMesh trackedMesh;
+        private final Consumer<Mesh.Manager.TrackedMesh> meshBuildCallback;
         private final ObjectArrayList<DrawComponent> components = new ObjectArrayList<>();
         private Buffer.Allocation instanceDataAlloc;
         private int instanceDataOffset;
@@ -143,12 +145,13 @@ public class GLDrawBatch implements DrawBatch {
             onRebuild();
             instanceDataAlloc = instanceDataBuffer.alloc(INSTANCE_DATA_BYTE_SIZE);
             final var ref = new WeakReference<>(this);
-            trackedMesh.addBuildCallback(() -> {
+            meshBuildCallback = ignored -> {
                 final var manager = ref.get();
                 if (manager != null) {
                     manager.onRebuild();
                 }
-            });
+            };
+            trackedMesh.addBuildCallback(meshBuildCallback);
             instanceDataAlloc.addReallocCallback(alloc -> {
                 final var manager = ref.get();
                 if (manager != null) {
@@ -267,6 +270,7 @@ public class GLDrawBatch implements DrawBatch {
             components.clear();
             instanceManagers.remove(staticMesh);
             indirectDrawInfoDirty = rebuildIndirectBlocks = true;
+            trackedMesh.removeBuildCallback(meshBuildCallback);
         }
         
         private class Instance implements DrawBatch.Instance {
