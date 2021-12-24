@@ -26,7 +26,7 @@ public class QuartzConfig {
         ;
     }
     
-    @ConfigValue
+    @ConfigValue(comment = "Backend mode used by quartz\nAutomatic will try to use the best available, and fallback as necessary")
     public final Mode mode;
     
     {

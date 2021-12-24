@@ -15,7 +15,6 @@ import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.quartz.internal.common.DrawInfo;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 
 import javax.annotation.Nonnull;
@@ -25,6 +24,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import static org.lwjgl.opengl.ARBDrawIndirect.GL_DRAW_INDIRECT_BUFFER;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glBindProgramPipeline;
 import static org.lwjgl.opengl.GL32C.*;
 
@@ -57,11 +57,11 @@ public class GLCore extends QuartzCore {
             builder.append("GL_SHADING_LANGUAGE_VERSION : ").append(glGetString(GL_SHADING_LANGUAGE_VERSION)).append('\n');
             
             final var extensionCount = glGetInteger(GL_NUM_EXTENSIONS);
-            builder.append("Supported OpenGL Extensions : " ).append(extensionCount).append('\n');
+            builder.append("Supported OpenGL Extensions : ").append(extensionCount).append('\n');
             for (int i = 0; i < extensionCount; i++) {
                 builder.append(glGetStringi(GL_EXTENSIONS, i)).append('\n');
             }
-        
+            
             // this is the backup impl, so this is ok to do
             Minecraft.crash(new CrashReport("Quartz startup failed", new IllegalStateException(builder.toString())));
             return null;
@@ -69,6 +69,8 @@ public class GLCore extends QuartzCore {
         LOGGER.info("Quartz initializing GLCore");
         return new GLCore();
     }
+    
+    private final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
     
     public static final WorkQueue deletionQueue = new WorkQueue();
     
@@ -161,7 +163,7 @@ public class GLCore extends QuartzCore {
         }
         
         vertexBuffer.flush();
-    
+        
         var playerPosition = pActiveRenderInfo.getPosition();
         drawInfo.playerPosition.set((int) playerPosition.x, (int) playerPosition.y, (int) playerPosition.z);
         drawInfo.playerSubBlock.set(playerPosition.x - (int) playerPosition.x, playerPosition.y - (int) playerPosition.y, playerPosition.z - (int) playerPosition.z);
@@ -184,9 +186,9 @@ public class GLCore extends QuartzCore {
         drawInfo.fogStart = RenderSystem.getShaderFogStart();
         drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
         drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
-    
+        
         mainProgram.setupDrawInfo(drawInfo);
-    
+        
         for (int i = 0; i < batchers.size(); i++) {
             var batch = batchers.get(i).get();
             if (batch != null) {
@@ -229,6 +231,10 @@ public class GLCore extends QuartzCore {
             glBindTexture(GL_TEXTURE_BUFFER, 0);
         }
         glActiveTexture(GL_TEXTURE0);
+        if (DRAW_INDIRECT) {
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
         glDisable(GL_DEPTH_TEST);
     }
     

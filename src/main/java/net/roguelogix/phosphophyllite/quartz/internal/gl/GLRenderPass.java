@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.quartz.internal.gl;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
@@ -12,13 +13,12 @@ import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static org.lwjgl.opengl.GL32C.*;
+import static org.lwjgl.opengl.GL32C.GL_LINE;
+import static org.lwjgl.opengl.GL32C.GL_TRIANGLES;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class GLRenderPass {
-    
-    public final RenderType renderType;
     
     public final boolean QUAD;
     public final boolean TEXTURE;
@@ -31,8 +31,21 @@ public class GLRenderPass {
     private final ResourceLocation textureResourceLocation;
     private AbstractTexture texture;
     
-    GLRenderPass(RenderType rawRenderType) {
-        this.renderType = rawRenderType;
+    private static final Object2ObjectOpenHashMap<RenderType, GLRenderPass> renderPasses = new Object2ObjectOpenHashMap<>();
+    
+    public static GLRenderPass renderPassForRenderType(RenderType renderType) {
+        return renderPasses.computeIfAbsent(renderType, (RenderType type) -> {
+            final var renderPass = new GLRenderPass(renderType);
+            for (final var potentialPass : renderPasses.values()) {
+                if(potentialPass.compatible(renderPass)){
+                    return potentialPass;
+                }
+            }
+            return renderPass;
+        });
+    }
+    
+    private GLRenderPass(RenderType rawRenderType) {
         if (!(rawRenderType instanceof RenderType.CompositeRenderType renderType)) {
             throw new IllegalArgumentException("RenderType must be composite type");
         }
@@ -70,6 +83,16 @@ public class GLRenderPass {
         };
         
         resourceReload();
+    }
+    
+    public boolean compatible(GLRenderPass otherPass) {
+        return QUAD == otherPass.QUAD &&
+                TEXTURE == otherPass.TEXTURE &&
+                LIGHTING == otherPass.LIGHTING &&
+                ALPHA_DISCARD == otherPass.ALPHA_DISCARD &&
+                VERTICES_PER_PRIMITIVE == otherPass.VERTICES_PER_PRIMITIVE &&
+                GL_MODE == otherPass.GL_MODE &&
+                textureResourceLocation.equals(otherPass.textureResourceLocation);
     }
     
     @Nullable
