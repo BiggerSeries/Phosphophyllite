@@ -134,12 +134,12 @@ public class GLCore extends QuartzCore {
             final var byteBuffer = elementBufferAllocation.buffer();
             int element = 0;
             for (int i = 0; i < newFaceCount; i++) {
-                byteBuffer.putInt(Integer.reverseBytes(element));
-                byteBuffer.putInt(Integer.reverseBytes(element + 1));
-                byteBuffer.putInt(Integer.reverseBytes(element + 3));
-                byteBuffer.putInt(Integer.reverseBytes(element + 3));
-                byteBuffer.putInt(Integer.reverseBytes(element + 1));
-                byteBuffer.putInt(Integer.reverseBytes(element + 2));
+                byteBuffer.putInt(element);
+                byteBuffer.putInt(element + 1);
+                byteBuffer.putInt(element + 3);
+                byteBuffer.putInt(element + 3);
+                byteBuffer.putInt(element + 1);
+                byteBuffer.putInt(element + 2);
                 element += 4;
             }
             elementBufferAllocation.dirty();

@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collections;
 import java.util.function.Consumer;
 
@@ -55,6 +56,7 @@ public class GLBuffer implements Buffer {
             final var weakRef = new WeakReference<>(this);
             Runnable slicer = () -> {
                 byteBuffer[0] = allocator.byteBuffer[0].slice(info.offset, info.size);
+                byteBuffer[0].order(ByteOrder.nativeOrder());
                 final var alloc = weakRef.get();
                 if(alloc == null){
                     return;

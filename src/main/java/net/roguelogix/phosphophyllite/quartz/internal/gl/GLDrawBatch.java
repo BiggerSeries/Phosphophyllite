@@ -191,8 +191,8 @@ public class GLDrawBatch implements DrawBatch {
             final var byteBuf = instanceDataAlloc.buffer();
             int baseOffset = instanceCount * INSTANCE_DATA_BYTE_SIZE;
             worldPosition.get(baseOffset + WORLD_POSITION_OFFSET, byteBuf);
-            byteBuf.putInt(baseOffset + DYNAMIC_MATRIX_ID_OFFSET, Integer.reverseBytes(dynamicMatrix.id()));
-            byteBuf.putInt(baseOffset + DYNAMIC_LIGHT_ID_OFFSET, Integer.reverseBytes(dynamicLight.id()));
+            byteBuf.putInt(baseOffset + DYNAMIC_MATRIX_ID_OFFSET, dynamicMatrix.id());
+            byteBuf.putInt(baseOffset + DYNAMIC_LIGHT_ID_OFFSET, dynamicLight.id());
             staticMatrix.get(baseOffset + STATIC_MATRIX_OFFSET, byteBuf);
             staticMatrix.normal(SCRATCH_NORMAL_MATRIX).get(baseOffset + STATIC_NORMAL_MATRIX_OFFSET, byteBuf);
 //            instanceDataAlloc.dirtyRange(baseOffset, INSTANCE_DATA_BYTE_SIZE);
@@ -288,7 +288,7 @@ public class GLDrawBatch implements DrawBatch {
                 if (newDynamicMatrix instanceof DynamicMatrixManager.Matrix dynamicMatrix && dynamicMatrixManager.owns(dynamicMatrix)) {
                     this.dynamicMatrix = dynamicMatrix;
                     final var offset = location.location * INSTANCE_DATA_BYTE_SIZE + DYNAMIC_MATRIX_ID_OFFSET;
-                    instanceDataAlloc.buffer().putInt(offset, Integer.reverseBytes(dynamicMatrix.id()));
+                    instanceDataAlloc.buffer().putInt(offset, dynamicMatrix.id());
                     instanceDataAlloc.dirtyRange(offset, INT_BYTE_SIZE);
                 }
             }
@@ -317,7 +317,7 @@ public class GLDrawBatch implements DrawBatch {
                     this.dynamicLight = dynamicLight;
                     int newLightID = dynamicLight.id();
                     final var offset = location.location * INSTANCE_DATA_BYTE_SIZE + DYNAMIC_LIGHT_ID_OFFSET;
-                    instanceDataAlloc.buffer().putInt(offset, Integer.reverseBytes(newLightID));
+                    instanceDataAlloc.buffer().putInt(offset, newLightID);
                     instanceDataAlloc.dirtyRange(offset, INT_BYTE_SIZE);
                 }
             }

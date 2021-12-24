@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -196,6 +197,7 @@ public class Mesh implements StaticMesh {
                 }
                 final long offsetAndSize = (long) (currentByteIndex / VERTEX_BYTE_SIZE) << 32 | (long) vertexCount;
                 final var byteBuf = masterBuffer.slice(currentByteIndex, vertexCount * VERTEX_BYTE_SIZE);
+                byteBuf.order(ByteOrder.nativeOrder());
                 currentByteIndex += vertexCount * VERTEX_BYTE_SIZE;
                 
                 Vector3f tempNormalVec = new Vector3f();
@@ -262,12 +264,12 @@ public class Mesh implements StaticMesh {
                         
                         for (int i = 0; i < 4; i++) {
                             var vertex = currentVertices[i];
-                            byteBuf.putInt(Integer.reverseBytes(Float.floatToIntBits(vertex.x))); // 4
-                            byteBuf.putInt(Integer.reverseBytes(Float.floatToIntBits(vertex.y))); // 8
-                            byteBuf.putInt(Integer.reverseBytes(Float.floatToIntBits(vertex.z))); // 12
-                            byteBuf.putInt(Integer.reverseBytes(vertex.rgba)); // 16
-                            byteBuf.putInt(Integer.reverseBytes(Float.floatToIntBits(vertex.texU))); // 20
-                            byteBuf.putInt(Integer.reverseBytes(Float.floatToIntBits(vertex.texV))); // 24
+                            byteBuf.putInt(Float.floatToIntBits(vertex.x)); // 4
+                            byteBuf.putInt(Float.floatToIntBits(vertex.y)); // 8
+                            byteBuf.putInt(Float.floatToIntBits(vertex.z)); // 12
+                            byteBuf.putInt(vertex.rgba); // 16
+                            byteBuf.putInt(Float.floatToIntBits(vertex.texU)); // 20
+                            byteBuf.putInt(Float.floatToIntBits(vertex.texV)); // 24
                             
                             int packedA = packedLightA;
                             int packedB = packedLightB;
@@ -281,8 +283,8 @@ public class Mesh implements StaticMesh {
                             
                             packedB |= (i & 0x3) << 28;
                             
-                            byteBuf.putInt(Integer.reverseBytes(packedA));
-                            byteBuf.putInt(Integer.reverseBytes(packedB));
+                            byteBuf.putInt(packedA);
+                            byteBuf.putInt(packedB);
                         }
                     }
                 }
