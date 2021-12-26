@@ -111,6 +111,7 @@ public class GLCore extends QuartzCore {
     @Override
     protected void resourcesReloadedInternal() {
         mainProgram.reload();
+        GLRenderPass.resourcesReloaded();
     }
     
     @Override

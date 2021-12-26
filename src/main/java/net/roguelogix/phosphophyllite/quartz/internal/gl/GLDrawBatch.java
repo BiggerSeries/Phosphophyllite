@@ -135,7 +135,6 @@ public class GLDrawBatch implements DrawBatch {
         
         private MeshInstanceManager(Mesh mesh, boolean autoDelete) {
             this.autoDelete = autoDelete;
-            updateMesh(mesh);
             final var ref = new WeakReference<>(this);
             meshBuildCallback = ignored -> {
                 final var manager = ref.get();
@@ -143,7 +142,6 @@ public class GLDrawBatch implements DrawBatch {
                     manager.onRebuild();
                 }
             };
-            
             instanceDataAlloc = instanceDataBuffer.alloc(INSTANCE_DATA_BYTE_SIZE);
             instanceDataAlloc.addReallocCallback(alloc -> {
                 final var manager = ref.get();
@@ -151,6 +149,7 @@ public class GLDrawBatch implements DrawBatch {
                     manager.instanceDataOffset = alloc.offset();
                 }
             });
+            updateMesh(mesh);
         }
         
         public void updateMesh(StaticMesh quartzMesh) {

@@ -33,6 +33,12 @@ public class GLRenderPass {
     
     private static final Object2ObjectOpenHashMap<RenderType, GLRenderPass> renderPasses = new Object2ObjectOpenHashMap<>();
     
+    public static void resourcesReloaded(){
+        for (GLRenderPass value : renderPasses.values()) {
+            value.resourceReload();
+        }
+    }
+    
     public static GLRenderPass renderPassForRenderType(RenderType renderType) {
         return renderPasses.computeIfAbsent(renderType, (RenderType type) -> {
             final var renderPass = new GLRenderPass(renderType);
@@ -100,7 +106,7 @@ public class GLRenderPass {
         return texture;
     }
     
-    public void resourceReload() {
+    private void resourceReload() {
         texture = Minecraft.getInstance().getTextureManager().getTexture(textureResourceLocation);
     }
 }
