@@ -254,13 +254,18 @@ public class Registry {
     }
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
-        
+        if(blockClazz.isAnnotationPresent(IgnoreRegistration.class)){
+            return;
+        }
         
         blockRegistrationQueue.enqueue(() -> {
             final Block block;
             final RegisterBlock annotation;
             try {
                 final Field field = blockClazz.getDeclaredField(memberName);
+                if(field.isAnnotationPresent(IgnoreRegistration.class)){
+                    return;
+                }
                 field.setAccessible(true);
                 block = (Block) field.get(null);
                 annotation = field.getAnnotation(RegisterBlock.class);
@@ -369,6 +374,10 @@ public class Registry {
     }
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
+        if(itemClazz.isAnnotationPresent(IgnoreRegistration.class)){
+            return;
+        }
+        
         itemRegistrationQueue.enqueue(() -> {
             
             assert itemClazz.isAnnotationPresent(RegisterItem.class);
@@ -437,6 +446,10 @@ public class Registry {
     }
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
+        if(fluidClazz.isAnnotationPresent(IgnoreRegistration.class)){
+            return;
+        }
+        
         blockRegistrationQueue.enqueue(() -> {
             
             assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
@@ -547,6 +560,10 @@ public class Registry {
     }
     
     private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
+        if(containerClazz.isAnnotationPresent(IgnoreRegistration.class)){
+            return;
+        }
+        
         assert containerClazz.isAnnotationPresent(RegisterContainer.class);
         
         final RegisterContainer annotation = containerClazz.getAnnotation(RegisterContainer.class);
@@ -640,6 +657,10 @@ public class Registry {
     }
     
     private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
+        if(tileClazz.isAnnotationPresent(IgnoreRegistration.class)){
+            return;
+        }
+        
         assert tileClazz.isAnnotationPresent(RegisterTileEntity.class);
         
         tileRegistrationQueue.enqueue(() -> {
@@ -781,6 +802,9 @@ public class Registry {
             final Block oreInstance;
             try {
                 final Field field = oreClazz.getDeclaredField(memberName);
+                if(field.isAnnotationPresent(IgnoreRegistration.class)){
+                    return;
+                }
                 field.setAccessible(true);
                 oreInstance = (Block) field.get(null);
             } catch (NoSuchFieldException e) {
@@ -832,7 +856,11 @@ public class Registry {
     
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {
         try {
-            ConfigManager.registerConfig(configClazz.getDeclaredField(memberName), modNamespace);
+            Field field = configClazz.getDeclaredField(memberName);
+            if(field.isAnnotationPresent(IgnoreRegistration.class)){
+                return;
+            }
+            ConfigManager.registerConfig(field, modNamespace);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -841,6 +869,9 @@ public class Registry {
     private void onModLoadAnnotation(String modNamespace, Class<?> modLoadClazz, final String memberName) {
         try {
             Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
+            if(method.isAnnotationPresent(IgnoreRegistration.class)){
+                return;
+            }
             if (!Modifier.isStatic(method.getModifiers())) {
                 LOGGER.error("Cannot call non-static @OnModLoad method " + method.getName() + " in " + modLoadClazz.getSimpleName());
                 return;
