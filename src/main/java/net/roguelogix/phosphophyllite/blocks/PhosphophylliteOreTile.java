@@ -1,14 +1,16 @@
 package net.roguelogix.phosphophyllite.blocks;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
-import net.roguelogix.phosphophyllite.quartz.*;
-import net.roguelogix.phosphophyllite.registry.RegisterTileEntity;
+import net.roguelogix.phosphophyllite.quartz.DrawBatch;
+import net.roguelogix.phosphophyllite.quartz.Quartz;
+import net.roguelogix.phosphophyllite.quartz.QuartzEvent;
+import net.roguelogix.phosphophyllite.quartz.StaticMesh;
+import net.roguelogix.phosphophyllite.registry.RegisterTile;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -17,13 +19,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
-@RegisterTileEntity(name = "phosphophyllite_ore")
 public class PhosphophylliteOreTile extends PhosphophylliteTile {
     
-    @RegisterTileEntity.Type
-    static BlockEntityType<?> TYPE;
+    @RegisterTile(name = "phosphophyllite_ore")
+    public static final BlockEntityType.BlockEntitySupplier<PhosphophylliteOreTile> SUPPLIER = new RegisterTile.Producer<>(PhosphophylliteOreTile::new);
     
-    public PhosphophylliteOreTile(BlockPos pWorldPosition, BlockState pBlockState) {
+    public PhosphophylliteOreTile(BlockEntityType<?> TYPE, BlockPos pWorldPosition, BlockState pBlockState) {
         super(TYPE, pWorldPosition, pBlockState);
     }
     

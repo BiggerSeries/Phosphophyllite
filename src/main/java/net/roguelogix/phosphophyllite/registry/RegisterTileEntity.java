@@ -3,8 +3,8 @@ package net.roguelogix.phosphophyllite.registry;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+@Deprecated(forRemoval = true)
 @Retention(RetentionPolicy.RUNTIME)
-
 public @interface RegisterTileEntity {
     
     String modid() default "";

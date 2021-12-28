@@ -7,7 +7,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.data.worldgen.features.OreFeatures;
 import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
@@ -21,9 +20,7 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.OreFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
-import net.minecraft.world.level.levelgen.heightproviders.UniformHeight;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
@@ -98,7 +95,9 @@ public class Registry {
         annotationMap.put(RegisterItem.class.getName(), this::registerItemAnnotation);
         annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
+        //noinspection removal
         annotationMap.put(RegisterTileEntity.class.getName(), this::registerTileEntityAnnotation);
+        annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
         annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
 //        annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
 //        annotationMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
@@ -254,7 +253,7 @@ public class Registry {
     }
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
-        if(blockClazz.isAnnotationPresent(IgnoreRegistration.class)){
+        if (blockClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
         }
         
@@ -263,7 +262,7 @@ public class Registry {
             final RegisterBlock annotation;
             try {
                 final Field field = blockClazz.getDeclaredField(memberName);
-                if(field.isAnnotationPresent(IgnoreRegistration.class)){
+                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     return;
                 }
                 field.setAccessible(true);
@@ -274,10 +273,10 @@ public class Registry {
                     LOGGER.warn("Non-final block instance variable " + memberName + " in " + blockClazz.getSimpleName());
                 }
             } catch (NoSuchFieldException e) {
-                LOGGER.error("Unable to find block field for block " + memberName);
+                LOGGER.error("Unable to find block field for block " + memberName + " in " + blockClazz.getSimpleName());
                 return;
             } catch (IllegalAccessException e) {
-                LOGGER.error("Unable to access block field for block " + memberName);
+                LOGGER.error("Unable to access block field for block " + memberName + " in " + blockClazz.getSimpleName());
                 return;
             }
             
@@ -374,7 +373,7 @@ public class Registry {
     }
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
-        if(itemClazz.isAnnotationPresent(IgnoreRegistration.class)){
+        if (itemClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
         }
         
@@ -446,7 +445,7 @@ public class Registry {
     }
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
-        if(fluidClazz.isAnnotationPresent(IgnoreRegistration.class)){
+        if (fluidClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
         }
         
@@ -560,7 +559,7 @@ public class Registry {
     }
     
     private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
-        if(containerClazz.isAnnotationPresent(IgnoreRegistration.class)){
+        if (containerClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
         }
         
@@ -656,8 +655,10 @@ public class Registry {
         });
     }
     
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true)
     private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
-        if(tileClazz.isAnnotationPresent(IgnoreRegistration.class)){
+        if (tileClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
         }
         
@@ -683,7 +684,7 @@ public class Registry {
             
             final String registryName = modid + ":" + name;
             
-            final BlockEntityType.BlockEntitySupplier<?>[] supplier = new BlockEntityType.BlockEntitySupplier[1];
+            BlockEntityType.BlockEntitySupplier<?> supplier = null;
             
             for (Field declaredField : tileClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterTileEntity.Supplier.class)) {
@@ -699,24 +700,24 @@ public class Registry {
                         LOGGER.error("Supplier annotation found on non-TileSupplier field " + declaredField.getName() + " in " + tileClazz.getSimpleName());
                         continue;
                     }
-                    if (supplier[0] != null) {
+                    if (supplier != null) {
                         LOGGER.error("Duplicate suppliers for tile " + tileClazz.getSimpleName());
                         continue;
                     }
                     declaredField.setAccessible(true);
                     try {
-                        supplier[0] = (BlockEntityType.BlockEntitySupplier<?>) declaredField.get(null);
+                        supplier = (BlockEntityType.BlockEntitySupplier<?>) declaredField.get(null);
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
                         continue;
                     }
-                    if (supplier[0] == null) {
+                    if (supplier == null) {
                         LOGGER.error("Tile supplier field " + declaredField.getName() + " null in " + tileClazz.getSimpleName());
                     }
                 }
             }
             
-            if (supplier[0] == null) {
+            if (supplier == null) {
                 // fall back to using the constructor via LambdaMetaFactory, if the correct one exists
                 // its not quite as fast, but its easier, and *meh*
                 
@@ -734,7 +735,7 @@ public class Registry {
                     @SuppressWarnings("unchecked")
                     BiFunction<BlockPos, BlockState, BlockEntity> tileSupplier = (BiFunction<BlockPos, BlockState, BlockEntity>) callSite.getTarget().invokeExact();
                     //noinspection NullableProblems
-                    supplier[0] = tileSupplier::apply;
+                    supplier = tileSupplier::apply;
                 } catch (NoSuchMethodException ignored) {
                     // if it doesn't exist, that's handled below
                     LOGGER.error("Unable to find constructor for " + tileClazz.getSimpleName());
@@ -749,7 +750,7 @@ public class Registry {
                 }
             }
             
-            if (supplier[0] == null) {
+            if (supplier == null) {
                 throw new IllegalStateException("No supplier found for tile " + tileClazz.getSimpleName());
             }
             
@@ -762,7 +763,7 @@ public class Registry {
             
             // fuck you java, its the correct size here
             @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
-            BlockEntityType<?> type = BlockEntityType.Builder.of(supplier[0], blocks.toArray(new Block[blocks.size()])).build(null);
+            BlockEntityType<?> type = BlockEntityType.Builder.of(supplier, blocks.toArray(new Block[blocks.size()])).build(null);
             
             type.setRegistryName(registryName);
             
@@ -797,12 +798,96 @@ public class Registry {
         });
     }
     
+    private static final Field tileProducerTYPEField;
+    
+    static {
+        try {
+            tileProducerTYPEField = RegisterTile.Producer.class.getDeclaredField("TYPE");
+            tileProducerTYPEField.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+    
+    private void registerTileAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
+        tileRegistrationQueue.enqueue(() -> {
+    
+            final Field field;
+            final RegisterTile annotation;
+            final RegisterTile.Producer<?> producer;
+    
+            try {
+                field = declaringClass.getDeclaredField(memberName);
+                if (!field.isAnnotationPresent(RegisterTile.class)) {
+                    LOGGER.error("Schrodinger's annotation on field " + memberName + " in " + declaringClass.getSimpleName());
+                    return;
+                }
+                annotation = field.getAnnotation(RegisterTile.class);
+                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                    return;
+                }
+                field.setAccessible(true);
+                var producerObject = field.get(null);
+                if (producerObject == null) {
+                    LOGGER.error("Null supplier for tile field " + memberName + " in " + declaringClass.getSimpleName());
+                    return;
+                }
+                if (producerObject.getClass() != RegisterTile.Producer.class) {
+                    LOGGER.error("Attempt to register non-TileProducer BlockEntitySupplier " + memberName + " in " + declaringClass.getSimpleName());
+                    return;
+                }
+                producer = (RegisterTile.Producer<?>) producerObject;
+            } catch (NoSuchFieldException e) {
+                LOGGER.error("Unable to find supplier field for tile " + memberName + " in " + declaringClass.getSimpleName());
+                return;
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Unable to access supplier field for tile " + memberName + " in " + declaringClass.getSimpleName());
+                return;
+            }
+            
+            String modid = annotation.modid();
+            if (modid.equals("")) {
+                modid = modNamespace;
+            }
+            String name = annotation.name();
+            if (modid.equals("")) {
+                LOGGER.error("Unable to register tile without a name from " + memberName + " in " + declaringClass.getSimpleName());
+                return;
+            }
+            final String registryName = modid + ":" + name;
+    
+            // this is safe, surely
+            // should actually be, otherwise previous checks should have errored
+            Class<?> tileClass = (Class<?>) ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
+    
+            LinkedList<Block> blocks = tileBlocks.remove(tileClass);
+    
+            if (blocks == null) {
+                return;
+            }
+    
+            // fuck you java, its the correct size here
+            @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
+            BlockEntityType<?> type = BlockEntityType.Builder.of(producer, blocks.toArray(new Block[blocks.size()])).build(null);
+    
+            type.setRegistryName(registryName);
+    
+            try {
+                tileProducerTYPEField.set(producer, type);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("Tile entity type unable to be saved for " + memberName + " in " + declaringClass.getSimpleName());
+            }
+    
+            tileRegistryEvent.getRegistry().register(type);
+        });
+    }
+    
     private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
         commonSetupQueue.enqueue(() -> {
             final Block oreInstance;
             try {
                 final Field field = oreClazz.getDeclaredField(memberName);
-                if(field.isAnnotationPresent(IgnoreRegistration.class)){
+                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     return;
                 }
                 field.setAccessible(true);
@@ -857,7 +942,7 @@ public class Registry {
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {
         try {
             Field field = configClazz.getDeclaredField(memberName);
-            if(field.isAnnotationPresent(IgnoreRegistration.class)){
+            if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                 return;
             }
             ConfigManager.registerConfig(field, modNamespace);
@@ -869,7 +954,7 @@ public class Registry {
     private void onModLoadAnnotation(String modNamespace, Class<?> modLoadClazz, final String memberName) {
         try {
             Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
-            if(method.isAnnotationPresent(IgnoreRegistration.class)){
+            if (method.isAnnotationPresent(IgnoreRegistration.class)) {
                 return;
             }
             if (!Modifier.isStatic(method.getModifiers())) {

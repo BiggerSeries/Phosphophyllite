@@ -28,6 +28,6 @@ public class PhosphophylliteOre extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
-        return new PhosphophylliteOreTile(pPos, pState);
+        return PhosphophylliteOreTile.SUPPLIER.create(pPos, pState);
     }
 }
