@@ -26,7 +26,7 @@ public class PhosphophylliteCompound implements ROBNObject {
     }
     
     public PhosphophylliteCompound(List<Byte> ROBNbuffer) {
-        if (ROBNbuffer.isEmpty()){
+        if (ROBNbuffer.isEmpty()) {
             return;
         }
         fromROBN(ROBNbuffer);
@@ -89,7 +89,7 @@ public class PhosphophylliteCompound implements ROBNObject {
     public PhosphophylliteCompound getCompound(String key) {
         var val = data.get(key);
         if (!(val instanceof PhosphophylliteCompound)) {
-            if(val instanceof Map){
+            if (val instanceof Map) {
                 var compound = new PhosphophylliteCompound();
                 //noinspection unchecked
                 compound.fromROBNMap((Map<String, Object>) val);
@@ -109,12 +109,12 @@ public class PhosphophylliteCompound implements ROBNObject {
         return (String) val;
     }
     
-    public boolean getBoolean(String key){
+    public boolean getBoolean(String key) {
         var val = data.get(key);
         if (val instanceof Boolean bool) {
             return bool;
         }
-        if(val instanceof Number number){
+        if (val instanceof Number number) {
             return number.longValue() != 0;
         }
         return false;
@@ -170,7 +170,7 @@ public class PhosphophylliteCompound implements ROBNObject {
     
     public List<?> getList(String key) {
         Object obj = data.get(key);
-        if(obj instanceof List<?> list){
+        if (obj instanceof List<?> list) {
             return list;
         }
         return new ArrayList<>();
@@ -178,7 +178,7 @@ public class PhosphophylliteCompound implements ROBNObject {
     
     public Map<?, ?> getMap(String key) {
         Object obj = data.get(key);
-        if(obj instanceof Map<?, ?> map){
+        if (obj instanceof Map<?, ?> map) {
             return map;
         }
         return new HashMap<>();
@@ -193,6 +193,16 @@ public class PhosphophylliteCompound implements ROBNObject {
     public void fromROBNMap(Map<String, Object> map) {
         data.clear();
         data.putAll(map);
+    }
+    
+    public void combine(PhosphophylliteCompound other) {
+        other.data.forEach((str, obj) -> {
+            if (obj == null) {
+                this.data.remove(str);
+                return;
+            }
+            this.data.put(str, obj);
+        });
     }
 }
 
