@@ -74,7 +74,7 @@ public abstract class QuartzCore {
     protected abstract void startupInternal();
     
     public static void shutdown() {
-        if(!wasInit){
+        if (!wasInit) {
             return;
         }
         Quartz.EVENT_BUS.post(new QuartzEvent.Shutdown());
@@ -84,6 +84,9 @@ public abstract class QuartzCore {
     protected abstract void shutdownInternal();
     
     public static void resourcesReloaded() {
+        if (!wasInit) {
+            return;
+        }
         INSTANCE.meshManager.buildAllMeshes();
         INSTANCE.resourcesReloadedInternal();
     }
