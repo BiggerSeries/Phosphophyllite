@@ -1,6 +1,8 @@
 package net.roguelogix.phosphophyllite.config;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.roguelogix.phosphophyllite.parsers.Element;
 import net.roguelogix.phosphophyllite.parsers.JSON5;
 import net.roguelogix.phosphophyllite.parsers.TOML;
@@ -42,6 +44,13 @@ public class ConfigManager {
         var annotation = field.getAnnotation(RegisterConfig.class);
         if (!annotation.name().equals("")) {
             modName = annotation.name();
+        }
+        
+        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+            if (annotation.type() == ConfigType.CLIENT){
+                // no need to load client configs on the server
+                return;
+            }
         }
         
         ModConfig config = new ModConfig(field, modName);
@@ -160,7 +169,7 @@ public class ConfigManager {
                 }
             }
         }
-
+        
         void load() {
             runPreLoads();
             if (actualFile == null) {
