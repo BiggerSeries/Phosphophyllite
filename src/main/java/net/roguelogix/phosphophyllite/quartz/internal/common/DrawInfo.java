@@ -20,7 +20,9 @@ public class DrawInfo {
     public float partialTicks;
     
     public final Vector3i playerPosition = new Vector3i();
+    public final Vector3i playerPositionNegative = new Vector3i();
     public final Vector3f playerSubBlock = new Vector3f();
+    public final Vector3f playerSubBlockNegative = new Vector3f();
     public final Matrix4f projectionMatrix = new Matrix4f();
     public final ByteBuffer projectionMatrixByteBuffer = MemoryUtil.memAlloc(MagicNumbers.MATRIX_4F_BYTE_SIZE);
     public final FloatBuffer projectionMatrixFloatBuffer = projectionMatrixByteBuffer.asFloatBuffer();

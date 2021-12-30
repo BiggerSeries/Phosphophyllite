@@ -29,6 +29,7 @@ public class WorldEngine {
         if (drawBatch == null) {
             final var newDrawBatch = QuartzCore.INSTANCE.createDrawBatch();
             final var finalAABB = new AABBi(aabb);
+            newDrawBatch.setCullAABB(finalAABB);
             QuartzCore.CLEANER.register(newDrawBatch, () -> {
                 synchronized (this){
                     customDrawBatchers.remove(finalAABB);
@@ -48,6 +49,7 @@ public class WorldEngine {
         }
         if (drawBatch == null) {
             final var newDrawBatch = QuartzCore.INSTANCE.createDrawBatch();
+            newDrawBatch.setCullAABB(new AABBi(0, 0, 0, 16, 16, 16).translate(SectionPos.sectionToBlockCoord(SectionPos.x(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.y(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.z(sectionPos))));
             QuartzCore.CLEANER.register(newDrawBatch, () -> {
                 synchronized (this){
                     sectionDrawBatchers.remove(sectionPos);

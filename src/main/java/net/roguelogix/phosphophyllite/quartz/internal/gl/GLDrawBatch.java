@@ -10,10 +10,7 @@ import net.roguelogix.phosphophyllite.quartz.StaticMesh;
 import net.roguelogix.phosphophyllite.quartz.internal.Buffer;
 import net.roguelogix.phosphophyllite.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.quartz.internal.common.*;
-import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.repack.org.joml.*;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import org.lwjgl.opengl.GL;
 
@@ -380,12 +377,12 @@ public class GLDrawBatch implements DrawBatch {
         
         private static class InstanceBatch implements DrawBatch.InstanceBatch {
             private final MeshInstanceManager instanceManager;
-    
+            
             public InstanceBatch(MeshInstanceManager instanceManager) {
                 this.instanceManager = instanceManager;
                 QuartzCore.CLEANER.register(this, instanceManager::delete);
             }
-    
+            
             @Override
             public void updateMesh(StaticMesh mesh) {
                 instanceManager.updateMesh(mesh);
@@ -479,7 +476,11 @@ public class GLDrawBatch implements DrawBatch {
     private boolean rebuildIndirectBlocks = false;
     
     private AABBi cullAABB = null;
+    private final AABBi cullAABBi = new AABBi();
+    private final AABBf cullAABBf = new AABBf();
+    private static final AABBf clipAABB = new AABBf(-1, -1, -1, 1, 1, 1);
     private boolean enabled = true;
+    private boolean culled = false;
     
     public GLDrawBatch() {
         final int VAO = glGenVertexArrays();
@@ -695,8 +696,24 @@ public class GLDrawBatch implements DrawBatch {
         return instanceManagers.isEmpty() && instanceBatches.isEmpty();
     }
     
-    void updateAndCull(DrawInfo drawInfo) {
+    void updateAndCull(@SuppressWarnings("SameParameterValue") DrawInfo drawInfo) {
+        // matrices need to be updated anyway
         dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
+        
+        if (cullAABB != null) {
+            cullAABB.translate(drawInfo.playerPositionNegative, cullAABBi);
+            cullAABBf.setMin(cullAABBi.minX, cullAABBi.minY, cullAABBi.minZ);
+            cullAABBf.setMax(cullAABBi.maxX, cullAABBi.maxY, cullAABBi.maxZ);
+            cullAABBf.translate(drawInfo.playerSubBlockNegative);
+            cullAABBf.transform(drawInfo.projectionMatrix);
+            culled = !cullAABBf.intersectsAABB(clipAABB);
+        }
+        
+        if (culled) {
+            return;
+        }
+        
+        assert Minecraft.getInstance().level != null;
         lightManager.updateAll(Minecraft.getInstance().level);
         dynamicMatrixBuffer.flush();
         dynamicLightBuffer.flush();
@@ -726,7 +743,7 @@ public class GLDrawBatch implements DrawBatch {
     }
     
     void drawOpaque() {
-        if (!enabled || opaqueDrawComponents.isEmpty()) {
+        if (!enabled || culled || opaqueDrawComponents.isEmpty()) {
             return;
         }
         
@@ -757,7 +774,7 @@ public class GLDrawBatch implements DrawBatch {
     }
     
     void drawCutout() {
-        if (!enabled || cutoutDrawComponents.isEmpty()) {
+        if (!enabled || culled || cutoutDrawComponents.isEmpty()) {
             return;
         }
         

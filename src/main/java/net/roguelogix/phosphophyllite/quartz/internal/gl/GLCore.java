@@ -167,7 +167,9 @@ public class GLCore extends QuartzCore {
         
         var playerPosition = pActiveRenderInfo.getPosition();
         drawInfo.playerPosition.set((int) playerPosition.x, (int) playerPosition.y, (int) playerPosition.z);
+        drawInfo.playerPositionNegative.set(drawInfo.playerPosition).negate();
         drawInfo.playerSubBlock.set(playerPosition.x - (int) playerPosition.x, playerPosition.y - (int) playerPosition.y, playerPosition.z - (int) playerPosition.z);
+        drawInfo.playerSubBlockNegative.set(drawInfo.playerSubBlockNegative).negate();
         pProjection.store(drawInfo.projectionMatrixFloatBuffer);
         drawInfo.projectionMatrix.set(drawInfo.projectionMatrixFloatBuffer);
         pMatrixStack.last().pose().store(drawInfo.projectionMatrixFloatBuffer);
