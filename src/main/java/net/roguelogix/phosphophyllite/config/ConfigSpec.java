@@ -26,11 +26,13 @@ public class ConfigSpec {
         final String comment;
         final boolean advanced;
         final boolean hidden;
+        final boolean reloadable;
         
-        private SpecNode(@Nullable String comment, boolean advanced, boolean hidden) {
+        private SpecNode(@Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             this.comment = comment;
             this.advanced = advanced;
             this.hidden = hidden;
+            this.reloadable = reloadable;
         }
     }
     
@@ -39,8 +41,8 @@ public class ConfigSpec {
         final Map<String, SpecClazzNode> clazzNodes;
         final Map<String, SpecFieldNode> fieldNodes;
         
-        private SpecClazzNode(Class<?> clazz, Map<String, SpecClazzNode> clazzNodes, Map<String, SpecFieldNode> fieldNodes, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(comment, advanced, hidden);
+        private SpecClazzNode(Class<?> clazz, Map<String, SpecClazzNode> clazzNodes, Map<String, SpecFieldNode> fieldNodes, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(comment, advanced, hidden, reloadable);
             this.clazz = clazz;
             this.clazzNodes = Collections.unmodifiableMap(clazzNodes);
             this.fieldNodes = Collections.unmodifiableMap(fieldNodes);
@@ -51,8 +53,8 @@ public class ConfigSpec {
         @Nonnull
         final Field field;
         
-        private SpecFieldNode(Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(comment, advanced, hidden);
+        private SpecFieldNode(Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(comment, advanced, hidden, reloadable);
             this.field = field;
         }
     }
@@ -61,8 +63,8 @@ public class ConfigSpec {
         final Class<?> clazz;
         final Map<String, SpecFieldNode> subNodes;
         
-        private SpecObjectNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecObjectNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.clazz = clazz;
             this.subNodes = Collections.unmodifiableMap(subNodes);
         }
@@ -72,8 +74,8 @@ public class ConfigSpec {
         final Class<?> clazz;
         final Map<String, SpecFieldNode> subNodes;
         
-        private SpecElementNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, boolean advanced, boolean hidden) {
-            super(null, advanced, hidden);
+        private SpecElementNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, boolean advanced, boolean hidden, boolean reloadable) {
+            super(null, advanced, hidden, reloadable);
             this.clazz = clazz;
             this.subNodes = Collections.unmodifiableMap(subNodes);
         }
@@ -84,8 +86,8 @@ public class ConfigSpec {
         final SpecElementNode nodeType;
         final Map<String, SpecElementNode> defaultSubNodes;
         
-        private SpecMapNode(Class<?> elementClass, SpecElementNode nodeType, Map<String, SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecMapNode(Class<?> elementClass, SpecElementNode nodeType, Map<String, SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.elementClass = elementClass;
             this.nodeType = nodeType;
             this.defaultSubNodes = Collections.unmodifiableMap(defaultSubNodes);
@@ -97,8 +99,8 @@ public class ConfigSpec {
         final SpecElementNode subNodeType;
         final List<SpecElementNode> defaultSubNodes;
         
-        private SpecListNode(Class<?> elementClass, SpecElementNode subNodeType, List<SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecListNode(Class<?> elementClass, SpecElementNode subNodeType, List<SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.elementClass = elementClass;
             this.subNodeType = subNodeType;
             this.defaultSubNodes = Collections.unmodifiableList(defaultSubNodes);
@@ -108,8 +110,8 @@ public class ConfigSpec {
     public static class SpecStringNode extends SpecFieldNode {
         final String defaultString;
         
-        private SpecStringNode(String defaultString, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecStringNode(String defaultString, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.defaultString = defaultString;
         }
     }
@@ -119,8 +121,8 @@ public class ConfigSpec {
         final String defaultValue;
         final List<String> allowedValues;
         
-        private SpecEnumNode(Class<?> enumClass, String defaultValue, List<String> allowedValues, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecEnumNode(Class<?> enumClass, String defaultValue, List<String> allowedValues, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.enumClass = enumClass;
             this.defaultValue = defaultValue;
             this.allowedValues = Collections.unmodifiableList(allowedValues);
@@ -135,8 +137,8 @@ public class ConfigSpec {
         final double upperBound;
         final double defaultValue;
         
-        private SpecNumberNode(boolean integral, boolean lowerInclusive, double lowerBound, boolean upperInclusive, double upperBound, double defaultValue, Field field, String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecNumberNode(boolean integral, boolean lowerInclusive, double lowerBound, boolean upperInclusive, double upperBound, double defaultValue, Field field, String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.integral = integral;
             this.lowerInclusive = lowerInclusive;
             this.lowerBound = lowerBound;
@@ -149,8 +151,8 @@ public class ConfigSpec {
     public static class SpecBooleanNode extends SpecFieldNode {
         final boolean defaultValue;
         
-        private SpecBooleanNode(boolean defaultValue, Field field, String comment, boolean advanced, boolean hidden) {
-            super(field, comment, advanced, hidden);
+        private SpecBooleanNode(boolean defaultValue, Field field, String comment, boolean advanced, boolean hidden, boolean reloadable) {
+            super(field, comment, advanced, hidden, reloadable);
             this.defaultValue = defaultValue;
         }
     }
@@ -160,7 +162,7 @@ public class ConfigSpec {
     
     ConfigSpec(Field field, Object object) {
         field.setAccessible(true);
-        var masterNode = buildNodeForObject(object.getClass(), object, field, null, false, false);
+        var masterNode = buildNodeForObject(object.getClass(), object, field, null, false, false, true);
         if (masterNode == null) {
             throw new IllegalArgumentException("Unable to build root node");
         }
@@ -389,12 +391,12 @@ public class ConfigSpec {
     
     public Element regenerateElementTreeForNode(@Nullable Element tree, SpecNode node, @Nullable Object object, @Nullable String name, boolean enableAdvanced) throws IllegalAccessException {
         if (tree == null) {
-            return generateElementForNode(node, object, name, enableAdvanced);
+            return generateElementForNode(node, object, name, enableAdvanced, false);
         }
         
         if (node instanceof SpecClazzNode clazzNode) {
             if (tree.type != Element.Type.Section) {
-                return generateElementForNode(node, object, name, enableAdvanced);
+                return generateElementForNode(node, object, name, enableAdvanced, false);
             }
             
             final var subElements = new ArrayList<Element>();
@@ -442,7 +444,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Section, node.comment, name, subElements.toArray());
         } else if (node instanceof SpecObjectNode objectNode) {
             if (tree.type != Element.Type.Section) {
-                return generateElementForNode(objectNode, object, name, enableAdvanced);
+                return generateElementForNode(objectNode, object, name, enableAdvanced, false);
             }
             
             var nodeObject = objectNode.field.get(object);
@@ -480,7 +482,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Section, objectNode.comment, name, subElements.toArray());
         } else if (node instanceof SpecElementNode elementNode) {
             if (tree.type != Element.Type.Section) {
-                return generateElementForNode(elementNode, object, name, enableAdvanced);
+                return generateElementForNode(elementNode, object, name, enableAdvanced, false);
             }
             
             if (object == null) {
@@ -515,7 +517,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Section, elementNode.comment, name, subElements.toArray());
         } else if (node instanceof SpecMapNode mapNode) {
             if (tree.type != Element.Type.Section) {
-                return generateElementForNode(mapNode, object, name, enableAdvanced);
+                return generateElementForNode(mapNode, object, name, enableAdvanced, false);
             }
             
             final var subElements = new ArrayList<Element>();
@@ -537,7 +539,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Section, mapNode.comment, name, subElements.toArray());
         } else if (node instanceof SpecListNode listNode) {
             if (tree.type != Element.Type.Array) {
-                return generateElementForNode(listNode, object, name, enableAdvanced);
+                return generateElementForNode(listNode, object, name, enableAdvanced, false);
             }
             
             final var subElements = new ArrayList<Element>();
@@ -562,7 +564,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Array, listNode.comment, name, subElements.toArray());
         } else if (node instanceof SpecEnumNode enumNode) {
             if (tree.type != Element.Type.String) {
-                return generateElementForNode(enumNode, object, name, enableAdvanced);
+                return generateElementForNode(enumNode, object, name, enableAdvanced, false);
             }
             
             final var enumVals = (Enum<?>[]) enumNode.enumClass.getEnumConstants();
@@ -588,18 +590,18 @@ public class ConfigSpec {
                 }
             }
             if (givenVal == null) {
-                return generateElementForNode(enumNode, object, name, enableAdvanced);
+                return generateElementForNode(enumNode, object, name, enableAdvanced, false);
             }
             return tree;
             
         } else if (node instanceof SpecStringNode) {
             if (tree.type != Element.Type.String && tree.type != Element.Type.Number && tree.type != Element.Type.Boolean) {
-                return generateElementForNode(node, object, name, enableAdvanced);
+                return generateElementForNode(node, object, name, enableAdvanced, false);
             }
             return tree;
         } else if (node instanceof SpecNumberNode numberNode) {
             if (tree.type != Element.Type.Number) {
-                return generateElementForNode(numberNode, object, name, enableAdvanced);
+                return generateElementForNode(numberNode, object, name, enableAdvanced, false);
             }
             double val = tree.asDouble();
             if (numberNode.integral) {
@@ -640,7 +642,7 @@ public class ConfigSpec {
             return new Element(Element.Type.Number, numberNode.comment, tree.name, String.valueOf(val));
         } else if (node instanceof SpecBooleanNode boolNode) {
             if (tree.type != Element.Type.String && tree.type != Element.Type.Number && tree.type != Element.Type.Boolean) {
-                return generateElementForNode(boolNode, object, name, enableAdvanced);
+                return generateElementForNode(boolNode, object, name, enableAdvanced, false);
             }
             final boolean newVal;
             if (tree.type == Element.Type.String || tree.type == Element.Type.Boolean) {
@@ -657,8 +659,12 @@ public class ConfigSpec {
     }
     
     public Element generateElementTree(boolean enableAdvanced) {
+        return generateElementTree(enableAdvanced, false);
+    }
+    
+    public Element generateElementTree(boolean enableAdvanced, boolean fullTree) {
         try {
-            return generateElementForNode(masterNode, null, null, enableAdvanced);
+            return generateElementForNode(masterNode, null, null, enableAdvanced | fullTree, fullTree);
         } catch (IllegalAccessException e) {
             ConfigManager.LOGGER.error("Unexpected error caught reading from config");
             ConfigManager.LOGGER.error(e.toString());
@@ -666,19 +672,19 @@ public class ConfigSpec {
         }
     }
     
-    public Element generateElementForNode(SpecNode node, @Nullable Object object, @Nullable String name, boolean enableAdvanced) throws IllegalAccessException {
+    public Element generateElementForNode(SpecNode node, @Nullable Object object, @Nullable String name, boolean enableAdvanced, boolean fullTree) throws IllegalAccessException {
         if (node instanceof SpecClazzNode clazzNode) {
             final var subElements = new ArrayList<Element>();
             
             for (final var entry : clazzNode.fieldNodes.entrySet()) {
-                if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                    subElements.add(generateElementForNode(entry.getValue(), null, entry.getKey(), enableAdvanced));
+                if (fullTree || (enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
+                    subElements.add(generateElementForNode(entry.getValue(), null, entry.getKey(), enableAdvanced, fullTree));
                 }
             }
             
             for (final var entry : clazzNode.clazzNodes.entrySet()) {
-                if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                    subElements.add(generateElementForNode(entry.getValue(), null, entry.getKey(), enableAdvanced));
+                if (fullTree || (enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
+                    subElements.add(generateElementForNode(entry.getValue(), null, entry.getKey(), enableAdvanced, fullTree));
                 }
             }
             
@@ -690,8 +696,8 @@ public class ConfigSpec {
             final var subElements = new ArrayList<Element>();
             
             for (final var entry : objectNode.subNodes.entrySet()) {
-                if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                    subElements.add(generateElementForNode(entry.getValue(), nodeObject, entry.getKey(), enableAdvanced));
+                if (fullTree || (enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
+                    subElements.add(generateElementForNode(entry.getValue(), nodeObject, entry.getKey(), enableAdvanced, fullTree));
                 }
             }
             
@@ -700,8 +706,8 @@ public class ConfigSpec {
             final var subElements = new ArrayList<Element>();
             
             for (Map.Entry<String, SpecFieldNode> entry : elementNode.subNodes.entrySet()) {
-                if ((enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
-                    subElements.add(generateElementForNode(entry.getValue(), object, entry.getKey(), enableAdvanced));
+                if (fullTree || (enableAdvanced || !entry.getValue().advanced) && !entry.getValue().hidden) {
+                    subElements.add(generateElementForNode(entry.getValue(), object, entry.getKey(), enableAdvanced, fullTree));
                 }
             }
             
@@ -713,7 +719,7 @@ public class ConfigSpec {
             final var subElements = new ArrayList<Element>();
             
             for (Map.Entry<String, ?> entry : map.entrySet()) {
-                subElements.add(generateElementForNode(mapNode.nodeType, entry.getValue(), entry.getKey(), enableAdvanced));
+                subElements.add(generateElementForNode(mapNode.nodeType, entry.getValue(), entry.getKey(), enableAdvanced, fullTree));
             }
             
             return new Element(Element.Type.Section, mapNode.comment, name, subElements.toArray());
@@ -724,13 +730,13 @@ public class ConfigSpec {
             
             if (nodeObject instanceof List<?> list) {
                 for (Object o : list) {
-                    subElements.add(generateElementForNode(subNodeType, o, null, enableAdvanced));
+                    subElements.add(generateElementForNode(subNodeType, o, null, enableAdvanced, fullTree));
                 }
             } else {
                 assert nodeObject.getClass().isArray();
                 final int length = Array.getLength(nodeObject);
                 for (int i = 0; i < length; i++) {
-                    subElements.add(generateElementForNode(subNodeType, Array.get(nodeObject, i), null, enableAdvanced));
+                    subElements.add(generateElementForNode(subNodeType, Array.get(nodeObject, i), null, enableAdvanced, fullTree));
                 }
             }
             
@@ -752,9 +758,9 @@ public class ConfigSpec {
         throw new DefinitionError("Attempting to generate element for unknown node type");
     }
     
-    public void writeElementTree(Element tree) {
+    public void writeElementTree(Element tree, boolean isReload) {
         try {
-            writeElementNode(tree, masterNode, null);
+            writeElementNode(tree, masterNode, null, isReload);
         } catch (IllegalAccessException e) {
             ConfigManager.LOGGER.error("Unexpected error caught reading from config");
             e.printStackTrace();
@@ -762,7 +768,10 @@ public class ConfigSpec {
         }
     }
     
-    public static void writeElementNode(Element element, SpecNode node, @Nullable Object object) throws IllegalAccessException {
+    public static void writeElementNode(Element element, SpecNode node, @Nullable Object object, boolean isReload) throws IllegalAccessException {
+        if(isReload && !node.reloadable){
+            return;
+        }
         if (node instanceof SpecClazzNode clazzNode) {
             if (element.type != Element.Type.Section) {
                 ConfigManager.LOGGER.info("Invalid config structure given");
@@ -776,9 +785,9 @@ public class ConfigSpec {
                 final var subClazzNode = clazzNode.clazzNodes.get(subElement.name);
                 final var fieldNode = clazzNode.fieldNodes.get(subElement.name);
                 if (subClazzNode != null) {
-                    writeElementNode(subElement, subClazzNode, null);
+                    writeElementNode(subElement, subClazzNode, null, isReload);
                 } else if (fieldNode != null) {
-                    writeElementNode(subElement, fieldNode, null);
+                    writeElementNode(subElement, fieldNode, null, isReload);
                 } else {
                     Phosphophyllite.LOGGER.info("Unknown config option given: " + subElement.name);
                 }
@@ -803,7 +812,7 @@ public class ConfigSpec {
             for (final var subElement : subElements) {
                 final var subNode = objectNode.subNodes.get(subElement.name);
                 if (subNode != null) {
-                    writeElementNode(subElement, subNode, nodeObject);
+                    writeElementNode(subElement, subNode, nodeObject, isReload);
                 } else {
                     Phosphophyllite.LOGGER.info("Unknown config option given: " + element.name);
                 }
@@ -825,7 +834,7 @@ public class ConfigSpec {
             for (final var subElement : subElements) {
                 final var subNode = elementNode.subNodes.get(subElement.name);
                 if (subNode != null) {
-                    writeElementNode(subElement, subNode, object);
+                    writeElementNode(subElement, subNode, object, isReload);
                 } else {
                     Phosphophyllite.LOGGER.info("Unknown config option given: " + element.name);
                 }
@@ -847,7 +856,7 @@ public class ConfigSpec {
                 final Object newElementObject = createClassInstance(mapNode.elementClass);
                 //noinspection unchecked
                 map.put(subElement.name, newElementObject);
-                writeElementNode(subElement, mapNode.nodeType, newElementObject);
+                writeElementNode(subElement, mapNode.nodeType, newElementObject, isReload);
             }
             
             mapNode.field.set(object, map);
@@ -869,7 +878,7 @@ public class ConfigSpec {
                     final var subElement = subElements[i];
                     Array.set(array, i, newElementObject);
                     
-                    writeElementNode(subElement, listNode.subNodeType, newElementObject);
+                    writeElementNode(subElement, listNode.subNodeType, newElementObject, isReload);
                 }
                 
                 listNode.field.set(object, array);
@@ -879,7 +888,7 @@ public class ConfigSpec {
                 
                 for (Element subElement : subElements) {
                     final var newElementObject = createClassInstance(listNode.elementClass);
-                    writeElementNode(subElement, listNode.subNodeType, newElementObject);
+                    writeElementNode(subElement, listNode.subNodeType, newElementObject, isReload);
                     //noinspection unchecked
                     list.add(newElementObject);
                 }
@@ -1141,11 +1150,11 @@ public class ConfigSpec {
             return null;
         }
         
-        return new SpecClazzNode(clazz, clazzNodes, fieldNodes, comment, advanced, hidden);
+        return new SpecClazzNode(clazz, clazzNodes, fieldNodes, comment, advanced, hidden, true);
     }
     
     @Nullable
-    public static SpecObjectNode buildNodeForObject(Class<?> clazz, Object object, Field field, @Nullable String comment, boolean advanced, boolean hidden) {
+    public static SpecObjectNode buildNodeForObject(Class<?> clazz, Object object, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
         
         final var subNodes = new LinkedHashMap<String, SpecFieldNode>();
         
@@ -1168,11 +1177,11 @@ public class ConfigSpec {
             return null;
         }
         
-        return new SpecObjectNode(clazz, subNodes, field, comment, advanced, hidden);
+        return new SpecObjectNode(clazz, subNodes, field, comment, advanced, hidden, reloadable);
     }
     
     @Nullable
-    private static SpecElementNode buildNodeForElement(Class<?> clazz, Object object, boolean advanced, boolean hidden) {
+    private static SpecElementNode buildNodeForElement(Class<?> clazz, Object object, boolean advanced, boolean hidden, boolean reloadable) {
         
         final var subNodes = new LinkedHashMap<String, SpecFieldNode>();
         
@@ -1195,7 +1204,7 @@ public class ConfigSpec {
             return null;
         }
         
-        return new SpecElementNode(clazz, subNodes, advanced, hidden);
+        return new SpecElementNode(clazz, subNodes, advanced, hidden, reloadable);
     }
     
     @Nullable
@@ -1228,6 +1237,7 @@ public class ConfigSpec {
         
         
         final ConfigValue fieldAnnotation = field.getAnnotation(ConfigValue.class);
+        final var reloadable = fieldAnnotation.reloadable();
         
         final String comment;
         {
@@ -1287,7 +1297,7 @@ public class ConfigSpec {
                 for (int i = 0; i < Array.getLength(fieldObject); i++) {
                     final var element = Array.get(fieldObject, 0);
                     if (element != null) {
-                        var subNode = buildNodeForElement(elementClass, element, advanced, hidden);
+                        var subNode = buildNodeForElement(elementClass, element, advanced, hidden, reloadable);
                         if (subNode != null) {
                             defaultSubNodes.add(subNode);
                         }
@@ -1300,7 +1310,7 @@ public class ConfigSpec {
                 
                 final var list = (List<?>) fieldObject;
                 list.forEach(element -> {
-                    var subNode = buildNodeForElement(elementClass, element, advanced, hidden);
+                    var subNode = buildNodeForElement(elementClass, element, advanced, hidden, reloadable);
                     if (subNode != null) {
                         defaultSubNodes.add(subNode);
                     }
@@ -1309,12 +1319,12 @@ public class ConfigSpec {
             
             final var defaultObject = createClassInstance(elementClass);
             
-            final var defaultNode = buildNodeForElement(elementClass, defaultObject, advanced, hidden);
+            final var defaultNode = buildNodeForElement(elementClass, defaultObject, advanced, hidden, reloadable);
             if (defaultNode == null) {
                 return null;
             }
             
-            node = new SpecListNode(elementClass, defaultNode, defaultSubNodes, field, comment, advanced, hidden);
+            node = new SpecListNode(elementClass, defaultNode, defaultSubNodes, field, comment, advanced, hidden, reloadable);
         } else if (Map.class == fieldClass || HashMap.class == fieldClass) {
             final var type = (ParameterizedType) field.getGenericType();
             final var generics = type.getActualTypeArguments();
@@ -1328,7 +1338,7 @@ public class ConfigSpec {
             
             final Object defaultObject = createClassInstance(elementClass);
             
-            final var defaultNode = buildNodeForElement(elementClass, defaultObject, advanced, hidden);
+            final var defaultNode = buildNodeForElement(elementClass, defaultObject, advanced, hidden, reloadable);
             if (defaultNode == null) {
                 return null;
             }
@@ -1336,20 +1346,20 @@ public class ConfigSpec {
             // its checked, see me check that generic type like 10 lines ago
             @SuppressWarnings("unchecked") final var map = (Map<String, ?>) fieldObject;
             map.forEach((string, element) -> {
-                var newNode = buildNodeForElement(elementClass, element, advanced, hidden);
+                var newNode = buildNodeForElement(elementClass, element, advanced, hidden, reloadable);
                 if (newNode != null) {
                     defaultSubNodes.put(string, newNode);
                 }
             });
             
-            node = new SpecMapNode(elementClass, defaultNode, defaultSubNodes, field, comment, advanced, hidden);
+            node = new SpecMapNode(elementClass, defaultNode, defaultSubNodes, field, comment, advanced, hidden, reloadable);
         } else if (String.class == fieldClass) {
-            node = new SpecStringNode((String) fieldObject, field, comment, hidden, advanced);
+            node = new SpecStringNode((String) fieldObject, field, comment, hidden, advanced, reloadable);
         } else if (fieldClass.isEnum()) {
-            node = new SpecEnumNode(fieldClass, fieldObject.toString(), Arrays.asList(fieldAnnotation.allowedValues()), field, comment, advanced, hidden);
+            node = new SpecEnumNode(fieldClass, fieldObject.toString(), Arrays.asList(fieldAnnotation.allowedValues()), field, comment, advanced, hidden, reloadable);
         } else if (fieldClass.isPrimitive() || Number.class.isAssignableFrom(fieldClass) || Boolean.class == fieldClass) {
             if (fieldClass == boolean.class || fieldClass == Boolean.class) {
-                node = new SpecBooleanNode((Boolean) fieldObject, field, comment, advanced, hidden);
+                node = new SpecBooleanNode((Boolean) fieldObject, field, comment, advanced, hidden, reloadable);
             } else {
                 // if it isn't a boolean, and it is a primitive, then its a number or its void
                 // cant declare a void variable, so its a number
@@ -1416,10 +1426,10 @@ public class ConfigSpec {
                     throw new DefinitionError("Higher bound must be greater or equal to lower bound");
                 }
                 
-                node = new SpecNumberNode(isIntegral(fieldClass), lowerInclusive, lowerBound, higherInclusive, higherBound, ((Number) fieldObject).doubleValue(), field, comment, advanced, hidden);
+                node = new SpecNumberNode(isIntegral(fieldClass), lowerInclusive, lowerBound, higherInclusive, higherBound, ((Number) fieldObject).doubleValue(), field, comment, advanced, hidden, reloadable);
             }
         } else {
-            node = buildNodeForObject(fieldClass, fieldObject, field, comment, advanced, hidden);
+            node = buildNodeForObject(fieldClass, fieldObject, field, comment, advanced, hidden, reloadable);
         }
         
         return node;
