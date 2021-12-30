@@ -102,9 +102,8 @@ public class ConfigManager {
         assert server != null;
         if (!server.isDedicatedServer()) {
             var serverUUID = e.getPlayer().getUUID();
-            assert Minecraft.getInstance().player != null;
-            var localUUID = Minecraft.getInstance().player.getUUID();
-            if (serverUUID.equals(localUUID)) {
+            var localUUID = Minecraft.getInstance().getUser().getUuid();
+            if (serverUUID.toString().equals(localUUID)) {
                 // ignore local player on integrated server
                 // do have the configs reload the saved tree though
                 for (ModConfig value : modConfigs.values()) {
