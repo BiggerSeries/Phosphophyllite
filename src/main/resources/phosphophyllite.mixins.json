@@ -7,13 +7,6 @@
   "mixins": [
     "ChunkMapMixin"
   ],
-  "client": [
-    "QuartzStartupMixin",
-    "NoVizFallbackMixin",
-    "LevelRendererMixin",
-    "MinecraftShutdownMixin",
-    "ResourceReloadListener"
-  ],
   "injectors": {
     "defaultRequire": 1
   }
