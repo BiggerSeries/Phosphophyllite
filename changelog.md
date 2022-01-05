@@ -1,3 +1,11 @@
+# 1.18.1-0.6.0-beta
+ - Pull quartz out into its own mod
+ - Config sync, syncs common type configs
+ - New tile registration annotation, old one is deprecated for removal but not removed
+ - Add IgnoreRegistration annotation to allow use of annotation without automatic registration
+ - GUI library refactored
+   - Tooltips fixed
+
 # 1.18.1-0.6.0-alpha.9.1
  - use US locale with toLowerCase and toUpperCase, should fix loading with some system languages
  - always run read data for module, even if data is null, mimics vanilla tile behavior
