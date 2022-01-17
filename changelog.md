@@ -1,3 +1,8 @@
+# 1.18.1-0.6.0-beta.0.1
+ - fix multiblock merging causing paused multiblock state
+ - fix item white hole saving
+ - add error for null multiblock controller on server side
+
 # 1.18.1-0.6.0-beta
  - Pull quartz out into its own mod
  - Config sync, syncs common type configs
