@@ -31,6 +31,7 @@ public class MultiblockController<
     protected final Level world;
     
     private boolean hasSaveDelegate = false;
+    private boolean isMergingControllers = false;
     protected final ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
     protected final Set<ITickableMultiblockTile> toTick = new LinkedHashSet<>();
     protected final Set<IAssemblyAttemptedTile> assemblyAttemptedTiles = new LinkedHashSet<>();
@@ -252,7 +253,7 @@ public class MultiblockController<
                 onBlockWithNBTAttached(toAttachModule.controllerData);
                 toAttachModule.controllerData = null;
             }
-            if (state == AssemblyState.DISASSEMBLED) {
+            if (state == AssemblyState.DISASSEMBLED && !isMergingControllers) {
                 state = AssemblyState.PAUSED;
             }
             onPartAttached(toAttachTile);
@@ -276,9 +277,6 @@ public class MultiblockController<
             return;
         }
         TileType toDetachTile = toDetachModule.iface;
-        
-        toDetachModule.nullNeighbors();
-        toDetachModule.controller = null;
         
         if (toDetachTile instanceof ITickableMultiblockTile) {
             toTick.remove(toDetachTile);
@@ -304,6 +302,9 @@ public class MultiblockController<
             Queues.serverThread.enqueue(toDetachModule::attachToNeighbors);
         }
         
+        toDetachModule.nullNeighbors();
+        toDetachModule.controller = null;
+        
         if (toDetachModule.isSaveDelegate) {
             hasSaveDelegate = false;
         }
@@ -316,7 +317,7 @@ public class MultiblockController<
         
         if (checkForDetachments) {
             this.checkForDetachmentsAtTick = Phosphophyllite.tickNumber() + 2;
-            if(!onChunkUnload){
+            if (!onChunkUnload) {
                 this.checkForDetachmentsAtTick = Long.MIN_VALUE;
             }
             removedBlocks.add(toDetachPos);
@@ -442,11 +443,13 @@ public class MultiblockController<
                     this.cachedNBT = otherController.cachedNBT;
                     otherController.cachedNBT = null;
                 }
+                isMergingControllers = true;
                 otherController.blocks.forEachModule(module -> {
                     module.controller = null;
                     module.preExistingBlock = true;
                     attemptAttach(module);
                 });
+                isMergingControllers = false;
                 otherController.blocks.clear();
                 updateAssemblyAtTick = Long.MIN_VALUE;
                 otherController.mergedInto = this;
@@ -589,7 +592,7 @@ public class MultiblockController<
                 // if you do onDisassembled will be called incorrectly
                 AssemblyState nbtState = AssemblyState.valueOf(multiblockData.getString("assemblyState"));
                 // because minecraft is dumb, and saves chunks before unloading them, i need to treat assembled as paused too
-                if (state == AssemblyState.DISASSEMBLED && (nbtState == AssemblyState.PAUSED || nbtState == AssemblyState.ASSEMBLED)) {
+                if (state == AssemblyState.DISASSEMBLED && (nbtState == AssemblyState.PAUSED || nbtState == AssemblyState.ASSEMBLED) && pauseOnUnload) {
                     state = AssemblyState.PAUSED;
                 }
             }
@@ -652,8 +655,8 @@ public class MultiblockController<
     @Nonnull
     public String getDebugString() {
         return "BlockCount: " + blocks.size() + "\n" +
-                "Min " + minCoord.toString() + "\n" +
-                "Max " + maxCoord.toString() + "\n" +
+                "Min " + minCoord + "\n" +
+                "Max " + maxCoord + "\n" +
                 "Controller: " + this + "\n" +
                 "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
                 "AssemblyState: " + state + "\n";
