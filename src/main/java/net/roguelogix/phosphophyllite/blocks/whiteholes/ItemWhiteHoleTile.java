@@ -53,21 +53,21 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
         this.item = item;
     }
     
+    @Nonnull
     @Override
     public CompoundTag writeNBT() {
         var compound = super.writeNBT();
-        if (compound.contains("item")) {
-            item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(compound.getString("item")));
+        if (item != null) {
+            compound.putString("item", Objects.requireNonNull(item.getRegistryName()).toString());
         }
         return compound;
     }
     
-    @Nonnull
     @Override
     public void readNBT(@Nonnull CompoundTag compound) {
         super.readNBT(compound);
-        if (item != null) {
-            compound.putString("item", Objects.requireNonNull(item.getRegistryName()).toString());
+        if (compound.contains("item")) {
+            item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(compound.getString("item")));
         }
     }
     
