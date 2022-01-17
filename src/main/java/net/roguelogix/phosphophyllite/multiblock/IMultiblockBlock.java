@@ -35,7 +35,11 @@ public interface IMultiblockBlock extends IModularBlock, EntityBlock {
                     if (controller != null && controller.lastValidationError != null) {
                         player.sendMessage(controller.lastValidationError.getTextComponent(), Util.NIL_UUID);
                     } else {
-                        player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.unknown"), Util.NIL_UUID);
+                        if (controller == null) {
+                            player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.null_controller"), Util.NIL_UUID);
+                        } else {
+                            player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.unknown"), Util.NIL_UUID);
+                        }
                     }
                 }
                 return InteractionResult.SUCCESS;
