@@ -12,24 +12,34 @@ public class Event {
     }
     
     @SuppressWarnings("unused")
-    public synchronized void join() {
+    public void join() {
         if (wasTriggered) {
             return;
         }
-        try {
-            wait();
-        } catch (InterruptedException ignored) {
+        synchronized (this) {
+            if (wasTriggered) {
+                return;
+            }
+            try {
+                wait();
+            } catch (InterruptedException ignored) {
+            }
         }
     }
     
     @SuppressWarnings("unused")
-    public synchronized boolean join(int timeout) {
+    public boolean join(int timeout) {
         if (wasTriggered) {
             return true;
         }
-        try {
-            wait(timeout);
-        } catch (InterruptedException ignored) {
+        synchronized (this) {
+            if (wasTriggered) {
+                return true;
+            }
+            try {
+                wait(timeout);
+            } catch (InterruptedException ignored) {
+            }
         }
         
         return wasTriggered;
@@ -39,8 +49,8 @@ public class Event {
         if (wasTriggered) {
             return;
         }
-        wasTriggered = true;
         callbacks.forEach(Runnable::run);
+        wasTriggered = true;
         notifyAll();
     }
     
