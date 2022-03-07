@@ -115,7 +115,6 @@ public class MultiblockTileModule<
     
     public void attachToNeighbors() {
         assert iface.getLevel() != null;
-        controller = null;
         if (iface.getLevel().isClientSide) {
             return;
         }
@@ -138,7 +137,7 @@ public class MultiblockTileModule<
 //            Util.setBlockStateWithoutUpdate(iface.getBlockPos(), iface.getBlockState().setValue(ASSEMBLED, false));
         }
         if (controller != null) {
-            controller.detach(this);
+            controller.detach(this, false, false, true);
             controller = null;
         }
         // at this point, i need to get or create a controller
@@ -204,7 +203,7 @@ public class MultiblockTileModule<
     @Override
     public void onRemoved(boolean chunkUnload) {
         if (controller != null) {
-            controller.detach(this, chunkUnload);
+            controller.detach(this, chunkUnload, !chunkUnload);
         }
         allowAttach = false;
     }

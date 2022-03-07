@@ -272,7 +272,11 @@ public class MultiblockController<
         detach(toDetach, onChunkUnload, true);
     }
     
-    final void detach(@Nonnull MultiblockTileModule<TileType, ControllerType> toDetachModule, boolean onChunkUnload, boolean checkForDetachments) {
+    final void detach(@Nonnull MultiblockTileModule<TileType, ControllerType> toDetach, boolean onChunkUnload, boolean attemptReattach) {
+        detach(toDetach, onChunkUnload, attemptReattach, true);
+    }
+    
+    final void detach(@Nonnull MultiblockTileModule<TileType, ControllerType> toDetachModule, boolean onChunkUnload, boolean attemptReattach, boolean checkForDetachments) {
         if (!blocks.removeModule(toDetachModule)) {
             return;
         }
@@ -298,7 +302,9 @@ public class MultiblockController<
             }
         } else {
             onPartBroken(toDetachTile);
-            // dont need to try to attach if the chunk just unloaded
+        }
+        
+        if(attemptReattach){
             Queues.serverThread.enqueue(toDetachModule::attachToNeighbors);
         }
         
@@ -414,7 +420,7 @@ public class MultiblockController<
                 });
                 if (!toOrphan.isEmpty()) {
                     for (MultiblockTileModule<TileType, ControllerType> tile : toOrphan) {
-                        detach(tile, state == AssemblyState.PAUSED, false);
+                        detach(tile, state == AssemblyState.PAUSED, true, false);
                     }
                     updateAssemblyAtTick = Long.MIN_VALUE;
                 }
