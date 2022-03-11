@@ -13,7 +13,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class PhosphophylliteOreTile extends PhosphophylliteTile {
     
-    @RegisterTile(name = "phosphophyllite_ore")
+    @RegisterTile("phosphophyllite_ore")
     public static final BlockEntityType.BlockEntitySupplier<PhosphophylliteOreTile> SUPPLIER = new RegisterTile.Producer<>(PhosphophylliteOreTile::new);
     
     public PhosphophylliteOreTile(BlockEntityType<?> TYPE, BlockPos pWorldPosition, BlockState pBlockState) {

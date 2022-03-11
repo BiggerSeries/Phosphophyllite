@@ -86,7 +86,7 @@ public class Registry {
     private FMLCommonSetupEvent commonSetupEvent;
     
     private final ArrayList<Runnable> biomeLoadingEventHandlers = new ArrayList<>();
-    private BiomeLoadingEvent biomeLoadingEvent;
+    private BiomeLoadingEvent  biomeLoadingEvent;
     
     private final Map<String, AnnotationHandler> annotationMap = new HashMap<>();
     
@@ -95,8 +95,6 @@ public class Registry {
         annotationMap.put(RegisterItem.class.getName(), this::registerItemAnnotation);
         annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
-        //noinspection removal
-        annotationMap.put(RegisterTileEntity.class.getName(), this::registerTileEntityAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
         annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
 //        annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
@@ -649,149 +647,6 @@ public class Registry {
         });
     }
     
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true)
-    private void registerTileEntityAnnotation(String modNamespace, Class<?> tileClazz, final String memberName) {
-        if (tileClazz.isAnnotationPresent(IgnoreRegistration.class)) {
-            return;
-        }
-        
-        assert tileClazz.isAnnotationPresent(RegisterTileEntity.class);
-        
-        tileRegistrationQueue.enqueue(() -> {
-            final RegisterTileEntity annotation = tileClazz.getAnnotation(RegisterTileEntity.class);
-            
-            String modid = annotation.modid();
-            if (modid.equals("")) {
-                modid = modNamespace;
-            }
-            String name = annotation.name();
-            if (modid.equals("")) {
-                LOGGER.error("Unable to register tile type without a name");
-                return;
-            }
-            
-            if (!BlockEntity.class.isAssignableFrom(tileClazz)) {
-                LOGGER.error("Attempt to register tile type from class not extended from TileEntity");
-                return;
-            }
-            
-            final String registryName = modid + ":" + name;
-            
-            BlockEntityType.BlockEntitySupplier<?> supplier = null;
-            
-            for (Field declaredField : tileClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(RegisterTileEntity.Supplier.class)) {
-                    int modifiers = declaredField.getModifiers();
-                    if (!Modifier.isStatic(modifiers)) {
-                        LOGGER.error("Cannot access non-static tile supplier " + declaredField.getName() + " in " + tileClazz.getSimpleName());
-                        return;
-                    }
-                    if (!Modifier.isFinal(modifiers)) {
-                        LOGGER.warn("Tile supplier " + declaredField.getName() + " not final in" + tileClazz.getSimpleName());
-                    }
-                    if (!BlockEntityType.BlockEntitySupplier.class.isAssignableFrom(declaredField.getType())) {
-                        LOGGER.error("Supplier annotation found on non-TileSupplier field " + declaredField.getName() + " in " + tileClazz.getSimpleName());
-                        continue;
-                    }
-                    if (supplier != null) {
-                        LOGGER.error("Duplicate suppliers for tile " + tileClazz.getSimpleName());
-                        continue;
-                    }
-                    declaredField.setAccessible(true);
-                    try {
-                        supplier = (BlockEntityType.BlockEntitySupplier<?>) declaredField.get(null);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                        continue;
-                    }
-                    if (supplier == null) {
-                        LOGGER.error("Tile supplier field " + declaredField.getName() + " null in " + tileClazz.getSimpleName());
-                    }
-                }
-            }
-            
-            if (supplier == null) {
-                // fall back to using the constructor via LambdaMetaFactory, if the correct one exists
-                // its not quite as fast, but its easier, and *meh*
-                
-                try {
-                    var lookup = MethodHandles.lookup();
-                    var methodHandle = lookup.findConstructor(tileClazz, MethodType.methodType(void.class, new Class<?>[]{BlockPos.class, BlockState.class}));
-                    var callSite = LambdaMetafactory.metafactory(
-                            lookup,
-                            "apply",
-                            MethodType.methodType(BiFunction.class),
-                            methodHandle.type().generic(),
-                            methodHandle,
-                            methodHandle.type()
-                    );
-                    @SuppressWarnings("unchecked")
-                    BiFunction<BlockPos, BlockState, BlockEntity> tileSupplier = (BiFunction<BlockPos, BlockState, BlockEntity>) callSite.getTarget().invokeExact();
-                    //noinspection NullableProblems
-                    supplier = tileSupplier::apply;
-                } catch (NoSuchMethodException ignored) {
-                    // if it doesn't exist, that's handled below
-                    LOGGER.error("Unable to find constructor for " + tileClazz.getSimpleName());
-                } catch (LambdaConversionException e) {
-                    LOGGER.error("LambdaConversionException creating tile supplier for for " + tileClazz.getSimpleName());
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    LOGGER.error("Unable to access constructor for " + tileClazz.getSimpleName());
-                } catch (Throwable throwable) {
-                    LOGGER.error("Unknown error occurred attempting to create supplier for " + tileClazz.getSimpleName());
-                    throwable.printStackTrace();
-                }
-            }
-            
-            if (supplier == null) {
-                throw new IllegalStateException("No supplier found for tile " + tileClazz.getSimpleName());
-            }
-            
-            
-            LinkedList<Block> blocks = tileBlocks.remove(tileClazz);
-            
-            if (blocks == null) {
-                return;
-            }
-            
-            // fuck you java, its the correct size here
-            @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
-            BlockEntityType<?> type = BlockEntityType.Builder.of(supplier, blocks.toArray(new Block[blocks.size()])).build(null);
-            
-            type.setRegistryName(registryName);
-            
-            boolean typeSet = false;
-            for (Field declaredField : tileClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(RegisterTileEntity.Type.class)) {
-                    if (!declaredField.getType().isAssignableFrom(BlockEntityType.class)) {
-                        LOGGER.error("Unassignable type variable " + declaredField.getName() + " in " + tileClazz.getSimpleName());
-                        continue;
-                    }
-                    if (!Modifier.isStatic(declaredField.getModifiers())) {
-                        LOGGER.error("Cannot set non-static type variable " + declaredField.getName() + " in " + tileClazz.getSimpleName());
-                        continue;
-                    }
-                    if (typeSet) {
-                        LOGGER.warn("Duplicate TileEntityType fields in " + tileClazz.getSimpleName());
-                    }
-                    declaredField.setAccessible(true);
-                    try {
-                        declaredField.set(null, type);
-                        typeSet = true;
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            
-            if (!typeSet) {
-                throw new IllegalStateException("Tile entity type unable to be saved for " + tileClazz.getSimpleName());
-            }
-            tileRegistryEvent.getRegistry().register(type);
-        });
-    }
-    
     private static final Field tileProducerTYPEField;
     
     static {
@@ -805,11 +660,11 @@ public class Registry {
     
     private void registerTileAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
         tileRegistrationQueue.enqueue(() -> {
-    
+            
             final Field field;
             final RegisterTile annotation;
             final RegisterTile.Producer<?> producer;
-    
+            
             try {
                 field = declaringClass.getDeclaredField(memberName);
                 if (!field.isAnnotationPresent(RegisterTile.class)) {
@@ -843,35 +698,35 @@ public class Registry {
             if (modid.equals("")) {
                 modid = modNamespace;
             }
-            String name = annotation.name();
+            String name = annotation.value();
             if (modid.equals("")) {
                 LOGGER.error("Unable to register tile without a name from " + memberName + " in " + declaringClass.getSimpleName());
                 return;
             }
             final String registryName = modid + ":" + name;
-    
+            
             // this is safe, surely
             // should actually be, otherwise previous checks should have errored
-            Class<?> tileClass = (Class<?>) ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
-    
+            Class<?> tileClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+            
             LinkedList<Block> blocks = tileBlocks.remove(tileClass);
-    
+            
             if (blocks == null) {
                 return;
             }
-    
+            
             // fuck you java, its the correct size here
             @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
             BlockEntityType<?> type = BlockEntityType.Builder.of(producer, blocks.toArray(new Block[blocks.size()])).build(null);
-    
+            
             type.setRegistryName(registryName);
-    
+            
             try {
                 tileProducerTYPEField.set(producer, type);
             } catch (IllegalAccessException e) {
                 throw new IllegalStateException("Tile entity type unable to be saved for " + memberName + " in " + declaringClass.getSimpleName());
             }
-    
+            
             tileRegistryEvent.getRegistry().register(type);
         });
     }

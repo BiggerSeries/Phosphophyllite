@@ -42,6 +42,6 @@ public class PowerWhiteHole extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new PowerWhiteHoleTile(pos, state);
+        return PowerWhiteHoleTile.SUPPLIER.create(pos, state);
     }
 }

@@ -39,7 +39,7 @@ public class FluidWhiteHole extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new FluidWhiteHoleTile(pos, state);
+        return FluidWhiteHoleTile.SUPPLIER.create(pos, state);
     }
     
     @Nullable

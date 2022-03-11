@@ -30,6 +30,6 @@ public class ItemBlackHole extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new ItemBlackHoleTile(pos, state);
+        return ItemBlackHoleTile.SUPPLIER.create(pos, state);
     }
 }

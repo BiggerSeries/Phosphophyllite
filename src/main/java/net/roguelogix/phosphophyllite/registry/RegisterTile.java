@@ -19,16 +19,16 @@ import java.lang.annotation.Target;
 public @interface RegisterTile {
     String modid() default "";
     
-    String name();
+    String value();
     
     class Producer<T extends BlockEntity> implements BlockEntityType.BlockEntitySupplier<T> {
         public interface Constructor<T extends BlockEntity> {
     
-            T apply(BlockEntityType<?> tileEntityTypeIn, BlockPos pos, BlockState state);
+            T apply(BlockEntityType<T> tileEntityTypeIn, BlockPos pos, BlockState state);
         }
         private final Constructor<T> constructor;
     
-        private final BlockEntityType<?> TYPE;
+        public final BlockEntityType<T> TYPE;
         {
             // set via reflection from registry
             TYPE = null;

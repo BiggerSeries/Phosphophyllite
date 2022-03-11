@@ -30,6 +30,6 @@ public class FluidBlackHole extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new FluidBlackHoleTile(pos, state);
+        return FluidBlackHoleTile.SUPPLIER.create(pos, state);
     }
 }
