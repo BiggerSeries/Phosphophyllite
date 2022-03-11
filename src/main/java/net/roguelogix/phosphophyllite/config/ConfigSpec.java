@@ -23,10 +23,10 @@ public class ConfigSpec {
     
     public static abstract class SpecNode {
         @Nullable
-        final String comment;
-        final boolean advanced;
-        final boolean hidden;
-        final boolean reloadable;
+        public final String comment;
+        public final boolean advanced;
+        public final boolean hidden;
+        public final boolean reloadable;
         
         private SpecNode(@Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             this.comment = comment;
@@ -37,9 +37,9 @@ public class ConfigSpec {
     }
     
     public static class SpecClazzNode extends SpecNode {
-        final Class<?> clazz;
-        final Map<String, SpecClazzNode> clazzNodes;
-        final Map<String, SpecFieldNode> fieldNodes;
+        public final Class<?> clazz;
+        public final Map<String, SpecClazzNode> clazzNodes;
+        public final Map<String, SpecFieldNode> fieldNodes;
         
         private SpecClazzNode(Class<?> clazz, Map<String, SpecClazzNode> clazzNodes, Map<String, SpecFieldNode> fieldNodes, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(comment, advanced, hidden, reloadable);
@@ -51,7 +51,7 @@ public class ConfigSpec {
     
     public static class SpecFieldNode extends SpecNode {
         @Nonnull
-        final Field field;
+        public final Field field;
         
         private SpecFieldNode(Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(comment, advanced, hidden, reloadable);
@@ -60,8 +60,8 @@ public class ConfigSpec {
     }
     
     public static class SpecObjectNode extends SpecFieldNode {
-        final Class<?> clazz;
-        final Map<String, SpecFieldNode> subNodes;
+        public final Class<?> clazz;
+        public final Map<String, SpecFieldNode> subNodes;
         
         private SpecObjectNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -71,8 +71,8 @@ public class ConfigSpec {
     }
     
     public static class SpecElementNode extends SpecNode {
-        final Class<?> clazz;
-        final Map<String, SpecFieldNode> subNodes;
+        public final Class<?> clazz;
+        public final Map<String, SpecFieldNode> subNodes;
         
         private SpecElementNode(Class<?> clazz, Map<String, SpecFieldNode> subNodes, boolean advanced, boolean hidden, boolean reloadable) {
             super(null, advanced, hidden, reloadable);
@@ -82,9 +82,9 @@ public class ConfigSpec {
     }
     
     public static class SpecMapNode extends SpecFieldNode {
-        final Class<?> elementClass;
-        final SpecElementNode nodeType;
-        final Map<String, SpecElementNode> defaultSubNodes;
+        public final Class<?> elementClass;
+        public final SpecElementNode nodeType;
+        public final Map<String, SpecElementNode> defaultSubNodes;
         
         private SpecMapNode(Class<?> elementClass, SpecElementNode nodeType, Map<String, SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -95,9 +95,9 @@ public class ConfigSpec {
     }
     
     public static class SpecListNode extends SpecFieldNode {
-        final Class<?> elementClass;
-        final SpecElementNode subNodeType;
-        final List<SpecElementNode> defaultSubNodes;
+        public final Class<?> elementClass;
+        public final SpecElementNode subNodeType;
+        public final List<SpecElementNode> defaultSubNodes;
         
         private SpecListNode(Class<?> elementClass, SpecElementNode subNodeType, List<SpecElementNode> defaultSubNodes, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -108,7 +108,7 @@ public class ConfigSpec {
     }
     
     public static class SpecStringNode extends SpecFieldNode {
-        final String defaultString;
+        public final String defaultString;
         
         private SpecStringNode(String defaultString, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -117,9 +117,9 @@ public class ConfigSpec {
     }
     
     public static class SpecEnumNode extends SpecFieldNode {
-        final Class<?> enumClass;
-        final String defaultValue;
-        final List<String> allowedValues;
+        public final Class<?> enumClass;
+        public final String defaultValue;
+        public final List<String> allowedValues;
         
         private SpecEnumNode(Class<?> enumClass, String defaultValue, List<String> allowedValues, Field field, @Nullable String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -130,12 +130,12 @@ public class ConfigSpec {
     }
     
     public static class SpecNumberNode extends SpecFieldNode {
-        final boolean integral;
-        final boolean lowerInclusive;
-        final double lowerBound;
-        final boolean upperInclusive;
-        final double upperBound;
-        final double defaultValue;
+        public final boolean integral;
+        public final boolean lowerInclusive;
+        public final double lowerBound;
+        public final boolean upperInclusive;
+        public final double upperBound;
+        public final double defaultValue;
         
         private SpecNumberNode(boolean integral, boolean lowerInclusive, double lowerBound, boolean upperInclusive, double upperBound, double defaultValue, Field field, String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
@@ -149,7 +149,7 @@ public class ConfigSpec {
     }
     
     public static class SpecBooleanNode extends SpecFieldNode {
-        final boolean defaultValue;
+        public final boolean defaultValue;
         
         private SpecBooleanNode(boolean defaultValue, Field field, String comment, boolean advanced, boolean hidden, boolean reloadable) {
             super(field, comment, advanced, hidden, reloadable);
