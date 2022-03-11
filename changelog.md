@@ -1,3 +1,6 @@
+# 1.18.1-0.6.0-beta-0.3
+ - fix edge case that can cause a null multiblock controller
+
 # 1.18.1-0.6.0-beta.0.1
  - fix multiblock merging causing paused multiblock state
  - fix item white hole saving
