@@ -303,16 +303,6 @@ public class Registry {
             
             final String registryName = modid + ":" + name;
             
-            
-            Constructor<?> constructor;
-            try {
-                constructor = blockClazz.getDeclaredConstructor();
-            } catch (NoSuchMethodException e) {
-                LOGGER.error("Failed to find default constructor to create instance of " + blockClazz.getSimpleName());
-                return;
-            }
-            constructor.setAccessible(true);
-            
             if (annotation.tileEntityClass() != BlockEntity.class) {
                 tileBlocks.computeIfAbsent(annotation.tileEntityClass(), k -> new LinkedList<>()).add(block);
             }
@@ -372,6 +362,22 @@ public class Registry {
         });
     }
     
+    private static final Field itemCreativeModeTabField;
+    
+    static {
+        Field itemField = null;
+        for (Field declaredField : Item.class.getDeclaredFields()) {
+            if (declaredField.getType().equals(CreativeModeTab.class)) {
+                itemField = declaredField;
+            }
+        }
+        if (itemField == null) {
+            throw new IllegalStateException("Unable to find category field in Item.class");
+        }
+        itemField.setAccessible(true);
+        itemCreativeModeTabField = itemField;
+    }
+    
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
         if (itemClazz.isAnnotationPresent(IgnoreRegistration.class)) {
             return;
@@ -379,9 +385,32 @@ public class Registry {
         
         itemRegistrationQueue.enqueue(() -> {
             
-            assert itemClazz.isAnnotationPresent(RegisterItem.class);
+            final Item item;
+            final RegisterItem annotation;
+            try {
+                final Field field = itemClazz.getDeclaredField(memberName);
+                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                    return;
+                }
+                field.setAccessible(true);
+                item = (Item) field.get(null);
+                annotation = field.getAnnotation(RegisterItem.class);
+                
+                if (!Modifier.isFinal(field.getModifiers())) {
+                    LOGGER.warn("Non-final item instance variable " + memberName + " in " + itemClazz.getSimpleName());
+                }
+            } catch (NoSuchFieldException e) {
+                LOGGER.error("Unable to find item field for block " + memberName + " in " + itemClazz.getSimpleName());
+                return;
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Unable to access item field for block " + memberName + " in " + itemClazz.getSimpleName());
+                return;
+            }
             
-            final RegisterItem annotation = itemClazz.getAnnotation(RegisterItem.class);
+            if (item == null) {
+                LOGGER.warn("Null item instance variable " + memberName + " in " + itemClazz.getSimpleName());
+                return;
+            }
             
             String modid = annotation.modid();
             if (modid.equals("")) {
@@ -389,56 +418,21 @@ public class Registry {
             }
             String name = annotation.name();
             if (modid.equals("")) {
-                LOGGER.error("Unable to register item without a name");
-                return;
-            }
-            
-            
-            if (!Item.class.isAssignableFrom(itemClazz)) {
-                LOGGER.error("Attempt to register item from class not extended from Item");
+                LOGGER.error("Unable to register item " + memberName + " in " + itemClazz.getSimpleName() + " without a registry name");
                 return;
             }
             
             final String registryName = modid + ":" + name;
-            
-            Constructor<?> constructor;
-            try {
-                constructor = itemClazz.getDeclaredConstructor(Item.Properties.class);
-            } catch (NoSuchMethodException e) {
-                LOGGER.error("Failed to find constructor to create instance of " + itemClazz.getSimpleName());
-                return;
-            }
-            constructor.setAccessible(true);
-            
-            Item item;
-            try {
-                //noinspection ConstantConditions
-                item = (Item) constructor.newInstance(new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */));
-            } catch (InstantiationException | InvocationTargetException | IllegalAccessException | ClassCastException e) {
-                LOGGER.error("Exception caught when instantiating instance of " + itemClazz.getSimpleName());
-                e.printStackTrace();
-                return;
-            }
-            
-            for (Field declaredField : itemClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(RegisterItem.Instance.class)) {
-                    if (!declaredField.getType().isAssignableFrom(itemClazz)) {
-                        LOGGER.error("Unassignable instance variable " + declaredField.getName() + " in " + itemClazz.getSimpleName());
-                        continue;
-                    }
-                    if (!Modifier.isStatic(declaredField.getModifiers())) {
-                        LOGGER.error("Cannot set non-static instance variable " + declaredField.getName() + " in " + itemClazz.getSimpleName());
-                        continue;
-                    }
-                    declaredField.setAccessible(true);
-                    try {
-                        declaredField.set(null, item);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+    
+            if (annotation.creativeTab()) {
+                try {
+                    itemCreativeModeTabField.set(item, itemGroup);
+                } catch (IllegalAccessException e) {
+                    LOGGER.error("Failed to set item category when registering " + registryName);
+                    return;
                 }
             }
-            
+
             item.setRegistryName(registryName);
             itemRegistryEvent.getRegistry().register(item);
         });

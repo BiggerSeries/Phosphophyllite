@@ -8,14 +8,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.roguelogix.phosphophyllite.registry.RegisterItem;
 
-@RegisterItem(name = "debug_tool")
 public class DebugTool extends Item {
     
-    @RegisterItem.Instance
-    public static DebugTool INSTANCE;
+    @RegisterItem(name = "debug_tool")
+    public static final DebugTool INSTANCE = new DebugTool();
     
-    public DebugTool(Properties properties) {
-        super(properties.stacksTo(1));
+    public DebugTool() {
+        super(new Item.Properties().stacksTo(1));
     }
     
     @Override
