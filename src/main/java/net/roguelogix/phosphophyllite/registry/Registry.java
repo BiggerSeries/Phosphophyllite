@@ -2,8 +2,8 @@ package net.roguelogix.phosphophyllite.registry;
 
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.data.worldgen.features.OreFeatures;
 import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.minecraft.resources.ResourceLocation;
@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -43,18 +42,12 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
-import net.roguelogix.phosphophyllite.util.VanillaFeatureWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.lang.invoke.LambdaConversionException;
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class Registry {
@@ -732,60 +725,60 @@ public class Registry {
     }
     
     private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
-        commonSetupQueue.enqueue(() -> {
-            final Block oreInstance;
-            try {
-                final Field field = oreClazz.getDeclaredField(memberName);
-                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                    return;
-                }
-                field.setAccessible(true);
-                oreInstance = (Block) field.get(null);
-            } catch (NoSuchFieldException e) {
-                LOGGER.error("Unable to find block field for block " + memberName);
-                return;
-            } catch (IllegalAccessException e) {
-                LOGGER.error("Unable to access block field for block " + memberName);
-                return;
-            }
-            
-            final ResourceLocation resourceLocation = oreInstance.getRegistryName();
-            
-            
-            if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
-                LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
-                return;
-            }
-            
-            final RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatures.NETHER_ORE_REPLACEABLES : OreFeatures.STONE_ORE_REPLACEABLES;
-            
-            final ConfiguredFeature<?, ?> feature = Feature.ORE.configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()));
-            
-            boolean doSpawn = oreInfo.doSpawn();
-            
-            final var wrapper = new VanillaFeatureWrapper<>(feature, () -> doSpawn);
-            
-            final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
-            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(net.minecraft.core.RegistryAccess.builtin().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
-            
-            final var placed = wrapper.placed(OrePlacements.orePlacement(
-                    CountPlacement.of(oreInfo.count()),
-                    HeightRangePlacement.uniform(VerticalAnchor.absolute(oreInfo.minLevel()), VerticalAnchor.absolute(oreInfo.maxLevel()))
-            ));
-            
-            biomeLoadingEventHandlers.add(() -> {
-                if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
-                    return;
-                }
-                if (spawnBiomes.size() > 0) {
-                    if (!spawnBiomes.contains(biomeLoadingEvent.getName().toString())) {
-                        return;
-                    }
-                }
-                
-                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> placed);
-            });
-        });
+//        commonSetupQueue.enqueue(() -> {
+//            final Block oreInstance;
+//            try {
+//                final Field field = oreClazz.getDeclaredField(memberName);
+//                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+//                    return;
+//                }
+//                field.setAccessible(true);
+//                oreInstance = (Block) field.get(null);
+//            } catch (NoSuchFieldException e) {
+//                LOGGER.error("Unable to find block field for block " + memberName);
+//                return;
+//            } catch (IllegalAccessException e) {
+//                LOGGER.error("Unable to access block field for block " + memberName);
+//                return;
+//            }
+//
+//            final ResourceLocation resourceLocation = oreInstance.getRegistryName();
+//
+//
+//            if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
+//                LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
+//                return;
+//            }
+//
+//            final RuleTest fillerBlock = oreInfo.isNetherOre() ? OreFeatures.NETHER_ORE_REPLACEABLES : OreFeatures.STONE_ORE_REPLACEABLES;
+//
+//            final ConfiguredFeature<?, ?> feature = Feature.ORE.configured(new OreConfiguration(fillerBlock, oreInstance.defaultBlockState(), oreInfo.size()));
+//
+//            boolean doSpawn = oreInfo.doSpawn();
+//
+//            final var wrapper = new OreFeatureWrapper(feature, () -> doSpawn);
+//
+//            final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
+//            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(RegistryAccess.BUILTIN.get().registryOrThrow(net.minecraft.core.Registry.CONFIGURED_FEATURE_REGISTRY), resourceLocation, wrapper));
+//
+//            final var placed = wrapper.placed(OrePlacements.orePlacement(
+//                    CountPlacement.of(oreInfo.count()),
+//                    HeightRangePlacement.uniform(VerticalAnchor.absolute(oreInfo.minLevel()), VerticalAnchor.absolute(oreInfo.maxLevel()))
+//            ));
+//
+//            biomeLoadingEventHandlers.add(() -> {
+//                if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
+//                    return;
+//                }
+//                if (spawnBiomes.size() > 0) {
+//                    if (!spawnBiomes.contains(biomeLoadingEvent.getName().toString())) {
+//                        return;
+//                    }
+//                }
+//
+//                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(() -> placed);
+//            });
+//        });
     }
     
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {

@@ -198,20 +198,19 @@ public class DataLoader<T> {
     
     @Nonnull
     public List<T> loadAll(ResourceLocation location) {
-        if (Phosphophyllite.dataPackRegistries == null) {
+        if (Phosphophyllite.serverResourceManager == null) {
             return new ArrayList<>();
         }
         
         ArrayList<T> elements = new ArrayList<>();
         
-        ResourceManager resourceManager = Phosphophyllite.dataPackRegistries.getResourceManager();
-        Collection<ResourceLocation> resourceLocations = resourceManager.listResources(location.getPath(), s -> s.contains(".json"));
+        Collection<ResourceLocation> resourceLocations = Phosphophyllite.serverResourceManager.listResources(location.getPath(), s -> s.contains(".json"));
         
         for (ResourceLocation resourceLocation : resourceLocations) {
             if (!resourceLocation.getNamespace().equals(location.getNamespace())) {
                 continue;
             }
-            T t = load(resourceLocation, resourceManager);
+            T t = load(resourceLocation, Phosphophyllite.serverResourceManager);
             if (t != null) {
                 elements.add(t);
             }
@@ -222,10 +221,10 @@ public class DataLoader<T> {
     
     @Nullable
     public T load(ResourceLocation location) {
-        if (Phosphophyllite.dataPackRegistries == null) {
+        if (Phosphophyllite.serverResourceManager == null) {
             return null;
         }
-        return load(location, Phosphophyllite.dataPackRegistries.getResourceManager());
+        return load(location, Phosphophyllite.serverResourceManager);
     }
     
     @Nullable

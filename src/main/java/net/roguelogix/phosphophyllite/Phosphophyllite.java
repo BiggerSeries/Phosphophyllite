@@ -1,11 +1,11 @@
 package net.roguelogix.phosphophyllite;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.server.ServerResources;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -59,16 +59,16 @@ public class Phosphophyllite {
         }
     }
     
-    public static ServerResources dataPackRegistries;
+    public static ResourceManager serverResourceManager;
     
     @SubscribeEvent
-    public void onAddReloadListenerEvent(AddReloadListenerEvent reloadListenerEvent) {
-        dataPackRegistries = reloadListenerEvent.getDataPackRegistries();
+    public void onAddReloadListenerEvent(ServerAboutToStartEvent serverAboutToStartEvent) {
+        serverResourceManager = serverAboutToStartEvent.getServer().getResourceManager();
     }
     
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent serverStoppedEvent) {
-        dataPackRegistries = null;
+        serverResourceManager = null;
     }
     
     public static long tickNumber() {
