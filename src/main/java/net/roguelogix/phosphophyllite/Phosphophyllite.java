@@ -1,17 +1,19 @@
 package net.roguelogix.phosphophyllite;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.roguelogix.phosphophyllite.event.ReloadDataEvent;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.registry.Registry;
@@ -60,20 +62,32 @@ public class Phosphophyllite {
         }
     }
     
+    private static MinecraftServer server;
     public static ResourceManager serverResourceManager;
     
     @SubscribeEvent
-    public void onAddReloadListenerEvent(ServerAboutToStartEvent serverAboutToStartEvent) {
-        serverResourceManager = serverAboutToStartEvent.getServer().getResourceManager();
+    public void onServerStarted(ServerStartedEvent serverStartedEvent) {
+        server = serverStartedEvent.getServer();
+//        updateRegistries();
     }
     
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent serverStoppedEvent) {
         serverResourceManager = null;
+        server = null;
     }
     
-    @SubscribeEvent
+    @SubscribeEvent()
     public void onTagsUpdated(TagsUpdatedEvent tagsUpdatedEvent) {
+        updateRegistries();
+    }
+    
+    void updateRegistries() {
+        if(server == null){
+            return;
+        }
+        serverResourceManager = server.getResourceManager();
+        MinecraftForge.EVENT_BUS.post(new ReloadDataEvent());
         controllersToTick.forEach((serverLevel, multiblockControllers) -> multiblockControllers.forEach(MultiblockController::revalidate));
     }
     
