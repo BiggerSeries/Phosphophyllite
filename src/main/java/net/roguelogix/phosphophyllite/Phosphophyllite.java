@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -69,6 +70,11 @@ public class Phosphophyllite {
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent serverStoppedEvent) {
         serverResourceManager = null;
+    }
+    
+    @SubscribeEvent
+    public void onTagsUpdated(TagsUpdatedEvent tagsUpdatedEvent) {
+        controllersToTick.forEach((serverLevel, multiblockControllers) -> multiblockControllers.forEach(MultiblockController::revalidate));
     }
     
     public static long tickNumber() {

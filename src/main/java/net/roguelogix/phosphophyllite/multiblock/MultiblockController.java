@@ -299,12 +299,13 @@ public class MultiblockController<
             onPartDetached(toDetachTile);
             if (pauseOnUnload) {
                 state = AssemblyState.PAUSED;
+                updateCachedNBT();
             }
         } else {
             onPartBroken(toDetachTile);
         }
         
-        if(attemptReattach){
+        if (attemptReattach) {
             Queues.serverThread.enqueue(toDetachModule::attachToNeighbors);
         }
         
@@ -478,6 +479,10 @@ public class MultiblockController<
         }
     }
     
+    public void revalidate() {
+        updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
+    }
+    
     public void suicide() {
         ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
         blocks.addAll(this.blocks);
@@ -496,13 +501,14 @@ public class MultiblockController<
         }
         if (validated) {
             state = AssemblyState.ASSEMBLED;
-            if (cachedNBT != null) {
+            if (cachedNBT != null && oldState != AssemblyState.ASSEMBLED) {
                 read(cachedNBT.getCompound("userdata"));
                 shouldUpdateNBT = true;
             }
+            onValidationPassed();
             if (oldState == AssemblyState.PAUSED) {
                 onUnpaused();
-            } else {
+            } else if (oldState == AssemblyState.DISASSEMBLED) {
                 onAssembled();
             }
             assembledBlockStates();
@@ -661,11 +667,11 @@ public class MultiblockController<
     @Nonnull
     public String getDebugString() {
         return "BlockCount: " + blocks.size() + "\n" +
-                "Min " + minCoord + "\n" +
-                "Max " + maxCoord + "\n" +
-                "Controller: " + this + "\n" +
-                "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
-                "AssemblyState: " + state + "\n";
+                       "Min " + minCoord + "\n" +
+                       "Max " + maxCoord + "\n" +
+                       "Controller: " + this + "\n" +
+                       "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
+                       "AssemblyState: " + state + "\n";
     }
     
     
@@ -754,15 +760,24 @@ public class MultiblockController<
     }
     
     /**
-     * Called when a multiblock is assembled by a placed block
+     * Called when a multiblock passes validation
+     * <p>
+     * called after @onPartPlaced, called before @onAssembled or @onUnpaused
+     */
+    protected void onValidationPassed() {
+    }
+    
+    /**
+     * Called when a multiblock is assembled from a disassembled state
      * <p>
      * called after @onPartPlaced
+     * Not called if multiblock is already assembled
      */
     protected void onAssembled() {
     }
     
     /**
-     * Called when a multiblock is assembled by a destroyed block
+     * Called when a multiblock is disassembled by a destroyed block
      * <p>
      * called after @onPartBroken, called before @write
      */
