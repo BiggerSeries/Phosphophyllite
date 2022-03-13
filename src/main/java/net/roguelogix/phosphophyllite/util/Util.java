@@ -13,12 +13,15 @@ import it.unimi.dsi.fastutil.shorts.ShortIterator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
 import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ThreadedLevelLightEngine;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -411,5 +414,12 @@ public class Util {
             return Direction.SOUTH;
         }
         throw new IllegalArgumentException("identical positions gives");
+    }
+    
+    
+    private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:tools/wrench"));
+    private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:wrenches"));
+    public static boolean isWrench(Item item){
+        return item.builtInRegistryHolder().is(WRENCH_TAG_0) || item.builtInRegistryHolder().is(WRENCH_TAG_1);
     }
 }
