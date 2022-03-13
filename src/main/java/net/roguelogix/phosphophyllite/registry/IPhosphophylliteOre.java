@@ -1,5 +1,9 @@
 package net.roguelogix.phosphophyllite.registry;
 
+import net.minecraft.world.level.block.Block;
+
+import javax.annotation.Nullable;
+
 public interface IPhosphophylliteOre {
     /**
      * How many blocks are in each vein.
@@ -26,7 +30,7 @@ public interface IPhosphophylliteOre {
      * The lowest Y level to spawn at (the bottom spawn offset).
      */
     default int minLevel() {
-        return 0;
+        return Integer.MIN_VALUE;
     }
     
     /**
@@ -41,6 +45,22 @@ public interface IPhosphophylliteOre {
      */
     default boolean isNetherOre() {
         return false;
+    }
+    
+    @Nullable
+    default Block stoneVariant(){
+        if(this instanceof Block block){
+            return block;
+        }
+        return null;
+    }
+    
+    @Nullable
+    default Block deepslateVariant(){
+        if(this instanceof Block block){
+            return block;
+        }
+        return null;
     }
     
     /**
