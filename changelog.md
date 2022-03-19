@@ -1,3 +1,10 @@
+# 1.18.2-0.6.0-beta-1
+ - 1.18.2
+ - default worldgen to start at world bottom instead of y 0
+ - remove old tile registration annotation 
+ - move item registration to static initialization like block registration
+ - re-validate multiblocks when tags are updated
+
 # 1.18.1-0.6.0-beta-0.3
  - fix edge case that can cause a null multiblock controller
 
@@ -59,7 +66,7 @@
  - Quartz added, this changelog note is an understatement of the amount of work
    - Mixins!
 
-# 1.17.1-0.6.0-alpah.6.1
+# 1.17.1-0.6.0-alpha.6.1
  - gracefully handle config parse errors
  - handle empty config file edge case
  - always set controller's own blocks' controller back to self
