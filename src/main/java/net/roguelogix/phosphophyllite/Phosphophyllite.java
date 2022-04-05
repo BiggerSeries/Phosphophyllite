@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -68,7 +69,7 @@ public class Phosphophyllite {
     @SubscribeEvent
     public void onServerStarted(ServerStartedEvent serverStartedEvent) {
         server = serverStartedEvent.getServer();
-//        updateRegistries();
+        updateRegistries();
     }
     
     @SubscribeEvent
@@ -83,8 +84,15 @@ public class Phosphophyllite {
     }
     
     void updateRegistries() {
-        if(server == null){
+        if (server == null) {
             return;
+        }
+        if (FMLLoader.getDist().isClient()) {
+            // ignore client thread
+            // prevents double reloads, and reaching across sides
+            if(RenderSystem.isOnRenderThread()){
+                return;
+            }
         }
         serverResourceManager = server.getResourceManager();
         MinecraftForge.EVENT_BUS.post(new ReloadDataEvent());
