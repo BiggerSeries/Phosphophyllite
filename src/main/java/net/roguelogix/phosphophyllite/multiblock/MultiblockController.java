@@ -64,6 +64,7 @@ public class MultiblockController<
     protected final Validator<IMultiblockTile<?, ?>> tileTypeValidator;
     private Validator<ControllerType> assemblyValidator = c -> true;
     
+    protected boolean isUpdatingState = false;
     protected ValidationError lastValidationError = null;
     
     long lastTick = -1;
@@ -158,6 +159,10 @@ public class MultiblockController<
         
         if (!tileTypeValidator.validate(toAttachGeneric.iface)) {
             return;
+        }
+    
+        if (isUpdatingState) {
+            throw new IllegalStateException("Attempt to add block while updating multiblock state");
         }
         
         //noinspection unchecked
@@ -281,6 +286,10 @@ public class MultiblockController<
             return;
         }
         TileType toDetachTile = toDetachModule.iface;
+    
+        if (isUpdatingState) {
+            throw new IllegalStateException("Attempt to remove block while updating multiblock state");
+        }
         
         if (toDetachTile instanceof ITickableMultiblockTile) {
             toTick.remove(toDetachTile);
@@ -495,40 +504,45 @@ public class MultiblockController<
         boolean validated = false;
         lastValidationError = null;
         try {
-            validated = assemblyValidator.validate(self());
-        } catch (ValidationError e) {
-            lastValidationError = e;
+            isUpdatingState = true;
+            try {
+                validated = assemblyValidator.validate(self());
+            } catch (ValidationError e) {
+                lastValidationError = e;
+            }
+            if (validated) {
+                state = AssemblyState.ASSEMBLED;
+                if (cachedNBT != null && oldState != AssemblyState.ASSEMBLED) {
+                    read(cachedNBT.getCompound("userdata"));
+                    shouldUpdateNBT = true;
+                }
+                onValidationPassed();
+                if (oldState == AssemblyState.PAUSED) {
+                    onUnpaused();
+                } else if (oldState == AssemblyState.DISASSEMBLED) {
+                    onAssembled();
+                }
+                assembledBlockStates();
+                onAssemblyTiles.forEach(IOnAssemblyTile::onAssembly);
+                if (!hasSaveDelegate) {
+                    MultiblockTileModule<TileType, ControllerType> module = blocks.getOne();
+                    assert module != null;
+                    module.isSaveDelegate = true;
+                    hasSaveDelegate = true;
+                }
+            } else {
+                if (oldState == AssemblyState.ASSEMBLED) {
+                    state = AssemblyState.DISASSEMBLED;
+                    onDisassembled();
+                    disassembledBlockStates();
+                    updateCachedNBT();
+                    onDisassemblyTiles.forEach(IOnDisassemblyTile::onDisassembly);
+                }
+            }
+            assemblyAttemptedTiles.forEach(IAssemblyAttemptedTile::onAssemblyAttempted);
+        } finally {
+            isUpdatingState = false;
         }
-        if (validated) {
-            state = AssemblyState.ASSEMBLED;
-            if (cachedNBT != null && oldState != AssemblyState.ASSEMBLED) {
-                read(cachedNBT.getCompound("userdata"));
-                shouldUpdateNBT = true;
-            }
-            onValidationPassed();
-            if (oldState == AssemblyState.PAUSED) {
-                onUnpaused();
-            } else if (oldState == AssemblyState.DISASSEMBLED) {
-                onAssembled();
-            }
-            assembledBlockStates();
-            onAssemblyTiles.forEach(IOnAssemblyTile::onAssembly);
-            if (!hasSaveDelegate) {
-                MultiblockTileModule<TileType, ControllerType> module = blocks.getOne();
-                assert module != null;
-                module.isSaveDelegate = true;
-                hasSaveDelegate = true;
-            }
-        } else {
-            if (oldState == AssemblyState.ASSEMBLED) {
-                state = AssemblyState.DISASSEMBLED;
-                onDisassembled();
-                disassembledBlockStates();
-                updateCachedNBT();
-                onDisassemblyTiles.forEach(IOnDisassemblyTile::onDisassembly);
-            }
-        }
-        assemblyAttemptedTiles.forEach(IAssemblyAttemptedTile::onAssemblyAttempted);
     }
     
     private void onBlockWithNBTAttached(CompoundTag nbt) {
