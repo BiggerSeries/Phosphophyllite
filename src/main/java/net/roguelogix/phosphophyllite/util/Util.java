@@ -43,7 +43,7 @@ import java.util.function.BiConsumer;
 
 public class Util {
     public static String readResourceLocation(ResourceLocation location) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Minecraft.getInstance().getResourceManager().getResource(location).getInputStream()))) {
+        try (BufferedReader reader = Minecraft.getInstance().getResourceManager().getResource(location).orElseThrow().openAsReader()) {
             StringBuilder stringBuilder = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {

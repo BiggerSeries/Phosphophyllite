@@ -204,13 +204,14 @@ public class DataLoader<T> {
         
         ArrayList<T> elements = new ArrayList<>();
         
-        Collection<ResourceLocation> resourceLocations = Phosphophyllite.serverResourceManager.listResources(location.getPath(), s -> s.contains(".json"));
+        Map<ResourceLocation, Resource> resourceLocations = Phosphophyllite.serverResourceManager.listResources(location.getPath(), s -> s.getPath().contains(".json"));
         
-        for (ResourceLocation resourceLocation : resourceLocations) {
+        for (Map.Entry<ResourceLocation, Resource> entry : resourceLocations.entrySet()) {
+            final var resourceLocation = entry.getKey();
             if (!resourceLocation.getNamespace().equals(location.getNamespace())) {
                 continue;
             }
-            T t = load(resourceLocation, Phosphophyllite.serverResourceManager);
+            T t = load(resourceLocation, entry.getValue());
             if (t != null) {
                 elements.add(t);
             }
@@ -224,15 +225,14 @@ public class DataLoader<T> {
         if (Phosphophyllite.serverResourceManager == null) {
             return null;
         }
-        return load(location, Phosphophyllite.serverResourceManager);
+        return load(location, Phosphophyllite.serverResourceManager.getResource(location).get());
     }
     
     @Nullable
-    private T load(ResourceLocation location, ResourceManager resourceManager) {
+    private T load(ResourceLocation location, Resource resource) {
         String json;
         try {
-            Resource resource = resourceManager.getResource(location);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
+            try (BufferedReader reader = resource.openAsReader()) {
                 StringBuilder builder = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {

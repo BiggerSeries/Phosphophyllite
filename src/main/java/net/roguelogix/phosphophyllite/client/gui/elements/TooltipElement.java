@@ -2,7 +2,6 @@ package net.roguelogix.phosphophyllite.client.gui.elements;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -60,7 +59,7 @@ public class TooltipElement<T extends AbstractContainerMenu> extends AbstractEle
     public void renderTooltip(@Nonnull PoseStack poseStack, int mouseX, int mouseY) {
         // Check conditions, and render tooltip.
         if (this.tooltipEnable && this.tooltip != null && this.isMouseOver(mouseX, mouseY)) {
-            this.parent.renderComponentTooltip(poseStack, Arrays.stream(tooltip.getString().split("\\n")).map(TextComponent::new).collect(Collectors.toList()), mouseX, mouseY);
+            this.parent.renderComponentTooltip(poseStack, Arrays.stream(tooltip.getString().split("\\n")).map(Component::literal).collect(Collectors.toList()), mouseX, mouseY);
         }
     }
 

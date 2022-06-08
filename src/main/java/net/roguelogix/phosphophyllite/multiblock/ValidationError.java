@@ -2,7 +2,6 @@ package net.roguelogix.phosphophyllite.multiblock;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -37,6 +36,6 @@ public class ValidationError extends IllegalStateException {
         if (cause != null) {
             return cause;
         }
-        return new TranslatableComponent(getMessage());
+        return Component.translatable(getMessage());
     }
 }

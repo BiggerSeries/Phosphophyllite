@@ -1,17 +1,21 @@
 package net.roguelogix.phosphophyllite.fluids;
 
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IRegistryDelegate;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
+import java.util.Objects;
 
 /**
  * Re-writable long capable version of a FluidStack
@@ -32,7 +36,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         }
     }
     
-    private void setDelegate(IRegistryDelegate<Fluid> delegate) {
+    private void setDelegate(Holder.Reference<Fluid> delegate) {
         try {
             delegateField.set(this, delegate);
         } catch (IllegalAccessException e) {
@@ -88,20 +92,12 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     Fluid fluid;
-    IRegistryDelegate<Fluid> delegateWrapper = new IRegistryDelegate<Fluid>() {
+    
+    Holder.Reference<Fluid> delegateWrapper = new Holder.Reference<>(Holder.Reference.Type.STAND_ALONE, Registry.FLUID, null, null) {
         @Override
-        public Fluid get() {
-            return fluid;
-        }
-        
-        @Override
-        public ResourceLocation name() {
-            return fluid.delegate.name();
-        }
-        
-        @Override
-        public Class<Fluid> type() {
-            return fluid.delegate.type();
+        public void bind(ResourceKey<Fluid> key, Fluid fluid) {
+            this.key = key;
+            this.value = fluid;
         }
     };
     
@@ -109,6 +105,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     
     public void setFluid(Fluid fluid) {
         this.fluid = fluid;
+        delegateWrapper.bind(ResourceKey.create(Registry.FLUID_REGISTRY, Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid))), fluid);
     }
     
     public static FluidStack loadFromNBT(CompoundTag nbt) {
@@ -137,7 +134,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public CompoundTag writeToNBT(CompoundTag nbt) {
-        nbt.putString("FluidName", getFluid().getRegistryName().toString());
+        nbt.putString("FluidName", ForgeRegistries.FLUIDS.getKey(getFluid()).toString());
         nbt.putInt("Amount", (int) Math.min(amount, Integer.MAX_VALUE));
         nbt.putLong("LongAmount", amount);
         
@@ -148,18 +145,18 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public void writeToPacket(FriendlyByteBuf buf) {
-        buf.writeRegistryId(getFluid());
+        buf.writeRegistryId(ForgeRegistries.FLUIDS, getFluid());
         buf.writeVarInt(getAmount());
         buf.writeNbt(getTag());
     }
     
     public void writeToLongPacket(FriendlyByteBuf buf) {
-        buf.writeRegistryId(getFluid());
+        buf.writeRegistryId(ForgeRegistries.FLUIDS, getFluid());
         buf.writeVarLong(getAmount());
         buf.writeNbt(getTag());
     }
     
-    public static FluidStack readFromPacket(FriendlyByteBuf buf) {
+    public static FluidStack readFromLongPacket(FriendlyByteBuf buf) {
         Fluid fluid = buf.readRegistryId();
         long amount = buf.readVarLong();
         CompoundTag tag = buf.readNbt();

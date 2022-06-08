@@ -3,7 +3,7 @@ package net.roguelogix.phosphophyllite.multiblock;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -33,12 +33,12 @@ public interface IMultiblockBlock extends IModularBlock, EntityBlock {
                 if (!level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockTile tile) {
                     var controller = tile.nullableController();
                     if (controller != null && controller.lastValidationError != null) {
-                        player.sendMessage(controller.lastValidationError.getTextComponent(), Util.NIL_UUID);
+                        player.sendSystemMessage(controller.lastValidationError.getTextComponent());
                     } else {
                         if (controller == null) {
-                            player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.null_controller"), Util.NIL_UUID);
+                            player.sendSystemMessage(Component.translatable("multiblock.error.phosphophyllite.null_controller"));
                         } else {
-                            player.sendMessage(new TranslatableComponent("multiblock.error.phosphophyllite.unknown"), Util.NIL_UUID);
+                            player.sendSystemMessage(Component.translatable("multiblock.error.phosphophyllite.unknown"));
                         }
                     }
                 }

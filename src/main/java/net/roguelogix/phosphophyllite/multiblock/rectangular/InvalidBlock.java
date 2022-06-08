@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.roguelogix.phosphophyllite.multiblock.ValidationError;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -30,9 +30,9 @@ public class InvalidBlock extends ValidationError {
     }
     
     public InvalidBlock(Block block, Vector3i worldPosition, String multiblockPosition) {
-        super(new TranslatableComponent(
+        super(Component.translatable(
                 "multiblock.error.phosphophyllite.invalid_block." + multiblockPosition,
-                new TranslatableComponent(block.getDescriptionId()),
+                Component.translatable(block.getDescriptionId()),
                 "(x: " + worldPosition.x + "; y: " + worldPosition.y + "; z: " + worldPosition.z + ")")
         );
     }

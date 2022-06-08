@@ -1,6 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock.rectangular;
 
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -97,7 +97,7 @@ public class RectangularMultiblockController<
         }
         // dimension check failed in all orientations
         if (dimensions == null) {
-            throw new ValidationError(new TranslatableComponent("multiblock.error.phosphophyllite.dimensions",
+            throw new ValidationError(Component.translatable("multiblock.error.phosphophyllite.dimensions",
                     allowedOrientations[0].x, allowedOrientations[0].y, allowedOrientations[0].z,
                     controller.minSize.x, controller.minSize.y, controller.minSize.z,
                     controller.maxSize.x, controller.maxSize.y, controller.maxSize.z));

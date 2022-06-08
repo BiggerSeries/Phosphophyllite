@@ -54,7 +54,7 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
     public CompoundTag writeNBT() {
         var compound = super.writeNBT();
         if (item != null) {
-            compound.putString("item", Objects.requireNonNull(item.getRegistryName()).toString());
+            compound.putString("item", Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(item)).toString());
         }
         return compound;
     }

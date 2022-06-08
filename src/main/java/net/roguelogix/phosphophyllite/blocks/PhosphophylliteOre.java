@@ -22,7 +22,7 @@ public class PhosphophylliteOre extends Block implements EntityBlock {
     public static final PhosphophylliteOre INSTANCE = new PhosphophylliteOre();
     
     public PhosphophylliteOre() {
-        super(Properties.of(Material.STONE).noDrops().destroyTime(3.0F).explosionResistance(3.0F));
+        super(Properties.of(Material.STONE).noLootTable().destroyTime(3.0F).explosionResistance(3.0F));
     }
     
     @Nullable

@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.debug;
 
 import net.minecraft.Util;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,10 +32,10 @@ public class DebugTool extends Item {
                 }else {
                     debugString = "\nServer:\n" + debugString;
                 }
-                player.sendMessage(new TextComponent(debugString), Util.NIL_UUID);
+                player.sendSystemMessage(Component.literal(debugString));
                 System.out.println(debugString);
             } else {
-                player.sendMessage(new TextComponent("Non-debuggable block"), Util.NIL_UUID);
+                player.sendSystemMessage(Component.literal("Non-debuggable block"));
             }
         }
         return InteractionResult.SUCCESS;

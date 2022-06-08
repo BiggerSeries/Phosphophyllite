@@ -32,8 +32,6 @@ import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.world.BiomeLoadingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidAttributes;
@@ -45,6 +43,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
@@ -55,26 +54,29 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Supplier;
 
+import static net.minecraft.core.Registry.*;
+
 public class Registry {
     
     private static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Registry");
     
     private final WorkQueue blockRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<Block> blockRegistryEvent;
+    
+    private RegisterEvent.RegisterHelper<Block> blockRegistryEvent;
     
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<Item> itemRegistryEvent;
+    private RegisterEvent.RegisterHelper<Item> itemRegistryEvent;
     private final CreativeModeTab itemGroup;
     private Item itemGroupItem = Items.STONE;
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<Fluid> fluidRegistryEvent;
+    private RegisterEvent.RegisterHelper<Fluid> fluidRegistryEvent;
     
     private final WorkQueue containerRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<MenuType<?>> containerRegistryEvent;
+    private RegisterEvent.RegisterHelper<MenuType<?>> containerRegistryEvent;
     
     private final WorkQueue tileRegistrationQueue = new WorkQueue();
-    private RegistryEvent.Register<BlockEntityType<?>> tileRegistryEvent;
+    private RegisterEvent.RegisterHelper<BlockEntityType<?>> tileRegistryEvent;
     private final Map<Class<?>, LinkedList<Block>> tileBlocks = new HashMap<>();
     
     private final WorkQueue clientSetupQueue = new WorkQueue();
@@ -83,8 +85,8 @@ public class Registry {
     private final WorkQueue commonSetupQueue = new WorkQueue();
     private FMLCommonSetupEvent commonSetupEvent;
     
-    private final ArrayList<Runnable> biomeLoadingEventHandlers = new ArrayList<>();
-    private BiomeLoadingEvent biomeLoadingEvent;
+//    private final ArrayList<Runnable> biomeLoadingEventHandlers = new ArrayList<>();
+//    private BiomeLoadingEvent biomeLoadingEvent;
     
     private final Map<String, AnnotationHandler> annotationMap = new HashMap<>();
     
@@ -94,9 +96,7 @@ public class Registry {
         annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
-        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
-//        annotationMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
-//        annotationMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
+//        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
     }
     
     public Registry() {
@@ -155,13 +155,9 @@ public class Registry {
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
-        ModBus.addGenericListener(Block.class, this::blockRegistration);
-        ModBus.addGenericListener(Item.class, this::itemRegistration);
-        ModBus.addGenericListener(Fluid.class, this::fluidRegistration);
-        ModBus.addGenericListener(MenuType.class, this::containerRegistration);
-        ModBus.addGenericListener(BlockEntityType.class, this::tileEntityRegistration);
+        ModBus.addListener(this::registerEvent);
         
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
+//        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -196,31 +192,39 @@ public class Registry {
         }
     }
     
-    private void blockRegistration(RegistryEvent.Register<Block> event) {
+    private void registerEvent(RegisterEvent registerEvent) {
+        registerEvent.register(BLOCK_REGISTRY, this::blockRegistration);
+        registerEvent.register(ITEM_REGISTRY, this::itemRegistration);
+        registerEvent.register(FLUID_REGISTRY, this::fluidRegistration);
+        registerEvent.register(MENU_REGISTRY, this::containerRegistration);
+        registerEvent.register(BLOCK_ENTITY_TYPE_REGISTRY, this::tileEntityRegistration);
+    }
+    
+    private void blockRegistration(RegisterEvent.RegisterHelper<Block> event) {
         blockRegistryEvent = event;
         blockRegistrationQueue.runAll();
         blockRegistryEvent = null;
     }
     
-    private void itemRegistration(RegistryEvent.Register<Item> event) {
+    private void itemRegistration(RegisterEvent.RegisterHelper<Item> event) {
         itemRegistryEvent = event;
         itemRegistrationQueue.runAll();
         itemRegistryEvent = null;
     }
     
-    private void fluidRegistration(RegistryEvent.Register<Fluid> event) {
+    private void fluidRegistration(RegisterEvent.RegisterHelper<Fluid> event) {
         fluidRegistryEvent = event;
         fluidRegistrationQueue.runAll();
         fluidRegistryEvent = null;
     }
     
-    private void containerRegistration(RegistryEvent.Register<MenuType<?>> containerTypeRegistryEvent) {
+    private void containerRegistration(RegisterEvent.RegisterHelper<MenuType<?>> containerTypeRegistryEvent) {
         containerRegistryEvent = containerTypeRegistryEvent;
         containerRegistrationQueue.runAll();
         containerRegistryEvent = null;
     }
     
-    private void tileEntityRegistration(RegistryEvent.Register<BlockEntityType<?>> tileEntityTypeRegister) {
+    private void tileEntityRegistration(RegisterEvent.RegisterHelper<BlockEntityType<?>> tileEntityTypeRegister) {
         tileRegistryEvent = tileEntityTypeRegister;
         tileRegistrationQueue.runAll();
         tileRegistryEvent = null;
@@ -238,11 +242,11 @@ public class Registry {
         commonSetupEvent = null;
     }
     
-    private void biomeLoadingEventHandler(BiomeLoadingEvent event) {
-        biomeLoadingEvent = event;
-        biomeLoadingEventHandlers.forEach(Runnable::run);
-        biomeLoadingEvent = null;
-    }
+//    private void biomeLoadingEventHandler(BiomeLoadingEvent event) {
+//        biomeLoadingEvent = event;
+//        biomeLoadingEventHandlers.forEach(Runnable::run);
+//        biomeLoadingEvent = null;
+//    }
     
     private interface AnnotationHandler {
         void run(final String modNamespace, final Class<?> clazz, final String memberName);
@@ -303,8 +307,7 @@ public class Registry {
                 tileBlocks.computeIfAbsent(annotation.tileEntityClass(), k -> new LinkedList<>()).add(block);
             }
             
-            block.setRegistryName(registryName);
-            blockRegistryEvent.getRegistry().register(block);
+            blockRegistryEvent.register(new ResourceLocation(registryName), block);
             
             if (FMLEnvironment.dist.isClient()) {
                 clientSetupQueue.enqueue(() -> {
@@ -348,8 +351,8 @@ public class Registry {
                 boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
                 itemRegistrationQueue.enqueue(() -> {
                     //noinspection ConstantConditions
-                    var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */)).setRegistryName(registryName);
-                    itemRegistryEvent.getRegistry().register(item);
+                    var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */));
+                    itemRegistryEvent.register(new ResourceLocation(registryName), item);
                     if (creativeTabBlock) {
                         itemGroupItem = item;
                     }
@@ -429,8 +432,7 @@ public class Registry {
                 }
             }
             
-            item.setRegistryName(registryName);
-            itemRegistryEvent.getRegistry().register(item);
+            itemRegistryEvent.register(new ResourceLocation(registryName), item);
         });
     }
     
@@ -499,7 +501,7 @@ public class Registry {
             
             fluids[0] = stillInstance;
             fluids[1] = flowingInstance;
-            blockArray[0] = new LiquidBlock(stillInstance, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noDrops());
+            blockArray[0] = new LiquidBlock(stillInstance, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noLootTable());
             
             for (Field declaredField : fluidClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterFluid.Instance.class)) {
@@ -520,8 +522,7 @@ public class Registry {
                 }
             }
             
-            blockArray[0].setRegistryName(baseRegistryName);
-            blockRegistryEvent.getRegistry().register(blockArray[0]);
+            blockRegistryEvent.register(new ResourceLocation(baseRegistryName), blockArray[0]);
             
             fluidRegistrationQueue.enqueue(() -> {
                 PhosphophylliteFluid still = fluids[0];
@@ -530,19 +531,15 @@ public class Registry {
                     return;
                 }
                 
-                still.setRegistryName(baseRegistryName);
-                flowing.setRegistryName(baseRegistryName + "_flowing");
-                
-                fluidRegistryEvent.getRegistry().register(still);
-                fluidRegistryEvent.getRegistry().register(flowing);
+                fluidRegistryEvent.register(new ResourceLocation(baseRegistryName), still);
+                fluidRegistryEvent.register(new ResourceLocation(baseRegistryName + "_flowing"), flowing);
             });
             
             if (annotation.registerBucket()) {
                 itemRegistrationQueue.enqueue(() -> {
                     BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
                     bucketArray[0] = bucket;
-                    bucket.setRegistryName(baseRegistryName + "_bucket");
-                    itemRegistryEvent.getRegistry().register(bucket);
+                    itemRegistryEvent.register(new ResourceLocation(baseRegistryName + "_bucket"), bucket);
                 });
             }
         });
@@ -640,8 +637,7 @@ public class Registry {
             if (type == null) {
                 return;
             }
-            type.setRegistryName(registryName);
-            containerRegistryEvent.getRegistry().register(type);
+            containerRegistryEvent.register(new ResourceLocation(registryName), type);
         });
     }
     
@@ -717,97 +713,95 @@ public class Registry {
             @SuppressWarnings({"ConstantConditions", "ToArrayCallWithZeroLengthArrayArgument"})
             BlockEntityType<?> type = BlockEntityType.Builder.of(producer, blocks.toArray(new Block[blocks.size()])).build(null);
             
-            type.setRegistryName(registryName);
-            
             try {
                 tileProducerTYPEField.set(producer, type);
             } catch (IllegalAccessException e) {
                 throw new IllegalStateException("Tile entity type unable to be saved for " + memberName + " in " + declaringClass.getSimpleName());
             }
             
-            tileRegistryEvent.getRegistry().register(type);
+            tileRegistryEvent.register(new ResourceLocation(registryName), type);
         });
     }
     
-    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
-        commonSetupQueue.enqueue(() -> {
-            final Block oreInstance;
-            try {
-                final Field field = oreClazz.getDeclaredField(memberName);
-                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                    return;
-                }
-                field.setAccessible(true);
-                oreInstance = (Block) field.get(null);
-            } catch (NoSuchFieldException e) {
-                LOGGER.error("Unable to find block field for block " + memberName);
-                return;
-            } catch (IllegalAccessException e) {
-                LOGGER.error("Unable to access block field for block " + memberName);
-                return;
-            }
-            
-            final ResourceLocation resourceLocation = oreInstance.getRegistryName();
-            assert resourceLocation != null;
-            
-            if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
-                LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
-                return;
-            }
-            
-            final var targetBlockStates = new ArrayList<OreConfiguration.TargetBlockState>();
-            
-            final var blockstate = oreInstance.defaultBlockState();
-            
-            if (oreInfo.isNetherOre()) {
-                targetBlockStates.add(OreConfiguration.target(OreFeatures.NETHER_ORE_REPLACEABLES, blockstate));
-            } else {
-                final var stoneVariant = oreInfo.stoneVariant();
-                if(stoneVariant != null){
-                    targetBlockStates.add(OreConfiguration.target(OreFeatures.STONE_ORE_REPLACEABLES, stoneVariant.defaultBlockState()));
-                }
-                final var deepslateVariant = oreInfo.deepslateVariant();
-                if (deepslateVariant != null) {
-                    targetBlockStates.add(OreConfiguration.target(OreFeatures.DEEPSLATE_ORE_REPLACEABLES, deepslateVariant.defaultBlockState()));
-                }
-            }
-            
-            final var oreConfiguration = new OreConfiguration(ImmutableList.copyOf(targetBlockStates), oreInfo.size());
-            
-            final ConfiguredFeature<?, ?> configuredFeature = new ConfiguredFeature<>(Feature.ORE, oreConfiguration);
-            
-            final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
-            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(BuiltinRegistries.CONFIGURED_FEATURE, resourceLocation, configuredFeature));
-            
-            final var placementModifiers = new ArrayList<PlacementModifier>();
-            if (!oreInfo.doSpawn()) {
-                placementModifiers.add(BlockPredicateFilter.forPredicate(BlockPredicate.not(BlockPredicate.alwaysTrue())));
-            }
-            final var rangeLower = oreInfo.minLevel() == Integer.MIN_VALUE ? VerticalAnchor.BOTTOM : VerticalAnchor.absolute(oreInfo.minLevel());
-            placementModifiers.addAll(OrePlacements.orePlacement(
-                    CountPlacement.of(oreInfo.count()),
-                    HeightRangePlacement.uniform(rangeLower, VerticalAnchor.absolute(oreInfo.maxLevel()))
-            ));
-            
-            final var placedFeature = new PlacedFeature(new Holder.Direct<>(configuredFeature), ImmutableList.copyOf(placementModifiers));
-            final var placedFeatureHolder = new Holder.Direct<>(placedFeature);
-            
-            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(BuiltinRegistries.PLACED_FEATURE, resourceLocation, placedFeature));
-            
-            biomeLoadingEventHandlers.add(() -> {
-                if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
-                    return;
-                }
-                if (spawnBiomes.size() > 0) {
-                    if (!spawnBiomes.contains(Objects.requireNonNull(biomeLoadingEvent.getName()).toString())) {
-                        return;
-                    }
-                }
-                
-                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(placedFeatureHolder);
-            });
-        });
-    }
+//    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
+//        commonSetupQueue.enqueue(() -> {
+//            final Block oreInstance;
+//            try {
+//                final Field field = oreClazz.getDeclaredField(memberName);
+//                if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+//                    return;
+//                }
+//                field.setAccessible(true);
+//                oreInstance = (Block) field.get(null);
+//            } catch (NoSuchFieldException e) {
+//                LOGGER.error("Unable to find block field for block " + memberName);
+//                return;
+//            } catch (IllegalAccessException e) {
+//                LOGGER.error("Unable to access block field for block " + memberName);
+//                return;
+//            }
+//
+//            final ResourceLocation resourceLocation = ForgeRegistries.BLOCKS.getKey(oreInstance);
+//            assert resourceLocation != null;
+//
+//            if (!(oreInstance instanceof IPhosphophylliteOre oreInfo)) {
+//                LOGGER.error("Attempt to register non-IPhosphophylliteOre block for world generation");
+//                return;
+//            }
+//
+//            final var targetBlockStates = new ArrayList<OreConfiguration.TargetBlockState>();
+//
+//            final var blockstate = oreInstance.defaultBlockState();
+//
+//            if (oreInfo.isNetherOre()) {
+//                targetBlockStates.add(OreConfiguration.target(OreFeatures.NETHER_ORE_REPLACEABLES, blockstate));
+//            } else {
+//                final var stoneVariant = oreInfo.stoneVariant();
+//                if(stoneVariant != null){
+//                    targetBlockStates.add(OreConfiguration.target(OreFeatures.STONE_ORE_REPLACEABLES, stoneVariant.defaultBlockState()));
+//                }
+//                final var deepslateVariant = oreInfo.deepslateVariant();
+//                if (deepslateVariant != null) {
+//                    targetBlockStates.add(OreConfiguration.target(OreFeatures.DEEPSLATE_ORE_REPLACEABLES, deepslateVariant.defaultBlockState()));
+//                }
+//            }
+//
+//            final var oreConfiguration = new OreConfiguration(ImmutableList.copyOf(targetBlockStates), oreInfo.size());
+//
+//            final ConfiguredFeature<?, ?> configuredFeature = new ConfiguredFeature<>(Feature.ORE, oreConfiguration);
+//
+//            final HashSet<String> spawnBiomes = new HashSet<>(Arrays.asList(oreInfo.spawnBiomes()));
+//            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(BuiltinRegistries.CONFIGURED_FEATURE, resourceLocation, configuredFeature));
+//
+//            final var placementModifiers = new ArrayList<PlacementModifier>();
+//            if (!oreInfo.doSpawn()) {
+//                placementModifiers.add(BlockPredicateFilter.forPredicate(BlockPredicate.not(BlockPredicate.alwaysTrue())));
+//            }
+//            final var rangeLower = oreInfo.minLevel() == Integer.MIN_VALUE ? VerticalAnchor.BOTTOM : VerticalAnchor.absolute(oreInfo.minLevel());
+//            placementModifiers.addAll(OrePlacements.orePlacement(
+//                    CountPlacement.of(oreInfo.count()),
+//                    HeightRangePlacement.uniform(rangeLower, VerticalAnchor.absolute(oreInfo.maxLevel()))
+//            ));
+//
+//            final var placedFeature = new PlacedFeature(new Holder.Direct<>(configuredFeature), ImmutableList.copyOf(placementModifiers));
+//            final var placedFeatureHolder = new Holder.Direct<>(placedFeature);
+//
+//            commonSetupEvent.enqueueWork(() -> net.minecraft.core.Registry.register(BuiltinRegistries.PLACED_FEATURE, resourceLocation, placedFeature));
+//
+//            biomeLoadingEventHandlers.add(() -> {
+//                if ((biomeLoadingEvent.getCategory() == Biome.BiomeCategory.NETHER) != oreInfo.isNetherOre()) {
+//                    return;
+//                }
+//                if (spawnBiomes.size() > 0) {
+//                    if (!spawnBiomes.contains(Objects.requireNonNull(biomeLoadingEvent.getName()).toString())) {
+//                        return;
+//                    }
+//                }
+//
+//                biomeLoadingEvent.getGeneration().getFeatures(GenerationStep.Decoration.UNDERGROUND_ORES).add(placedFeatureHolder);
+//            });
+//        });
+//    }
     
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {
         try {
