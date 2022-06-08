@@ -221,7 +221,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
                     nbt = subNBTs.getCompound(key);
                 }
                 module.handleDataNBT(nbt);
-                if (!nbt.isEmpty()) {
+                if (nbt == EMPTY_TAG && !nbt.isEmpty()) {
                     LOGGER.warn("Module " + key + " wrote to NBT in read!");
                     for (var str : EMPTY_TAG.getAllKeys().toArray(new String[0])) {
                         EMPTY_TAG.remove(str);
