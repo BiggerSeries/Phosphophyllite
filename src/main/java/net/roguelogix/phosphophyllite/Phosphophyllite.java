@@ -8,9 +8,9 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
@@ -116,18 +116,18 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
-    void onWorldUnload(final WorldEvent.Unload worldUnloadEvent) {
-        if (!worldUnloadEvent.getWorld().isClientSide()) {
+    void onWorldUnload(final LevelEvent.Unload worldUnloadEvent) {
+        if (!worldUnloadEvent.getLevel().isClientSide()) {
             //noinspection SuspiciousMethodCalls
-            ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getWorld());
+            ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getLevel());
             if (controllersToTick != null) {
                 for (MultiblockController<?, ?> multiblockController : controllersToTick) {
                     multiblockController.suicide();
                 }
             }
             // apparently, stragglers can exist
-            newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
-            oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getWorld());
+            newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getLevel());
+            oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getLevel());
         }
     }
     
@@ -182,16 +182,16 @@ public class Phosphophyllite {
     }
     
     @SubscribeEvent
-    public void tickWorld(TickEvent.WorldTickEvent e) {
-        if (!(e.world instanceof ServerLevel)) {
+    public void tickWorld(TickEvent.LevelTickEvent e) {
+        if (!(e.level instanceof ServerLevel)) {
             return;
         }
-        Util.updateBlockStates(e.world);
+        Util.updateBlockStates(e.level);
         if (e.phase != TickEvent.Phase.END) {
             return;
         }
         
-        ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.get(e.world);
+        ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.get(e.level);
         if (controllersToTick != null) {
             for (MultiblockController<?, ?> controller : controllersToTick) {
                 if (controller != null) {
@@ -200,6 +200,6 @@ public class Phosphophyllite {
             }
         }
         
-        Util.worldTickEndEvent(e.world);
+        Util.worldTickEndEvent(e.level);
     }
 }

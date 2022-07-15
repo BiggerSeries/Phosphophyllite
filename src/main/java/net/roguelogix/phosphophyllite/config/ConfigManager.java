@@ -98,10 +98,10 @@ public class ConfigManager {
     private static final ObjectArrayList<ServerPlayer> players = new ObjectArrayList<>();
     
     private static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent e) {
-        var server = e.getPlayer().getServer();
+        var server = e.getEntity().getServer();
         assert server != null;
         if (!server.isDedicatedServer()) {
-            var serverUUID = e.getPlayer().getUUID();
+            var serverUUID = e.getEntity().getUUID();
             var localUUID = Minecraft.getInstance().getUser().getUuid();
             if (serverUUID.toString().equals(localUUID)) {
                 // ignore local player on integrated server
@@ -112,13 +112,13 @@ public class ConfigManager {
                 return;
             }
         }
-        var player = (ServerPlayer) e.getPlayer();
+        var player = (ServerPlayer) e.getEntity();
         players.add(player);
         sendConfigToPlayer(player, true);
     }
     
     private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
-        var player = (ServerPlayer) e.getPlayer();
+        var player = (ServerPlayer) e.getEntity();
         players.remove(player);
     }
     

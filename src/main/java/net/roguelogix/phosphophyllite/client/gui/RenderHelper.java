@@ -11,6 +11,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 
 import javax.annotation.Nonnull;
@@ -125,10 +126,10 @@ public class RenderHelper {
         // Bind the new texture, set the color, and draw.
 
         RenderHelper.bindTexture(InventoryMenu.BLOCK_ATLAS);
-        RenderHelper.setRenderColor(fluid.getAttributes().getColor());
+        RenderHelper.setRenderColor(IClientFluidTypeExtensions.of(fluid).getTintColor());
         RenderHelper.drawTexture(poseStack, x, y, blitOffset, width, height,
                 Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                        .apply(fluid.getAttributes().getStillTexture()));
+                        .apply(IClientFluidTypeExtensions.of(fluid).getStillTexture()));
         // Reset color and restore the previously bound texture.
         RenderHelper.clearRenderColor();
         RenderHelper.bindTexture(preservedResource);

@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -89,17 +89,17 @@ public class GuiSync {
     public static synchronized void onContainerOpen(@Nonnull PlayerContainerEvent.Open e) {
         AbstractContainerMenu container = e.getContainer();
         if (container instanceof IGUIPacketProvider) {
-            playerGUIs.put(e.getPlayer(), (IGUIPacketProvider) container);
+            playerGUIs.put(e.getEntity(), (IGUIPacketProvider) container);
         }
     }
     
     public static synchronized void onContainerClose(@Nonnull PlayerContainerEvent.Close e) {
-        playerGUIs.remove(e.getPlayer());
+        playerGUIs.remove(e.getEntity());
     }
     
     private static IGUIPacketProvider currentGUI;
     
-    public static synchronized void GuiOpenEvent(@Nonnull ScreenOpenEvent e) {
+    public static synchronized void GuiOpenEvent(@Nonnull ScreenEvent.Opening e) {
         
         Screen gui = e.getScreen();
         if (gui instanceof AbstractContainerScreen) {

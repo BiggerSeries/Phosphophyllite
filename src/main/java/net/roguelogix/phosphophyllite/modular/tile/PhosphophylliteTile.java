@@ -15,8 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.event.world.WorldEvent;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
@@ -78,8 +78,8 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
     }
     
-    private static void worldUnloadEvent(WorldEvent.Unload unload) {
-        var removed = (unload.getWorld().isClientSide() ? clientWorldUnloadEventTiles : serverWorldUnloadEventTiles).remove((Level) unload.getWorld());
+    private static void worldUnloadEvent(LevelEvent.Unload unload) {
+        var removed = (unload.getLevel().isClientSide() ? clientWorldUnloadEventTiles : serverWorldUnloadEventTiles).remove((Level) unload.getLevel());
         if (removed != null) {
             for (int i = 0; i < removed.size(); i++) {
                 removed.get(i).remove(true);

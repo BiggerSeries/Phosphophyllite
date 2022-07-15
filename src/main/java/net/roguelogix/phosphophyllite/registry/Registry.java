@@ -34,7 +34,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fluids.FluidAttributes;
+import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -84,7 +84,7 @@ public class Registry {
     
     private final WorkQueue commonSetupQueue = new WorkQueue();
     private FMLCommonSetupEvent commonSetupEvent;
-    
+
 //    private final ArrayList<Runnable> biomeLoadingEventHandlers = new ArrayList<>();
 //    private BiomeLoadingEvent biomeLoadingEvent;
     
@@ -156,7 +156,7 @@ public class Registry {
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
         
         ModBus.addListener(this::registerEvent);
-        
+
 //        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
         
@@ -241,7 +241,7 @@ public class Registry {
         commonSetupQueue.runAll();
         commonSetupEvent = null;
     }
-    
+
 //    private void biomeLoadingEventHandler(BiomeLoadingEvent event) {
 //        biomeLoadingEvent = event;
 //        biomeLoadingEventHandlers.forEach(Runnable::run);
@@ -340,6 +340,7 @@ public class Registry {
                             }
                             final RenderType finalRenderType = renderType;
                             // parallel dispatch, and non-synchronized
+                            //noinspection removal
                             clientSetupEvent.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(block, finalRenderType));
                         }
                     }
@@ -476,10 +477,10 @@ public class Registry {
             
             Supplier<? extends PhosphophylliteFluid> stillSupplier = () -> fluids[0];
             Supplier<? extends PhosphophylliteFluid> flowingSupplier = () -> fluids[1];
-            FluidAttributes.Builder attributes = FluidAttributes.builder(new ResourceLocation(modid, "fluid/" + name + "_still"), new ResourceLocation(modid, "fluid/" + name + "_flowing"));
+            final var attributes = FluidType.Properties.create();
+            //  (new ResourceLocation(modid, "fluid/" + name + "_still"), new ResourceLocation(modid, "fluid/" + name + "_flowing")
 //            attributes.overlay(new ResourceLocation(modid, "fluid/" + name + "_overlay"));
-            attributes.color(annotation.color());
-            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(stillSupplier, flowingSupplier, attributes);
+            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(() -> new FluidType(attributes), stillSupplier, flowingSupplier);
             if (annotation.registerBucket()) {
                 properties.bucket(() -> bucketArray[0]);
             }
@@ -722,7 +723,7 @@ public class Registry {
             tileRegistryEvent.register(new ResourceLocation(registryName), type);
         });
     }
-    
+
 //    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {
 //        commonSetupQueue.enqueue(() -> {
 //            final Block oreInstance;
