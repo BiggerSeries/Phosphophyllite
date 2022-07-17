@@ -93,7 +93,7 @@ public class Registry {
     {
         annotationMap.put(RegisterBlock.class.getName(), this::registerBlockAnnotation);
         annotationMap.put(RegisterItem.class.getName(), this::registerItemAnnotation);
-        annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
+//        annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
 //        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
