@@ -25,15 +25,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkSource;
-import net.minecraft.world.level.chunk.ChunkStatus;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.*;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import org.jetbrains.annotations.Contract;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,7 +40,42 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.function.BiConsumer;
 
+import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
+
 public class Util {
+    
+    public static final Direction[] DIRECTIONS = Direction.values();
+    
+    private static final Level[] lastLevel = new Level[2];
+    private static final ChunkAccess[] lastChunk = new ChunkAccess[2];
+    private static final long[] lastChunkPos = new long[2];
+    
+    public static void setBlockState(Level level, BlockPos pos, BlockState state) {
+        var arrayIndex = level.isClientSide ? 1 : 0;
+        final var chunkPos = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+        if (lastLevel[arrayIndex] != level || chunkPos != lastChunkPos[arrayIndex]) {
+            lastLevel[arrayIndex] = level;
+            lastChunkPos[arrayIndex] = chunkPos;
+            lastChunk[arrayIndex] = level.getChunk(pos.getX() >> 4, pos.getZ() >> 4);
+        }
+        lastChunk[arrayIndex].setBlockState(pos, state, false);
+    }
+    
+    @Contract(pure = true)
+    public static BlockEntity getTile(Level level, BlockPos pos) {
+        var arrayIndex = level.isClientSide ? 1 : 0;
+        final var chunkPos = ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4);
+        if (lastLevel[arrayIndex] != level || chunkPos != lastChunkPos[arrayIndex] || lastChunk[arrayIndex] == null) {
+            lastLevel[arrayIndex] = level;
+            lastChunkPos[arrayIndex] = chunkPos;
+            lastChunk[arrayIndex] = level.getChunk(pos.getX() >> 4, pos.getZ() >> 4, ChunkStatus.FULL, false);
+        }
+        if (lastChunk[arrayIndex] == null) {
+            return null;
+        }
+        return lastChunk[arrayIndex].getBlockEntity(pos);
+    }
+    
     public static String readResourceLocation(ResourceLocation location) {
         try (BufferedReader reader = Minecraft.getInstance().getResourceManager().getResource(location).orElseThrow().openAsReader()) {
             StringBuilder stringBuilder = new StringBuilder();
@@ -146,6 +180,17 @@ public class Util {
     public static void markRangeDirty(Level world, Vector2i start, Vector2i end) {
         for (int X = start.x; X < ((end.x + 16) & 0xFFFFFFF0); X += 16) {
             for (int Z = start.y; Z < ((end.y + 16) & 0xFFFFFFF0); Z += 16) {
+                int chunkX = X >> 4;
+                int chunkZ = Z >> 4;
+                LevelChunk chunk = world.getChunk(chunkX, chunkZ);
+                chunk.setUnsaved(true);
+            }
+        }
+    }
+    
+    public static void markRangeDirty(Level world, Vector3ic start, Vector3ic end) {
+        for (int X = start.x(); X < ((end.x() + 16) & 0xFFFFFFF0); X += 16) {
+            for (int Z = start.z(); Z < ((end.z() + 16) & 0xFFFFFFF0); Z += 16) {
                 int chunkX = X >> 4;
                 int chunkZ = Z >> 4;
                 LevelChunk chunk = world.getChunk(chunkX, chunkZ);
@@ -356,14 +401,14 @@ public class Util {
     }
     
     public static void updateBlockStates(Level level) {
-        if(!endOfTickStates.isEmpty()){
+        if (!endOfTickStates.isEmpty()) {
             setBlockStates(endOfTickStates, level);
             endOfTickStates.clear();
         }
     }
     
     public static void worldTickEndEvent(Level level) {
-        if(!endOfTickStates.isEmpty()){
+        if (!endOfTickStates.isEmpty()) {
             setBlockStates(endOfTickStates, level);
             endOfTickStates.clear();
         }
@@ -419,7 +464,24 @@ public class Util {
     
     private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:tools/wrench"));
     private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:wrenches"));
-    public static boolean isWrench(Item item){
+    
+    public static boolean isWrench(Item item) {
         return item.builtInRegistryHolder().is(WRENCH_TAG_0) || item.builtInRegistryHolder().is(WRENCH_TAG_1);
+    }
+    
+    public static boolean isEntireAreaLoaded(Level level, Vector3ic min, Vector3ic max) {
+        return isEntireAreaLoaded(level, SectionPos.blockToSectionCoord(min.x()), SectionPos.blockToSectionCoord(min.z()), SectionPos.blockToSectionCoord(max.x()), SectionPos.blockToSectionCoord(max.z()));
+    }
+    
+    public static boolean  isEntireAreaLoaded(Level level, int minCX, int minCZ,  int maxCX, int maxCZ) {
+        // TODO: i need a faster way to do this
+        for (int i = minCX; i <= maxCX; i++) {
+            for (int j = minCZ; j <= maxCZ; j++) {
+                if(level.getChunk(i, j, ChunkStatus.FULL, false) == null){
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
