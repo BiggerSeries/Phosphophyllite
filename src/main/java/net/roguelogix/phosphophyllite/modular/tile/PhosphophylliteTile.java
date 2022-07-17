@@ -55,6 +55,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         });
     }
     
+    @Nullable
     public TileModule<?> module(Class<?> interfaceClazz) {
         return modules.get(interfaceClazz);
     }

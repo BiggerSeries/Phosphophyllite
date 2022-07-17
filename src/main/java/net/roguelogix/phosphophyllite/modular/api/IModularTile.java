@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.modular.api;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
@@ -14,9 +15,10 @@ public interface IModularTile {
         return (Type) this;
     }
     
-    
+    @Nullable
     TileModule<?> module(Class<?> interfaceClazz);
     
+    @Nullable
     default <T extends TileModule<?>> T module(Class<?> interfaceClazz, Class<T> moduleType) {
         //noinspection unchecked
         return (T) module(interfaceClazz);
