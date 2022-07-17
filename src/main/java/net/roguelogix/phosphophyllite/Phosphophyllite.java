@@ -55,7 +55,7 @@ public class Phosphophyllite {
                         Performant is incompatible with Phosphophyllite
                         This is a known issue with performant and it breaking other mods, the author does not care
                         GitHub issue on the matter: https://github.com/someaddons/performant_issues/issues/70
-                        To bypass this check add "bypassPerformantCheck: true" to your phosphophyllite config
+                        To bypass this check add "bypassPerformantCheck = true" to the top of your phosphophyllite config
                         If you bypass this check I (RogueLogix) will not provide any support for any issues related to Phosphophyllite or the mods that use it
                         If you believe your issue is unrelated, disable performant and reproduce it
                         By choosing to bypass this check you understand that here there be dragons""");
