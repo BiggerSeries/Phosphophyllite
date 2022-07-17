@@ -7,8 +7,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Nonnull
-@TypeQualifierDefault({ElementType.METHOD})
+@TypeQualifierDefault({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MethodsReturnNonnullByDefault {
+public @interface NonnullDefault {
     // so i don't rely on any minecraft/mojang code, but can still use this
 }

@@ -2,16 +2,14 @@ package net.roguelogix.phosphophyllite.parsers;
 
 import net.roguelogix.phosphophyllite.repack.tnjson.ParseException;
 import net.roguelogix.phosphophyllite.repack.tnjson.TnJson;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class JSON5 {
     @Nullable
     public static Element parseString(String string) {
