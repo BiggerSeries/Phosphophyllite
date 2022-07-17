@@ -140,20 +140,16 @@ public class WorkQueue {
         }
     }
     
-//    public Event enqueue(Runnable runnable, Set<Event> events) {
-//        return this.enqueue(runnable, (Event[]) events.toArray());
-//    }
-//
-//    public Event enqueue(Runnable runnable, List<Event> events) {
-//        return this.enqueue(runnable, (Event[]) events.toArray());
-//    }
-    
     public Event enqueue(Runnable runnable, Event... events) {
-        if(toRethrow != null){
+        if (toRethrow != null) {
             throw toRethrow;
         }
         WorkItem item = new WorkItem(queue, runnable, events);
         return item.waitEvent;
+    }
+    
+    public void enqueueUntracked(Runnable runnable) {
+        queue.add(runnable);
     }
     
     public boolean runOne() {
