@@ -265,6 +265,10 @@ public class Registry {
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     return;
                 }
+                if (!Modifier.isStatic(field.getModifiers())) {
+                    LOGGER.warn("Non-static block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+                    return;
+                }
                 field.setAccessible(true);
                 block = (Block) field.get(null);
                 annotation = field.getAnnotation(RegisterBlock.class);
