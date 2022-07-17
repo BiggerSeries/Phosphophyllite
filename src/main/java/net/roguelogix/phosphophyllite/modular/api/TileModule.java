@@ -23,6 +23,9 @@ public class TileModule<InterfaceType extends IModularTile> implements IDebuggab
         this.iface = (InterfaceType) iface;
     }
     
+    public void postModuleConstruction() {
+    }
+    
     
     public void onAdded() {
     }

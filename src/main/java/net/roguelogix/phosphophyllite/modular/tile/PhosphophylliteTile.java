@@ -53,6 +53,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
                 moduleList.add(module);
             }
         });
+        moduleList.forEach(TileModule::postModuleConstruction);
     }
     
     @Nullable
