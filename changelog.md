@@ -1,3 +1,6 @@
+# 1.18.2-0.6.0-beta.1.3
+ - re-enable mekanism wrappers
+
 # 1.18.2-0.6.0-beta-1.2
  - handle a CME better to give better debug info 
 
