@@ -150,6 +150,7 @@ dependencies {
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
 //
     compileOnly "mekanism:Mekanism:1.18.2-10.2.5.465:api"
+    runtimeOnly fg.deobf("mekanism:Mekanism:1.18.2-10.2.5.465")
 
     compileOnly "org.lwjgl:lwjgl-vulkan:3.2.2"
 }

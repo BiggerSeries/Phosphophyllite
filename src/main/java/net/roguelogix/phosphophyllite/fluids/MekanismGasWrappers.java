@@ -109,16 +109,8 @@ public class MekanismGasWrappers {
     }
 
     private static void addReloadEventListener(AddReloadListenerEvent event) {
-        event.addListener(new PreparableReloadListener() {
-            @Override
-            public CompletableFuture<Void> reload(PreparationBarrier pPreparationBarrier, ResourceManager pResourceManager, ProfilerFiller pPreparationsProfiler, ProfilerFiller pReloadProfiler, Executor pBackgroundExecutor, Executor pGameExecutor) {
-                pGameExecutor.execute(() -> {if (server != null) {
-                    reloadQueue.enqueue(MekanismGasWrappers::reloadMappings);
-                    reloadQueue.runAll();
-                }});
-                return CompletableFuture.completedFuture(null);
-            }
-        });
+        reloadQueue.enqueue(MekanismGasWrappers::reloadMappings);
+        reloadQueue.runAll();
     }
 
     @Nullable
