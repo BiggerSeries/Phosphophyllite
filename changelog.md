@@ -1,3 +1,6 @@
+# 1.18.2-0.6.0-beta.1.4
+- fix deadlock when loading mekanism recipes
+
 # 1.18.2-0.6.0-beta.1.3
  - re-enable mekanism wrappers
 
