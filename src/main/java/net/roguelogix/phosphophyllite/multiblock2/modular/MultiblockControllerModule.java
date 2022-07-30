@@ -1,7 +1,9 @@
 package net.roguelogix.phosphophyllite.multiblock2.modular;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.ValidationException;
@@ -13,13 +15,14 @@ import java.util.List;
 
 @NonnullDefault
 public abstract class MultiblockControllerModule<
-        TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType>
+        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
         > {
     
     public final ControllerType controller;
     
-    public MultiblockControllerModule(IModularMultiblockController<TileType, ControllerType> controller) {
+    public MultiblockControllerModule(IModularMultiblockController<TileType, BlockType, ControllerType> controller) {
         //noinspection unchecked
         this.controller = (ControllerType) controller;
     }

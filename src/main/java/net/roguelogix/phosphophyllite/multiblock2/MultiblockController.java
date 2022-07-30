@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
+import net.roguelogix.phosphophyllite.modular.api.IModularBlock;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.multiblock.Validator;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
@@ -33,9 +34,10 @@ import static net.roguelogix.phosphophyllite.util.Util.DIRECTIONS;
 
 @NonnullDefault
 public class MultiblockController<
-        TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType>
-        > implements IModularMultiblockController<TileType, ControllerType>, IDebuggable {
+        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
+        > implements IModularMultiblockController<TileType, BlockType, ControllerType>, IDebuggable {
     
     public enum AssemblyState {
         ASSEMBLED,
@@ -46,7 +48,7 @@ public class MultiblockController<
     
     public final Level level;
     @SuppressWarnings("unchecked")
-    protected final ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
+    protected final ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType>(new MultiblockTileModule[0]);
     
     public final Validator<BlockEntity> tileTypeValidator;
     public final Validator<Block> blockTypeValidator;
@@ -90,23 +92,23 @@ public class MultiblockController<
     protected final List<Detachment> removedBlocks = new LinkedList<>();
     
     @Nullable
-    private MultiblockController<TileType, ControllerType> mergedInto = null;
-    protected final Set<MultiblockController<TileType, ControllerType>> controllersToMerge = new ObjectOpenHashSet<>();
+    private MultiblockController<TileType, BlockType, ControllerType> mergedInto = null;
+    protected final Set<MultiblockController<TileType, BlockType, ControllerType>> controllersToMerge = new ObjectOpenHashSet<>();
     
-    public MultiblockController(Level level, Validator<BlockEntity> tileTypeValidator, Validator<Block> blockTypeValidator) {
+    public MultiblockController(Level level, Class<TileType> tileType, Class<BlockType> blockType) {
         this.level = level;
-        this.tileTypeValidator = tileTypeValidator;
-        this.blockTypeValidator = blockTypeValidator;
+        this.tileTypeValidator = tileType::isInstance;
+        this.blockTypeValidator = blockType::isInstance;
         MultiblockRegistry.addController(this);
         
-        final var moduleList = new ArrayList<MultiblockControllerModule<TileType, ControllerType>>();
+        final var moduleList = new ArrayList<MultiblockControllerModule<TileType, BlockType, ControllerType>>();
         moduleListRO = Collections.unmodifiableList(moduleList);
         
         final Class<?> thisClazz = this.getClass();
         MultiblockControllerModuleRegistry.forEach((clazz, constructor) -> {
             if (clazz.isAssignableFrom(thisClazz)) {
                 //noinspection unchecked
-                var module = (MultiblockControllerModule<TileType, ControllerType>) constructor.apply(this);
+                var module = (MultiblockControllerModule<TileType, BlockType, ControllerType>) constructor.apply(this);
                 modules.put(clazz, module);
                 moduleList.add(module);
             }
@@ -127,17 +129,17 @@ public class MultiblockController<
         return maxCoord;
     }
     
-    private final Object2ObjectOpenHashMap<Class<?>, MultiblockControllerModule<TileType, ControllerType>> modules = new Object2ObjectOpenHashMap<>();
-    private final List<MultiblockControllerModule<TileType, ControllerType>> moduleListRO;
+    private final Object2ObjectOpenHashMap<Class<?>, MultiblockControllerModule<TileType, BlockType, ControllerType>> modules = new Object2ObjectOpenHashMap<>();
+    private final List<MultiblockControllerModule<TileType, BlockType, ControllerType>> moduleListRO;
     
     @Override
     @Nullable
-    public MultiblockControllerModule<TileType, ControllerType> module(Class<?> interfaceClazz) {
+    public MultiblockControllerModule<TileType, BlockType, ControllerType> module(Class<?> interfaceClazz) {
         return modules.get(interfaceClazz);
     }
     
     @Override
-    public List<MultiblockControllerModule<TileType, ControllerType>> modules() {
+    public List<MultiblockControllerModule<TileType, BlockType, ControllerType>> modules() {
         return moduleListRO;
     }
     
@@ -146,7 +148,7 @@ public class MultiblockController<
     }
     
     @Nullable
-    public MultiblockTileModule<TileType, ControllerType> tileModule(int x, int y, int z) {
+    public MultiblockTileModule<TileType, BlockType, ControllerType> tileModule(int x, int y, int z) {
         return blocks.getModule(x, y, z);
     }
     
@@ -160,15 +162,15 @@ public class MultiblockController<
     }
     
     @Contract(pure = true)
-    public boolean canAttachTile(IMultiblockTile<?, ?> tile) {
+    public boolean canAttachTile(IMultiblockTile<?, ?, ?> tile) {
         return tileTypeValidator.validate((BlockEntity) tile);
     }
     
-    public void attemptAttach(@Nonnull MultiblockTileModule<?, ?> toAttachGeneric) {
+    public void attemptAttach(@Nonnull MultiblockTileModule<?, ?, ?> toAttachGeneric) {
         attemptAttach(toAttachGeneric, false);
     }
     
-    public void attemptAttach(@Nonnull MultiblockTileModule<?, ?> toAttachGeneric, boolean merging) {
+    public void attemptAttach(@Nonnull MultiblockTileModule<?, ?, ?> toAttachGeneric, boolean merging) {
         if (!canAttachTile(toAttachGeneric.iface)) {
             return;
         }
@@ -176,7 +178,7 @@ public class MultiblockController<
         // TODO: state updating check
         
         //noinspection unchecked
-        var toAttachModule = (MultiblockTileModule<TileType, ControllerType>) toAttachGeneric;
+        var toAttachModule = (MultiblockTileModule<TileType, BlockType, ControllerType>) toAttachGeneric;
         var toAttachTile = toAttachModule.iface;
         
         for (final var module : modules()) {
@@ -270,7 +272,7 @@ public class MultiblockController<
         requestValidation();
     }
     
-    public void detach(@Nonnull MultiblockTileModule<TileType, ControllerType> toDetachModule, boolean chunkUnload, boolean merging, boolean checkForDetachments) {
+    public void detach(@Nonnull MultiblockTileModule<TileType, BlockType, ControllerType> toDetachModule, boolean chunkUnload, boolean merging, boolean checkForDetachments) {
         
         if (!blocks.removeModule(toDetachModule)) {
             return;
@@ -429,7 +431,7 @@ public class MultiblockController<
         
         checkForDetachmentsAtTick = Long.MAX_VALUE;
         
-        AStarList<MultiblockTileModule<?, ?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
+        AStarList<MultiblockTileModule<?, ?, ?>> aStarList = new AStarList<>(module -> module.iface.getBlockPos());
         
         BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
         for (Detachment removedBlock : removedBlocks) {
@@ -463,7 +465,7 @@ public class MultiblockController<
             return;
         }
         
-        ObjectOpenHashSet<MultiblockTileModule<TileType, ControllerType>> toOrphan = new ObjectOpenHashSet<>();
+        ObjectOpenHashSet<MultiblockTileModule<TileType, BlockType, ControllerType>> toOrphan = new ObjectOpenHashSet<>();
         blocks.forEachModule(module -> {
             if (module.lastSavedTick != this.lastTick) {
                 toOrphan.add(module);
@@ -473,13 +475,13 @@ public class MultiblockController<
             return;
         }
         
-        for (MultiblockTileModule<TileType, ControllerType> tile : toOrphan) {
+        for (MultiblockTileModule<TileType, BlockType, ControllerType> tile : toOrphan) {
             detach(tile, false, true, false);
         }
         final var newMultiblocks = new ObjectArrayList<ControllerType>();
         // TODO: move to A* because its likely that its split into two
-        final var tempModuleArrays = new ObjectArrayList<MultiblockTileModule<TileType, ControllerType>>();
-        final var newMultiblockModules = new ObjectOpenHashSet<MultiblockTileModule<TileType, ControllerType>>();
+        final var tempModuleArrays = new ObjectArrayList<MultiblockTileModule<TileType, BlockType, ControllerType>>();
+        final var newMultiblockModules = new ObjectOpenHashSet<MultiblockTileModule<TileType, BlockType, ControllerType>>();
         while (!toOrphan.isEmpty()) {
             final var first = toOrphan.iterator().next();
             tempModuleArrays.add(first);
@@ -513,8 +515,8 @@ public class MultiblockController<
     
     private void processMerges() {
         while (!controllersToMerge.isEmpty()) {
-            ObjectOpenHashSet<MultiblockController<TileType, ControllerType>> newToMerge = new ObjectOpenHashSet<>();
-            for (MultiblockController<TileType, ControllerType> otherController : controllersToMerge) {
+            ObjectOpenHashSet<MultiblockController<TileType, BlockType, ControllerType>> newToMerge = new ObjectOpenHashSet<>();
+            for (MultiblockController<TileType, BlockType, ControllerType> otherController : controllersToMerge) {
                 //noinspection unchecked
                 final var otherCased = (ControllerType) otherController;
                 otherController.disassembledBlockStates();
@@ -556,7 +558,7 @@ public class MultiblockController<
         if (blocks.isEmpty()) {
             return;
         }
-        ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, ControllerType>, TileType>(new MultiblockTileModule[0]);
+        ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType>(new MultiblockTileModule[0]);
         blocks.addAll(this.blocks);
         blocks.forEachModule(module -> module.onRemoved(true));
         MultiblockRegistry.removeController(this);
@@ -585,6 +587,8 @@ public class MultiblockController<
         }
         if (lastFullTick < lastTick - 1) {
             requestValidation();
+            lastFullTick = lastTick;
+            return;
         }
         lastFullTick = lastTick;
         
@@ -617,7 +621,7 @@ public class MultiblockController<
         
         final int size = blocks.size();
         final TileType[] tileElements = blocks.tileElements();
-        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();
+        final MultiblockTileModule<TileType, BlockType, ControllerType>[] moduleElements = blocks.moduleElements();
         final var posElements = blocks.posElements();
         if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
             throw new IllegalStateException("Arrays too short");
@@ -642,7 +646,7 @@ public class MultiblockController<
         newStates.clear();
         final int size = blocks.size();
         final TileType[] tileElements = blocks.tileElements();
-        final MultiblockTileModule<TileType, ControllerType>[] moduleElements = blocks.moduleElements();
+        final MultiblockTileModule<TileType, BlockType, ControllerType>[] moduleElements = blocks.moduleElements();
         final var posElements = blocks.posElements();
         if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
             throw new IllegalStateException("Arrays too short");

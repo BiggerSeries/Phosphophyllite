@@ -15,15 +15,15 @@ import java.util.ArrayList;
 
 public final class MultiblockRegistry {
     
-    private static final Object2ObjectOpenHashMap<ServerLevel, ObjectArrayList<MultiblockController<?, ?>>> controllersToTick = new Object2ObjectOpenHashMap<>();
-    private static final ObjectArrayList<MultiblockController<?, ?>> newControllers = new ObjectArrayList<>();
-    private static final ObjectArrayList<MultiblockController<?, ?>> oldControllers = new ObjectArrayList<>();
+    private static final Object2ObjectOpenHashMap<ServerLevel, ObjectArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new Object2ObjectOpenHashMap<>();
+    private static final ObjectArrayList<MultiblockController<?, ?, ?>> newControllers = new ObjectArrayList<>();
+    private static final ObjectArrayList<MultiblockController<?, ?, ?>> oldControllers = new ObjectArrayList<>();
     
-    public static void addController(MultiblockController<?, ?> controller) {
+    public static void addController(MultiblockController<?, ?, ?> controller) {
         newControllers.add(controller);
     }
     
-    public static void removeController(MultiblockController<?, ?> controller) {
+    public static void removeController(MultiblockController<?, ?, ?> controller) {
         oldControllers.add(controller);
     }
     
@@ -36,9 +36,9 @@ public final class MultiblockRegistry {
     static void onWorldUnload(final LevelEvent.Unload worldUnloadEvent) {
         if (!worldUnloadEvent.getLevel().isClientSide()) {
             //noinspection SuspiciousMethodCalls
-            ObjectArrayList<MultiblockController<?, ?>> controllersToTick = MultiblockRegistry.controllersToTick.remove(worldUnloadEvent.getLevel());
+            ObjectArrayList<MultiblockController<?, ?, ?>> controllersToTick = MultiblockRegistry.controllersToTick.remove(worldUnloadEvent.getLevel());
             if (controllersToTick != null) {
-                for (MultiblockController<?, ?> multiblockController : controllersToTick) {
+                for (MultiblockController<?, ?, ?> multiblockController : controllersToTick) {
                     multiblockController.suicide();
                 }
             }
@@ -50,11 +50,11 @@ public final class MultiblockRegistry {
     
     @SubscribeEvent
     static void tickServer(TickEvent.ServerTickEvent e) {
-        for (MultiblockController<?, ?> newController : newControllers) {
+        for (MultiblockController<?, ?, ?> newController : newControllers) {
             controllersToTick.computeIfAbsent((ServerLevel) newController.level, k -> new ObjectArrayList<>()).add(newController);
         }
         newControllers.clear();
-        for (MultiblockController<?, ?> oldController : oldControllers) {
+        for (MultiblockController<?, ?, ?> oldController : oldControllers) {
             //noinspection SuspiciousMethodCalls
             var controllers = controllersToTick.get(oldController.level);
             controllers.remove(oldController);

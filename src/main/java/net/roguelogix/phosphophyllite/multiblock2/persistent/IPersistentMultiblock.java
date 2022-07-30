@@ -1,11 +1,13 @@
 package net.roguelogix.phosphophyllite.multiblock2.persistent;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
+import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.Util;
@@ -18,9 +20,10 @@ import javax.annotation.Nullable;
  */
 @NonnullDefault
 public interface IPersistentMultiblock<
-        TileType extends BlockEntity & IPersistentMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & IPersistentMultiblock<TileType, ControllerType>
-        > extends IModularMultiblockController<TileType, ControllerType> {
+        TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
+        > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     CompoundTag mergeNBTs(CompoundTag nbtA, CompoundTag nbtB);
     
@@ -29,7 +32,7 @@ public interface IPersistentMultiblock<
     @Nullable
     CompoundTag write();
     
-    default Module<TileType, ControllerType> persistentModule() {
+    default Module<TileType, BlockType, ControllerType> persistentModule() {
         //noinspection unchecked,ConstantConditions
         return module(IPersistentMultiblock.class, IPersistentMultiblock.Module.class);
     }
@@ -41,13 +44,14 @@ public interface IPersistentMultiblock<
     }
     
     final class Module<
-            TileType extends BlockEntity & IPersistentMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & IPersistentMultiblock<TileType, ControllerType>
-            > extends MultiblockControllerModule<TileType, ControllerType> {
+            TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
         @Nullable
         private TileType saveDelegate;
         @Nullable
-        private IPersistentMultiblockTile.Module<TileType, ControllerType> saveDelegateModule;
+        private IPersistentMultiblockTile.Module<TileType, BlockType, ControllerType> saveDelegateModule;
         @Nullable
         private CompoundTag nbt;
         
@@ -56,7 +60,7 @@ public interface IPersistentMultiblock<
             MultiblockControllerModuleRegistry.registerModule(IPersistentMultiblock.class, Module::new);
         }
         
-        public Module(IPersistentMultiblock<TileType, ControllerType> controller) {
+        public Module(IPersistentMultiblock<TileType, BlockType, ControllerType> controller) {
             super(controller);
         }
         

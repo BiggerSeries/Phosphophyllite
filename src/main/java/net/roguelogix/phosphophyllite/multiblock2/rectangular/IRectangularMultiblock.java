@@ -20,9 +20,10 @@ import javax.annotation.Nullable;
 
 @NonnullDefault
 public interface IRectangularMultiblock<
-        TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-        > extends IModularMultiblockController<TileType, ControllerType> {
+        TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+        > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     @Nullable
     default Vector3ic minSize() {
@@ -53,16 +54,17 @@ public interface IRectangularMultiblock<
     }
     
     final class Module<
-            TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-            > extends MultiblockControllerModule<TileType, ControllerType> {
+            TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
         
         @OnModLoad
         public static void register() {
             MultiblockControllerModuleRegistry.registerModule(IRectangularMultiblock.class, Module::new);
         }
         
-        public Module(IRectangularMultiblock<TileType, ControllerType> controller) {
+        public Module(IRectangularMultiblock<TileType, BlockType, ControllerType> controller) {
             super(controller);
         }
         

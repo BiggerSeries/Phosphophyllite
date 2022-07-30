@@ -2,13 +2,16 @@ package net.roguelogix.phosphophyllite.multiblock2.touching;
 
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
+import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -17,14 +20,16 @@ import net.roguelogix.phosphophyllite.util.VectorUtil;
 
 @NonnullDefault
 public interface ITouchingMultiblockTile<
-        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, ControllerType> & IRectangularMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & ITouchingMultiblock<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-        > extends IMultiblockTile<TileType, ControllerType> {
+        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+        > extends IMultiblockTile<TileType, BlockType, ControllerType> {
     
     final class Module<
-            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, ControllerType> & IRectangularMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & ITouchingMultiblock<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-            > extends ExtendedMultiblockTileModule<TileType, ControllerType> {
+            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+            > extends ExtendedMultiblockTileModule<TileType, BlockType, ControllerType> {
         
         boolean assembled = false;
         final Vector3i min = new Vector3i();

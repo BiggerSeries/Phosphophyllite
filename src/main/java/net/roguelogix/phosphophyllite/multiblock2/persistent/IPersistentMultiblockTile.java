@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.multiblock2.persistent;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
@@ -9,6 +10,7 @@ import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
@@ -17,21 +19,23 @@ import java.util.Objects;
 
 @NonnullDefault
 public interface IPersistentMultiblockTile<
-        TileType extends BlockEntity & IPersistentMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & IPersistentMultiblock<TileType, ControllerType>
-        > extends IMultiblockTile<TileType, ControllerType> {
+        TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
+        > extends IMultiblockTile<TileType, BlockType, ControllerType> {
     
     final class Module<
-            TileType extends BlockEntity & IPersistentMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & IPersistentMultiblock<TileType, ControllerType>
-            > extends ExtendedMultiblockTileModule<TileType, ControllerType> {
+            TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
+            > extends ExtendedMultiblockTileModule<TileType, BlockType, ControllerType> {
         
         @Nullable
         CompoundTag nbt;
         
-        MultiblockTileModule<TileType, ControllerType> multiblockModule;
+        MultiblockTileModule<TileType, BlockType, ControllerType> multiblockModule;
         @Nullable
-        IPersistentMultiblock.Module<TileType, ControllerType> controllerPersistentModule;
+        IPersistentMultiblock.Module<TileType, BlockType, ControllerType> controllerPersistentModule;
         
         @OnModLoad
         public static void register() {

@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.multiblock2.rectangular;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
@@ -15,14 +16,16 @@ import net.roguelogix.phosphophyllite.util.BlockStates;
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
 public interface IRectangularMultiblockTile<
-        TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-        > extends IMultiblockTile<TileType, ControllerType> {
+        TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+        > extends IMultiblockTile<TileType, BlockType, ControllerType> {
     
     final class Module<
-            TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-            > extends ExtendedMultiblockTileModule<TileType, ControllerType> {
+            TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+            > extends ExtendedMultiblockTileModule<TileType, BlockType, ControllerType> {
         
         private final boolean AXIS_POSITIONS = iface.getBlockState().hasProperty(X_AXIS_POSITION);
         private final boolean FACE_DIRECTION = iface.getBlockState().hasProperty(BlockStates.FACING);
@@ -32,7 +35,7 @@ public interface IRectangularMultiblockTile<
             ModuleRegistry.registerTileModule(IRectangularMultiblockTile.class, Module::new);
         }
         
-        public Module(IRectangularMultiblockTile<TileType, ControllerType> iface) {
+        public Module(IRectangularMultiblockTile<TileType, BlockType, ControllerType> iface) {
             super(iface);
         }
         

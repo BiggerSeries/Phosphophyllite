@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.multiblock2;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 
@@ -10,8 +11,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IMultiblockTile<
-        TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType>
+        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
         > extends IModularTile {
     
     ControllerType createController();
@@ -25,12 +27,12 @@ public interface IMultiblockTile<
         return multiblockModule().controller();
     }
     
-    default MultiblockTileModule<TileType, ControllerType> multiblockModule() {
+    default MultiblockTileModule<TileType, BlockType, ControllerType> multiblockModule() {
         //noinspection unchecked
-        return (MultiblockTileModule<TileType, ControllerType>) module(IMultiblockTile.class);
+        return (MultiblockTileModule<TileType, BlockType, ControllerType>) module(IMultiblockTile.class);
     }
     
-    default MultiblockTileModule<TileType, ControllerType> createMultiblockModule() {
+    default MultiblockTileModule<TileType, BlockType, ControllerType> createMultiblockModule() {
         return new MultiblockTileModule<>(as(IModularTile.class));
     }
 }

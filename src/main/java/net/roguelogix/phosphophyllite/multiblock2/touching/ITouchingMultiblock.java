@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock2.touching;
 
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockTileModule;
@@ -7,6 +8,7 @@ import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockCont
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -19,29 +21,31 @@ import java.util.Objects;
 
 @NonnullDefault
 public interface ITouchingMultiblock<
-        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, ControllerType> & IRectangularMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType> & ITouchingMultiblock<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-        > extends IModularMultiblockController<TileType, ControllerType> {
+        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IRectangularMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+        > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     final class Module<
-            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, ControllerType> & IRectangularMultiblockTile<TileType, ControllerType>,
-            ControllerType extends MultiblockController<TileType, ControllerType> & ITouchingMultiblock<TileType, ControllerType> & IRectangularMultiblock<TileType, ControllerType>
-            > extends MultiblockControllerModule<TileType, ControllerType> {
+            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IRectangularMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
         
         private boolean assembled = false;
         
         final Vector3i min = new Vector3i();
         final Vector3i max = new Vector3i();
         
-        private final FastArraySet<ITouchingMultiblockTile.Module<TileType, ControllerType>> touchingModules = new FastArraySet<>();
-        private final FastArraySet<MultiblockTileModule<TileType, ControllerType>> multiblockModules = new FastArraySet<>();
+        private final FastArraySet<ITouchingMultiblockTile.Module<TileType, BlockType, ControllerType>> touchingModules = new FastArraySet<>();
+        private final FastArraySet<MultiblockTileModule<TileType, BlockType, ControllerType>> multiblockModules = new FastArraySet<>();
         
         @OnModLoad
         public static void register() {
             MultiblockControllerModuleRegistry.registerModule(ITouchingMultiblock.class, Module::new);
         }
         
-        public Module(IModularMultiblockController<TileType, ControllerType> controller) {
+        public Module(IModularMultiblockController<TileType, BlockType, ControllerType> controller) {
             super(controller);
         }
         

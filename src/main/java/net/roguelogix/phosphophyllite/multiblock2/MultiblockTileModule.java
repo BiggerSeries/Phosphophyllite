@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
@@ -17,7 +18,6 @@ import net.roguelogix.phosphophyllite.util.Util;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
 import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
@@ -25,8 +25,9 @@ import static net.roguelogix.phosphophyllite.util.Util.DIRECTIONS;
 
 @NonnullDefault
 public final class MultiblockTileModule<
-        TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
-        ControllerType extends MultiblockController<TileType, ControllerType>
+        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
         > extends TileModule<TileType> {
     
     @Nullable
@@ -37,10 +38,10 @@ public final class MultiblockTileModule<
     long lastSavedTick = 0;
     
     @SuppressWarnings("unchecked") // its fine
-    final MultiblockTileModule<TileType, ControllerType>[] neighbors = new MultiblockTileModule[6];
+    final MultiblockTileModule<TileType, BlockType, ControllerType>[] neighbors = new MultiblockTileModule[6];
     final BlockEntity[] neighborTiles = new BlockEntity[6];
     
-    private final ObjectArrayList<ExtendedMultiblockTileModule<TileType, ControllerType>> extendedMultiblockTileModules = new ObjectArrayList<>();
+    private final ObjectArrayList<ExtendedMultiblockTileModule<TileType, BlockType, ControllerType>> extendedMultiblockTileModules = new ObjectArrayList<>();
     
     private final boolean ASSEMBLY_STATE = iface.getBlockState().hasProperty(ASSEMBLED);
     
@@ -56,9 +57,9 @@ public final class MultiblockTileModule<
     @Override
     public void postModuleConstruction() {
         for (TileModule<?> module : iface.modules()) {
-            if (module instanceof ExtendedMultiblockTileModule<?, ?>) {
+            if (module instanceof ExtendedMultiblockTileModule<?, ?, ?>) {
                 //noinspection unchecked
-                extendedMultiblockTileModules.add((ExtendedMultiblockTileModule<TileType, ControllerType>) module);
+                extendedMultiblockTileModules.add((ExtendedMultiblockTileModule<TileType, BlockType, ControllerType>) module);
             }
         }
     }
@@ -108,7 +109,7 @@ public final class MultiblockTileModule<
     }
     
     @Contract(pure = true)
-    private boolean shouldConnectTo(IMultiblockTile<?, ?> otherRawTile, Direction direction) {
+    private boolean shouldConnectTo(IMultiblockTile<?, ?, ?> otherRawTile, Direction direction) {
         if (this.controller != null) {
             if (!controller.canAttachTile(otherRawTile)) {
                 return false;
@@ -124,7 +125,7 @@ public final class MultiblockTileModule<
         //noinspection unchecked
         final var otherTile = (TileType) otherRawTile;
         //noinspection unchecked
-        final var otherModule = (MultiblockTileModule<TileType, ControllerType>) otherTile.module(IMultiblockTile.class);
+        final var otherModule = (MultiblockTileModule<TileType, BlockType, ControllerType>) otherTile.module(IMultiblockTile.class);
         assert otherModule != null;
         final var oppositeDirection = direction.getOpposite();
         
@@ -160,7 +161,7 @@ public final class MultiblockTileModule<
             neighborTiles[value.get3DDataValue()] = neighbor.iface;
         }
         for (int i = 0; i < neighbors.length; i++) {
-            MultiblockTileModule<TileType, ControllerType> neighbor = neighbors[i];
+            MultiblockTileModule<TileType, BlockType, ControllerType> neighbor = neighbors[i];
             if (neighbor != null) {
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = this;
                 neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = iface;
@@ -170,7 +171,7 @@ public final class MultiblockTileModule<
     
     void nullNeighbors() {
         for (int i = 0; i < neighbors.length; i++) {
-            MultiblockTileModule<?, ?> neighbor = neighbors[i];
+            MultiblockTileModule<?, ?, ?> neighbor = neighbors[i];
             if (neighbor != null) {
                 neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
                 neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
@@ -181,7 +182,7 @@ public final class MultiblockTileModule<
     }
     
     @Nullable
-    public MultiblockTileModule<TileType, ControllerType> getNeighbor(Direction direction) {
+    public MultiblockTileModule<TileType, BlockType, ControllerType> getNeighbor(Direction direction) {
         return neighbors[direction.get3DDataValue()];
     }
     
@@ -211,8 +212,8 @@ public final class MultiblockTileModule<
             possibleTilePos.set(pos);
             possibleTilePos.move(direction);
             final var tile = Util.getTile(level, possibleTilePos);
-            if (tile instanceof IMultiblockTile<?, ?> multiblockTile) {
-                final MultiblockTileModule<?, ?> multiblockModule = multiblockTile.multiblockModule();
+            if (tile instanceof IMultiblockTile<?, ?, ?> multiblockTile) {
+                final MultiblockTileModule<?, ?, ?> multiblockModule = multiblockTile.multiblockModule();
                 if (multiblockModule.controller == null) {
                     continue;
                 }
