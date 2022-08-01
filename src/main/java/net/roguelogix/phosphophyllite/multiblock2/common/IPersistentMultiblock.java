@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.multiblock2.persistent;
+package net.roguelogix.phosphophyllite.multiblock2.common;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
