@@ -19,6 +19,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
@@ -106,11 +107,14 @@ public class MekanismGasWrappers {
     private static void onModLoad() {
         MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::addReloadEventListener);
         MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::serverAboutToStart);
+        MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::serverStopped);
     }
 
     private static void addReloadEventListener(AddReloadListenerEvent event) {
         reloadQueue.enqueue(MekanismGasWrappers::reloadMappings);
-        reloadQueue.runAll();
+        if(server != null){
+            reloadQueue.runAll();
+        }
     }
 
     @Nullable
@@ -120,6 +124,11 @@ public class MekanismGasWrappers {
 
     private static void serverAboutToStart(ServerAboutToStartEvent event) {
         server = event.getServer();
+        reloadQueue.runAll();
+    }
+    
+    private static void serverStopped(ServerStoppedEvent event) {
+        server = null;
         reloadQueue.runAll();
     }
 
