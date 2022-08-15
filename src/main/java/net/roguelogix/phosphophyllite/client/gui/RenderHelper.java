@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.material.EmptyFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -193,7 +194,11 @@ public class RenderHelper {
      */
     public static void drawMaskedFluid(@Nonnull PoseStack poseStack, int x, int y, int blitOffset, int width, int height, int u, int v, Fluid fluid) {
         // Draw the fluid.
-        RenderHelper.drawFluid(poseStack, x, y, blitOffset, width, height, fluid);
+        if (!(fluid instanceof EmptyFluid)) {
+            // Only attempt to render fluid if it actually exists
+            RenderHelper.drawFluid(poseStack, x, y, blitOffset, width, height, fluid);
+        }
+
         // Draw frame/mask, or the lightning bolt icon.
         // I have now noticed that Mojang went (x, y, u, v, w, h), while I did (x, y, w, h, u, v).
         // And no, I won't change mine, because it'll be a pain to change every call.
