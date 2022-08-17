@@ -2,6 +2,7 @@ name: builds
 on: [push]
 jobs:
   reobfJar:
+    name: "CI build"
     runs-on: Felix
     steps:
       - uses: actions/checkout@v2
