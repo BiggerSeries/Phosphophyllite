@@ -7,6 +7,10 @@ jobs:
   build:
     name: "Build for Publish"
     runs-on: Felix
+    outputs:
+      mc_version: ${{ steps.verinfo.outputs.mcver }}
+      mc_major_version: ${{ steps.mverinfo.outputs.mcver }}
+      release_type: ${{ steps.relinfo.outputs.reltype }}
     steps:
       - uses: actions/checkout@v2
       - run: ./gradlew build
@@ -17,11 +21,39 @@ jobs:
         with:
           name: jars
           path: jars/*
+      - id: verinfo
+        run: echo "::set-output name=mcver::$(cat gradle.properties | grep mc_version | sed -n -e 's/^.*=//p')"
+      - id: mverinfo
+        run: echo "::set-output name=mcver::$(cat gradle.properties | grep mc_version | grep -o '1...' )"
+      - id: relinfo
+        run: echo "::set-output name=reltype::$(cat gradle.properties | grep "postfix=" | sed -n -e 's/^.*=//p')"
+
+  uploadToCurseforge:
+    name: "Upload to Curseforge"
+    runs-on: Felix
+    needs: [build]
+    outputs:
+      curseforge_file_id: ${{ steps.upload.outputs.id }}
+    steps:
+      - uses: actions/download-artifact@v3.0.0
+        with:
+          name: jars
+          path: jars/*
+      - id: upload
+        uses: itsmeow/curseforge-upload@v3.1.0
+        with:
+          token: "${{ secrets.CF_API_TOKEN }}"
+          project_id: 412551
+          game_endpoint: minecraft
+          file_path: "jars/phosphophyllite-${{ needs.build.outputs.mc_version }}-${{ github.ref_name }}.jar"
+          game_versions: "Minecraft ${{ needs.build.outputs.mc_major_version }}:${{ needs.build.outputs.mc_version }},Java 17,Forge"
+          release_type: "${{ needs.build.outputs.release_type }}"
+          changelog: "https://github.com/BiggerSeries/Phosphophyllite/blob/${{ github.ref_name }}/changelog.md"
 
   addToGithubRelease:
     name: "Upload to Github Release"
     runs-on: Felix
-    needs: [build]
+    needs: [build, uploadToCurseforge]
     steps:
      - uses: actions/download-artifact@v3.0.0
        with:
@@ -34,4 +66,4 @@ jobs:
          tag: ${{ github.ref }}
          overwrite: true
          file_glob: true
-         body: ""
+         body: "https://www.curseforge.com/minecraft/mc-mods/phosphophyllite/files/${{ needs.uploadToCurseforge.outputs.curseforge_file_id }}"
