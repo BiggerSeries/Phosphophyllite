@@ -1,38 +1,21 @@
 package net.roguelogix.phosphophyllite.registry;
 
-import com.electronwill.nightconfig.core.Config;
-import com.google.common.collect.ImmutableList;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.data.BuiltinRegistries;
-import net.minecraft.data.worldgen.features.OreFeatures;
-import net.minecraft.data.worldgen.placement.OrePlacements;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.VerticalAnchor;
-import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
-import net.minecraft.world.level.levelgen.placement.*;
-import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
@@ -51,7 +34,10 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static net.minecraft.core.Registry.*;
@@ -72,6 +58,8 @@ public class Registry {
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
     private RegisterEvent.RegisterHelper<Fluid> fluidRegistryEvent;
     
+    private final WorkQueue fluidTypeRegistrationQueue = new WorkQueue();
+    private RegisterEvent.RegisterHelper<FluidType> fluidTypeRegistryEvent;
     private final WorkQueue containerRegistrationQueue = new WorkQueue();
     private RegisterEvent.RegisterHelper<MenuType<?>> containerRegistryEvent;
     
@@ -93,7 +81,7 @@ public class Registry {
     {
         annotationMap.put(RegisterBlock.class.getName(), this::registerBlockAnnotation);
         annotationMap.put(RegisterItem.class.getName(), this::registerItemAnnotation);
-//        annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
+        annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
 //        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
@@ -196,6 +184,7 @@ public class Registry {
         registerEvent.register(BLOCK_REGISTRY, this::blockRegistration);
         registerEvent.register(ITEM_REGISTRY, this::itemRegistration);
         registerEvent.register(FLUID_REGISTRY, this::fluidRegistration);
+        registerEvent.register(ForgeRegistries.Keys.FLUID_TYPES, this::fluidTypeRegistration);
         registerEvent.register(MENU_REGISTRY, this::containerRegistration);
         registerEvent.register(BLOCK_ENTITY_TYPE_REGISTRY, this::tileEntityRegistration);
     }
@@ -216,6 +205,12 @@ public class Registry {
         fluidRegistryEvent = event;
         fluidRegistrationQueue.runAll();
         fluidRegistryEvent = null;
+    }
+    
+    private void fluidTypeRegistration(RegisterEvent.RegisterHelper<FluidType> event) {
+        fluidTypeRegistryEvent = event;
+        fluidTypeRegistrationQueue.runAll();
+        fluidTypeRegistryEvent = null;
     }
     
     private void containerRegistration(RegisterEvent.RegisterHelper<MenuType<?>> containerTypeRegistryEvent) {
@@ -466,6 +461,7 @@ public class Registry {
             }
             
             final String baseRegistryName = modid + ":" + name;
+            final var baseResourceLocation = new ResourceLocation(baseRegistryName);
             
             PhosphophylliteFluid[] fluids = new PhosphophylliteFluid[2];
             Item[] bucketArray = new Item[1];
@@ -481,10 +477,38 @@ public class Registry {
             
             Supplier<? extends PhosphophylliteFluid> stillSupplier = () -> fluids[0];
             Supplier<? extends PhosphophylliteFluid> flowingSupplier = () -> fluids[1];
-            final var attributes = FluidType.Properties.create();
-            //  (new ResourceLocation(modid, "fluid/" + name + "_still"), new ResourceLocation(modid, "fluid/" + name + "_flowing")
-//            attributes.overlay(new ResourceLocation(modid, "fluid/" + name + "_overlay"));
-            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(() -> new FluidType(attributes), stillSupplier, flowingSupplier);
+            final var fluidType = new FluidType(FluidType.Properties.create()) {
+                @Override
+                public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+                    consumer.accept(new IClientFluidTypeExtensions() {
+                        final ResourceLocation stillTexture = new ResourceLocation(modid, "fluid/" + name + "_still");
+                        final ResourceLocation flowingTexture = new ResourceLocation(modid, "fluid/" + name + "_flowing");
+                        final ResourceLocation overlayTexture = new ResourceLocation(modid, "fluid/" + name + "_overlay");
+                
+                        @Override
+                        public ResourceLocation getStillTexture() {
+                            return stillTexture;
+                        }
+                
+                        @Override
+                        public ResourceLocation getFlowingTexture() {
+                            return flowingTexture;
+                        }
+                
+                        @Override
+                        public ResourceLocation getOverlayTexture() {
+                            return overlayTexture;
+                        }
+                
+                        @Override
+                        public int getTintColor() {
+                            return annotation.color();
+                        }
+                    });
+                }
+            };
+            
+            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(() -> fluidType, stillSupplier, flowingSupplier);
             if (annotation.registerBucket()) {
                 properties.bucket(() -> bucketArray[0]);
             }
@@ -506,7 +530,7 @@ public class Registry {
             
             fluids[0] = stillInstance;
             fluids[1] = flowingInstance;
-            blockArray[0] = new LiquidBlock(stillInstance, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noLootTable());
+            blockArray[0] = new LiquidBlock(stillSupplier, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noLootTable());
             
             for (Field declaredField : fluidClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterFluid.Instance.class)) {
@@ -527,7 +551,7 @@ public class Registry {
                 }
             }
             
-            blockRegistryEvent.register(new ResourceLocation(baseRegistryName), blockArray[0]);
+            blockRegistryEvent.register(baseResourceLocation, blockArray[0]);
             
             fluidRegistrationQueue.enqueue(() -> {
                 PhosphophylliteFluid still = fluids[0];
@@ -536,7 +560,7 @@ public class Registry {
                     return;
                 }
                 
-                fluidRegistryEvent.register(new ResourceLocation(baseRegistryName), still);
+                fluidRegistryEvent.register(baseResourceLocation, still);
                 fluidRegistryEvent.register(new ResourceLocation(baseRegistryName + "_flowing"), flowing);
             });
             
@@ -547,6 +571,10 @@ public class Registry {
                     itemRegistryEvent.register(new ResourceLocation(baseRegistryName + "_bucket"), bucket);
                 });
             }
+    
+            fluidTypeRegistrationQueue.enqueueUntracked(() -> {
+                fluidTypeRegistryEvent.register(baseResourceLocation, fluidType);
+            });
         });
     }
     
