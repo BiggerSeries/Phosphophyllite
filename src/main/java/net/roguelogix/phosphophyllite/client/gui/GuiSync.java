@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
@@ -99,6 +100,7 @@ public class GuiSync {
     
     private static IGUIPacketProvider currentGUI;
     
+    @OnlyIn(Dist.CLIENT)
     public static synchronized void GuiOpenEvent(@Nonnull ScreenEvent.Opening e) {
         
         Screen gui = e.getScreen();
