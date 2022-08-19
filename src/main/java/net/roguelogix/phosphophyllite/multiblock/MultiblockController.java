@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
+import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -160,8 +161,10 @@ public class MultiblockController<
         if (!tileTypeValidator.validate(toAttachGeneric.iface)) {
             return;
         }
-    
+        
         if (isUpdatingState) {
+            atErrorWorldBlockState = world.getBlockState(toAttachGeneric.iface.getBlockPos());
+            atErrorTileBlockState = toAttachGeneric.iface.getBlockState();
             throw new IllegalStateException("Attempt to add block while updating multiblock state");
         }
         
@@ -286,8 +289,10 @@ public class MultiblockController<
             return;
         }
         TileType toDetachTile = toDetachModule.iface;
-    
+        
         if (isUpdatingState) {
+            atErrorWorldBlockState = world.getBlockState(toDetachModule.iface.getBlockPos());
+            atErrorTileBlockState = toDetachModule.iface.getBlockState();
             throw new IllegalStateException("Attempt to remove block while updating multiblock state");
         }
         
@@ -499,6 +504,12 @@ public class MultiblockController<
         Phosphophyllite.removeController(this);
     }
     
+    public static BlockState previousWorldBlockState;
+    public static BlockState previousTileBlockState;
+    public static BlockState atErrorWorldBlockState;
+    public static BlockState atErrorTileBlockState;
+    public static BlockState atErrorRequestedBlockState;
+    
     private void updateAssemblyState() {
         AssemblyState oldState = state;
         boolean validated = false;
@@ -523,7 +534,29 @@ public class MultiblockController<
                     onAssembled();
                 }
                 assembledBlockStates();
-                onAssemblyTiles.forEach(IOnAssemblyTile::onAssembly);
+                for (IOnAssemblyTile onAssemblyTile : onAssemblyTiles) {
+                    previousWorldBlockState = world.getBlockState(((PhosphophylliteTile)onAssemblyTile).getBlockPos());
+                    previousTileBlockState = ((PhosphophylliteTile)onAssemblyTile).getBlockState();
+                    atErrorRequestedBlockState = null; // in case i forget to set it somewhere
+                    try {
+                        onAssemblyTile.onAssembly();
+                    } catch (IllegalStateException e) {
+                        if(!e.getMessage().contains("multiblock")) {
+                            // not the exception im looking for
+                            throw e;
+                        }
+        
+                        var debugMessage = e.getMessage() + "\n";
+                        debugMessage += "previousWorldBlockState " + previousWorldBlockState + "\n";
+                        debugMessage += "previousTileBlockState " + previousTileBlockState + "\n";
+                        debugMessage += "atErrorWorldBlockState " + atErrorWorldBlockState + "\n";
+                        debugMessage += "atErrorTileBlockState " + atErrorTileBlockState + "\n";
+                        debugMessage += "atErrorRequestedBlockState " + atErrorRequestedBlockState + "\n";
+        
+                        // does still need to crash
+                        throw new IllegalStateException(debugMessage);
+                    }
+                }
                 if (!hasSaveDelegate) {
                     MultiblockTileModule<TileType, ControllerType> module = blocks.getOne();
                     assert module != null;
@@ -539,7 +572,30 @@ public class MultiblockController<
                     onDisassemblyTiles.forEach(IOnDisassemblyTile::onDisassembly);
                 }
             }
-            assemblyAttemptedTiles.forEach(IAssemblyAttemptedTile::onAssemblyAttempted);
+            for (IAssemblyAttemptedTile assemblyAttemptedTile : assemblyAttemptedTiles) {
+                assemblyAttemptedTile.onAssemblyAttempted();
+                previousWorldBlockState = world.getBlockState(((PhosphophylliteTile)assemblyAttemptedTile).getBlockPos());
+                previousTileBlockState = ((PhosphophylliteTile)assemblyAttemptedTile).getBlockState();
+                atErrorRequestedBlockState = null; // in case i forget to set it somewhere
+                try {
+                    assemblyAttemptedTile.onAssemblyAttempted();
+                } catch (IllegalStateException e) {
+                    if(!e.getMessage().contains("multiblock")) {
+                        // not the exception im looking for
+                        throw e;
+                    }
+        
+                    var debugMessage = e.getMessage() + "\n";
+                    debugMessage += "previousWorldBlockState " + previousWorldBlockState + "\n";
+                    debugMessage += "previousTileBlockState " + previousTileBlockState + "\n";
+                    debugMessage += "atErrorWorldBlockState " + atErrorWorldBlockState + "\n";
+                    debugMessage += "atErrorTileBlockState " + atErrorTileBlockState + "\n";
+                    debugMessage += "atErrorRequestedBlockState " + atErrorRequestedBlockState + "\n";
+                    
+                    // does still need to crash
+                    throw new IllegalStateException(debugMessage);
+                }
+            }
         } finally {
             isUpdatingState = false;
         }
@@ -681,11 +737,11 @@ public class MultiblockController<
     @Nonnull
     public String getDebugString() {
         return "BlockCount: " + blocks.size() + "\n" +
-                       "Min " + minCoord + "\n" +
-                       "Max " + maxCoord + "\n" +
-                       "Controller: " + this + "\n" +
-                       "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
-                       "AssemblyState: " + state + "\n";
+                "Min " + minCoord + "\n" +
+                "Max " + maxCoord + "\n" +
+                "Controller: " + this + "\n" +
+                "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
+                "AssemblyState: " + state + "\n";
     }
     
     
