@@ -128,7 +128,7 @@ mixin {
     config 'phosphophyllite.mixins.json'
 }
 
-//repositories {
+repositories {
 //    maven {
 //        name = "CurseForge"
 //        url = "https://minecraft.curseforge.com/api/maven/"
@@ -136,10 +136,10 @@ mixin {
 //    maven {
 //        url = "https://www.cursemaven.com"
 //    }
-//    maven {
-//        url =  'https://modmaven.dev/'
-//    }
-//}
+    maven {
+        url =  'https://modmaven.dev/'
+    }
+}
 
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
@@ -149,7 +149,7 @@ dependencies {
 //    compileOnly fg.deobf('curse.maven:tita-287342:3346366')
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
 //
-//    compileOnly "mekanism:Mekanism:${mekanism_mc_version}-${mekanism_version}:api"
+    compileOnly "mekanism:Mekanism:1.19.2-10.3.2.469:api"
 
     compileOnly "org.lwjgl:lwjgl-vulkan:3.2.2"
 }
