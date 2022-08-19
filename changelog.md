@@ -1,3 +1,9 @@
+# 1.19.2-0.6.0-beta.5
+ - 1.19.2
+ - Initial work on new multiblock system
+ - worldgen registration disabled
+ - mekanism gas integration re-enabled
+
 # 1.18.2-0.6.0-beta-1.2
  - handle a CME better to give better debug info 
 
