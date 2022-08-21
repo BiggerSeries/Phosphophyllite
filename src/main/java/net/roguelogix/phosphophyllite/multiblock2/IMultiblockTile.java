@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
+import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -14,11 +15,12 @@ public interface IMultiblockTile<
         TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
-        > extends IModularTile {
+        > extends IModularTile, IIsTickingTracker.Tile {
     
     ControllerType createController();
     
     default ControllerType controller() {
+        //noinspection ConstantConditions
         return multiblockModule().controller();
     }
     
@@ -28,7 +30,7 @@ public interface IMultiblockTile<
     }
     
     default MultiblockTileModule<TileType, BlockType, ControllerType> multiblockModule() {
-        //noinspection unchecked
+        //noinspection unchecked,ConstantConditions
         return (MultiblockTileModule<TileType, BlockType, ControllerType>) module(IMultiblockTile.class);
     }
     

@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
+import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.Queues;
@@ -28,12 +29,13 @@ public final class MultiblockTileModule<
         TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
-        > extends TileModule<TileType> {
+        > extends TileModule<TileType> implements IIsTickingTracker {
     
     @Nullable
     private ControllerType controller;
     
     boolean preExistingBlock = false;
+    boolean allowAttach = false;
     
     long lastSavedTick = 0;
     
@@ -64,10 +66,22 @@ public final class MultiblockTileModule<
         }
     }
     
+    /*
+     * There is a potential edge case where a multiblock can have blocks half loaded be broken by non-player means (quarry)
+     */
     @Override
-    public void onAdded() {
-        if (!Objects.requireNonNull(iface.getLevel()).isClientSide) {
-            attachToNeighborsLater();
+    public void startTicking() {
+        // this fires on server only
+        allowAttach = true;
+        attachToNeighborsLater();
+    }
+    
+    @Override
+    public void stopTicking() {
+        if (controller != null) {
+            allowAttach = false;
+            // effectively chunk unload, if a player is going to remove it, it will be ticking again when that happens
+            controller.detach(this, true, false, true);
         }
     }
     
@@ -110,6 +124,9 @@ public final class MultiblockTileModule<
     
     @Contract(pure = true)
     private boolean shouldConnectTo(IMultiblockTile<?, ?, ?> otherRawTile, Direction direction) {
+        if(!allowAttach) {
+            return false;
+        }
         if (this.controller != null) {
             if (!controller.canAttachTile(otherRawTile)) {
                 return false;

@@ -6,24 +6,22 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.SectionPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
-import net.roguelogix.phosphophyllite.modular.api.IModularBlock;
-import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.multiblock.Validator;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
-import net.roguelogix.phosphophyllite.util.*;
+import net.roguelogix.phosphophyllite.util.AStarList;
+import net.roguelogix.phosphophyllite.util.ModuleMap;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.phosphophyllite.util.Util;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nonnull;
@@ -66,7 +64,6 @@ public class MultiblockController<
     private final Vector3i maxExtremeBlocks = new Vector3i();
     
     private long lastTick = -1;
-    private long lastFullTick = -1;
     private long checkForDetachmentsAtTick = Long.MAX_VALUE;
     
     private record Detachment(BlockPos pos, byte directions) {
@@ -581,16 +578,6 @@ public class MultiblockController<
         processMerges();
         updateMinMaxCoordinates();
         updateAssemblyState();
-        
-        if (!Util.isEntireAreaLoaded(level, min(), max())) {
-            return;
-        }
-        if (lastFullTick < lastTick - 1) {
-            requestValidation();
-            lastFullTick = lastTick;
-            return;
-        }
-        lastFullTick = lastTick;
         
         modules().forEach(MultiblockControllerModule::preTick);
         if (assemblyState == AssemblyState.ASSEMBLED) {
