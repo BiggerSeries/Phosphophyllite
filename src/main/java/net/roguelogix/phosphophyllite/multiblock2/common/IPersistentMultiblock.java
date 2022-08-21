@@ -111,6 +111,9 @@ public interface IPersistentMultiblock<
         
         public void onPartUnloaded(TileType tile) {
             partRemoved(tile);
+            if (controller.assemblyState() != MultiblockController.AssemblyState.PAUSED) {
+                controller.transitionToState(MultiblockController.AssemblyState.PAUSED);
+            }
         }
         
         public void onPartAttached(TileType tile) {
