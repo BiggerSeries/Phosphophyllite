@@ -4,6 +4,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.common.IPersistentMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.common.IPersistentMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
@@ -21,15 +23,15 @@ import java.util.Objects;
 
 @NonnullDefault
 public interface ITouchingMultiblock<
-        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+        TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType> & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IRectangularMultiblockBlock,
-        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
         > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     final class Module<
-            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
+            TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType> & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
-            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
             > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
         
         private boolean assembled = false;
