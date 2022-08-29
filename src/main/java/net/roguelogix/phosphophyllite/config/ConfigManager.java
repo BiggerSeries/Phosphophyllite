@@ -3,99 +3,153 @@ package net.roguelogix.phosphophyllite.config;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import net.roguelogix.phosphophyllite.parsers.Element;
-import net.roguelogix.phosphophyllite.parsers.JSON5;
 import net.roguelogix.phosphophyllite.parsers.ROBN;
-import net.roguelogix.phosphophyllite.parsers.TOML;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Locale;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+// TODO: 8/28/22 registration/preload/postload
+@NonnullDefault
 public class ConfigManager {
-    
     static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Config");
+    private static final String PROTOCOL_VERSION = "1";
+    public static final SimpleChannel NETWORK_CHANNEL = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation(modid, "phosphophyllite/configsync"),
+            () -> PROTOCOL_VERSION,
+            PROTOCOL_VERSION::equals,
+            PROTOCOL_VERSION::equals
+    );
     
-    private static final Object2ObjectOpenHashMap<String, ModConfig> modConfigs = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<String, ConfigRegistration> clientConfigs = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<String, ConfigRegistration> commonConfigs = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<String, ConfigRegistration> serverConfigs = new Object2ObjectOpenHashMap<>();
     
-    public static void registerConfig(Field field, String modName) {
-        if (!field.isAnnotationPresent(RegisterConfig.class)) {
-            throw new IllegalArgumentException("Field must be annotated with @RegisterConfig");
-        }
-        if (!Modifier.isStatic(field.getModifiers())) {
-            throw new IllegalArgumentException("Base config object must be static");
-        }
-//        if(Modifier.isFinal(field.getModifiers())){
-//            throw new IllegalArgumentException("Base config object cannot be final");
-//        }
-        var annotation = field.getAnnotation(RegisterConfig.class);
-        if (!annotation.name().equals("")) {
-            modName = annotation.name();
-        }
-        
-        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            if (annotation.type() == ConfigType.CLIENT) {
-                // no need to load client configs on the server
-                return;
+    private static boolean connectedToServer = false;
+    @Nullable
+    private static MinecraftServer server;
+    private static final ObjectArrayList<ServerPlayer> players = new ObjectArrayList<>();
+    
+    public static void registerConfig(Object rootConfigObject, RegisterConfig annotation) {
+        registerConfig(rootConfigObject, ModLoadingContext.get().getActiveNamespace(), annotation);
+    }
+    
+    public static void registerConfig(Object rootConfigObject, String modName, RegisterConfig annotation) {
+        registerConfig(rootConfigObject, modName, annotation.name(), annotation.folder(), annotation.comment(), annotation.format(), annotation.type(), annotation.rootLevelType(), annotation.rootLevelReloadable());
+    }
+    
+    public static void registerConfig(Object rootConfigObject, String modName, String name, String folder, String comment, ConfigFormat format, ConfigType[] configTypes, ConfigType rootLevelDefaultType, boolean rootLevelReloadableDefault) {
+        if (configTypes.length == 1) {
+            rootLevelDefaultType = rootLevelDefaultType.from(configTypes[0]);
+        } else {
+            if (rootLevelDefaultType == ConfigType.NULL) {
+                throw new IllegalArgumentException("Must specify root level default type when registering multiple config types");
             }
         }
-        
-        ModConfig config = new ModConfig(field, modName);
-        modConfigs.put(config.baseFile.toString(), config);
-        config.load();
+        if (name.isEmpty()) {
+            name = modName;
+        }
+        for (final var configType : Arrays.stream(configTypes).collect(Collectors.toSet())) {
+            if (!configType.appliesToPhysicalSide) {
+                continue;
+            }
+            var configs = switch (configType) {
+                case NULL -> null;
+                case CLIENT -> clientConfigs;
+                case COMMON -> commonConfigs;
+                case SERVER -> serverConfigs;
+            };
+            assert configs != null;
+            final var registration = new ConfigRegistration(rootConfigObject, modName, name, folder, comment, format, configType, rootLevelDefaultType, rootLevelReloadableDefault);
+            if (registration.isEmpty()) {
+                continue;
+            }
+            configs.put(name, registration);
+        }
     }
     
-    void reloadConfigs() {
-        for (ModConfig value : modConfigs.values()) {
-            value.reload();
+    // TODO: 8/28/22 command to trigger this
+    public static void reloadAllConfigs() {
+        for (final var value : clientConfigs.values()) {
+            value.loadLocalConfigFile(true);
         }
-        for (ServerPlayer player : players) {
-            sendConfigToPlayer(player, false);
+        if (FMLEnvironment.dist.isDedicatedServer() || server != null && !server.isDedicatedServer()) {
+            // dedicated servers and disconnected clients reload common and server configs too
+            for (final var value : commonConfigs.values()) {
+                value.loadLocalConfigFile(true);
+            }
+            for (final var value : serverConfigs.values()) {
+                value.loadLocalConfigFile(true);
+            }
+            for (ServerPlayer player : players) {
+                sendConfigToPlayer(player, false);
+            }
         }
     }
+    
+    public static List<ConfigRegistration> getAllConfigsForMod(String modName) {
+        return Stream.concat(clientConfigs.values().stream(), Stream.concat(commonConfigs.values().stream(), serverConfigs.values().stream()))
+                .filter(configRegistration -> configRegistration.modName.equals(modName)).collect(Collectors.toList());
+    }
+    
     
     @OnModLoad
     private static void onModLoad() {
-        INSTANCE.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
+        NETWORK_CHANNEL.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
+        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
+        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerStopped);
+        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingIn);
+        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingOut);
     }
     
-    private static final ObjectArrayList<ServerPlayer> players = new ObjectArrayList<>();
+    private static void onServerAboutToStart(ServerAboutToStartEvent event) {
+        server = event.getServer();
+    }
+    
+    private static void onServerStopped(ServerStoppedEvent event) {
+        server = null;
+        players.clear();
+    }
+    
+    private static void onLoggingIn(ClientPlayerNetworkEvent.LoggingIn event) {
+        connectedToServer = true;
+    }
+    
+    private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        connectedToServer = false;
+        commonConfigs.values().forEach(ConfigRegistration::unloadRemoteConfig);
+    }
     
     private static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent e) {
         var server = e.getEntity().getServer();
@@ -106,8 +160,8 @@ public class ConfigManager {
             if (serverUUID.toString().equals(localUUID)) {
                 // ignore local player on integrated server
                 // do have the configs reload the saved tree though
-                for (ModConfig value : modConfigs.values()) {
-                    value.reloadSavedTree();
+                for (ConfigRegistration value : commonConfigs.values()) {
+                    value.unloadRemoteConfig();
                 }
                 return;
             }
@@ -117,28 +171,26 @@ public class ConfigManager {
         sendConfigToPlayer(player, true);
     }
     
-    private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
-        var player = (ServerPlayer) e.getEntity();
-        players.remove(player);
-    }
-    
     private static void sendConfigToPlayer(ServerPlayer player, boolean initialLogin) {
         final var configs = new Object2ObjectOpenHashMap<String, ArrayList<Byte>>();
-        for (ModConfig modConfig : modConfigs.values()) {
-            if (modConfig.type == ConfigType.COMMON) {
-                var configTree = modConfig.spec.generateElementTree(true, true);
-                var configROBN = ROBN.parseElement(configTree);
-                if (configROBN != null) {
-                    configs.put(modConfig.baseFile.toString(), configROBN);
-                }
+        for (ConfigRegistration modConfig : commonConfigs.values()) {
+            var configTree = modConfig.rootConfigSpecNode.generateSyncElement();
+            var configROBN = ROBN.parseElement(configTree);
+            if (configROBN != null) {
+                configs.put(modConfig.baseFile.toString(), configROBN);
             }
         }
-        var robn = net.roguelogix.phosphophyllite.robn.ROBN.toROBN(new Pair(initialLogin, configs));
+        var robn = net.roguelogix.phosphophyllite.robn.ROBN.toROBN(new Pair<>(initialLogin, configs));
         var bytes = new byte[robn.size()];
         for (int i = 0; i < robn.size(); i++) {
             bytes[i] = robn.get(i);
         }
-        INSTANCE.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+        NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+    }
+    
+    private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
+        var player = (ServerPlayer) e.getEntity();
+        players.remove(player);
     }
     
     private static void packetHandler(@Nonnull ByteArrayPacketMessage packet, @Nonnull Supplier<NetworkEvent.Context> ctx) {
@@ -158,13 +210,13 @@ public class ConfigManager {
                 final var configs = pair.getSecond();
                 for (final var entry : configs.entrySet()) {
                     final var configName = entry.getKey();
-                    final var config = modConfigs.get(configName);
+                    final var config = commonConfigs.get(configName);
                     if (config == null) {
                         return;
                     }
                     try {
                         final var elementTree = ROBN.parseROBN(entry.getValue());
-                        config.loadServerTree(elementTree, initialLogin);
+                        config.loadRemoteConfig(elementTree, !initialLogin);
                     } catch (IllegalArgumentException ignored) {
                     }
                 }
@@ -174,20 +226,8 @@ public class ConfigManager {
         ctx.get().setPacketHandled(true);
     }
     
-    private static final String PROTOCOL_VERSION = "0";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(modid, "phosphophyllite/configsync"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
-    
     private static class ByteArrayPacketMessage {
         public byte[] bytes;
-        
-        public ByteArrayPacketMessage() {
-        
-        }
         
         public ByteArrayPacketMessage(@Nonnull byte[] readByteArray) {
             bytes = readByteArray;
@@ -204,252 +244,4 @@ public class ConfigManager {
         }
     }
     
-    private static class ModConfig {
-        private final Object configObject;
-        private final Class<?> configClazz;
-        final RegisterConfig annotation;
-        final ConfigType type;
-        private final String modName;
-        File baseFile;
-        File actualFile = null;
-        ConfigFormat actualFormat;
-        Element savedTree;
-        
-        private final ConfigSpec spec;
-        
-        ModConfig(Field field, String name) {
-            try {
-                configObject = field.get(null);
-            } catch (IllegalAccessException e) {
-                throw new IllegalArgumentException(e);
-            }
-            configClazz = field.getType();
-            modName = name;
-            annotation = field.getAnnotation(RegisterConfig.class);
-            type = annotation.type();
-            spec = new ConfigSpec(field, configObject);
-            baseFile = new File("config/" + annotation.folder() + "/" + name + "-" + annotation.type().toString().toLowerCase(Locale.US));
-            
-            loadReflections();
-            runRegistrations();
-        }
-        
-        private Field enableAdvanced;
-        
-        boolean enableAdvanced() {
-            if (enableAdvanced == null) {
-                return false;
-            }
-            try {
-                return enableAdvanced.getBoolean(configObject);
-            } catch (IllegalAccessException ignored) {
-                return false;
-            }
-        }
-        
-        private final HashSet<Method> registrations = new HashSet<>();
-        private final HashSet<Method> preLoads = new HashSet<>();
-        private final HashSet<Method> postLoads = new HashSet<>();
-        
-        void loadReflections() {
-            for (Field declaredField : configClazz.getDeclaredFields()) {
-                if (declaredField.isAnnotationPresent(ConfigValue.class) && declaredField.getAnnotation(ConfigValue.class).enableAdvanced()) {
-                    enableAdvanced = declaredField;
-                    enableAdvanced.setAccessible(true);
-                    Class<?> EAClass = enableAdvanced.getType();
-                    if (EAClass != boolean.class && EAClass != Boolean.class) {
-                        throw new ConfigSpec.DefinitionError("Advanced enable flag must be a boolean");
-                    }
-                    break;
-                }
-            }
-            
-            for (Method declaredMethod : configClazz.getDeclaredMethods()) {
-                if (declaredMethod.getReturnType() != Void.TYPE) {
-                    continue;
-                }
-                if (declaredMethod.getParameterCount() != 0) {
-                    continue;
-                }
-                if (!Modifier.isStatic(declaredMethod.getModifiers())) {
-                    continue;
-                }
-                if (declaredMethod.isAnnotationPresent(RegisterConfig.Registration.class)) {
-                    declaredMethod.setAccessible(true);
-                    registrations.add(declaredMethod);
-                }
-                if (declaredMethod.isAnnotationPresent(RegisterConfig.PreLoad.class)) {
-                    declaredMethod.setAccessible(true);
-                    preLoads.add(declaredMethod);
-                }
-                if (declaredMethod.isAnnotationPresent(RegisterConfig.PostLoad.class)) {
-                    declaredMethod.setAccessible(true);
-                    postLoads.add(declaredMethod);
-                }
-            }
-        }
-        
-        void runPreLoads() {
-            for (Method preLoad : preLoads) {
-                try {
-                    preLoad.invoke(null);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        
-        void runRegistrations() {
-            for (Method load : registrations) {
-                try {
-                    load.invoke(null);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        
-        void runPostLoads() {
-            for (Method postLoad : postLoads) {
-                try {
-                    postLoad.invoke(null);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        
-        public void reload() {
-            load(true);
-        }
-        
-        void load() {
-            load(false);
-        }
-        
-        private void load(boolean isReload) {
-            if (actualFile == null) {
-                findFile();
-            }
-            if (!actualFile.exists()) {
-                generateFile();
-                // if we just generated the file, its default values, no need to do anything else
-                runPreLoads();
-                runPostLoads();
-                return;
-            }
-            Element tree = readFile();
-            if (tree == null) {
-                LOGGER.error("No config data for " + modName + " loaded, leaving defaults");
-                runPreLoads();
-                runPostLoads();
-                return;
-            }
-            loadElementTree(tree, isReload);
-            tree = spec.trimAndRegenerateTree(tree, enableAdvanced());
-            writeFile(tree);
-        }
-        
-        void findFile() {
-            File file = null;
-            ConfigFormat format = null;
-            for (ConfigFormat value : ConfigFormat.values()) {
-                File fullFile = new File(baseFile + "." + value.toString().toLowerCase(Locale.US));
-                if (fullFile.exists()) {
-                    if (file != null) {
-                        // why the fuck are there multiple?
-                        // if its the correct format, we will use it, otherwise, whatever we have is good enough
-                        if (annotation.format() == value) {
-                            file = fullFile;
-                            format = value;
-                        }
-                    } else {
-                        format = value;
-                        file = fullFile;
-                    }
-                }
-            }
-            
-            if (file == null) {
-                file = new File(baseFile + "." + annotation.format().toString().toLowerCase(Locale.US));
-                format = annotation.format();
-            }
-            
-            actualFile = file;
-            actualFormat = format;
-        }
-        
-        void generateFile() {
-            spec.writeDefaults();
-            writeFile(spec.trimElementTree(spec.generateElementTree(false)));
-        }
-        
-        void writeFile(@Nullable Element tree) {
-            if (tree == null) {
-                var path = Paths.get(String.valueOf(actualFile));
-                if (Files.exists(path)) {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException ignored) {
-                        // i really dont carez
-                    }
-                }
-                return;
-            }
-            String str = switch (actualFormat) {
-                case JSON5 -> JSON5.parseElement(tree);
-                case TOML -> TOML.parseElement(tree);
-            };
-            try {
-                //noinspection ResultOfMethodCallIgnored
-                actualFile.getParentFile().mkdirs();
-                Files.write(Paths.get(String.valueOf(actualFile)), str.getBytes());
-            } catch (IOException e) {
-                LOGGER.error("Failed to write config file for " + modName);
-                e.printStackTrace();
-            }
-        }
-        
-        @Nullable
-        Element readFile() {
-            String str;
-            try {
-                str = new String(Files.readAllBytes(Paths.get(String.valueOf(actualFile))));
-            } catch (IOException e) {
-                LOGGER.error("Failed to read config file for " + modName);
-                return null;
-            }
-            
-            Element element = switch (actualFormat) {
-                case JSON5 -> JSON5.parseString(str);
-                case TOML -> TOML.parseString(str);
-            };
-            if (element == null) {
-                LOGGER.error("Failed to parse config for " + modName);
-            }
-            return element;
-        }
-        
-        public void reloadSavedTree() {
-            if (savedTree == null) {
-                return;
-            }
-            loadElementTree(savedTree, true);
-            savedTree = null;
-        }
-        
-        public void loadServerTree(@Nullable Element tree, boolean initialLogin) {
-            if (tree == null) {
-                return;
-            }
-            savedTree = spec.generateElementTree(true, true);
-            loadElementTree(tree, !initialLogin);
-        }
-        
-        public void loadElementTree(Element tree, boolean isReload) {
-            runPreLoads();
-            spec.writeElementTree(tree, isReload);
-            runPostLoads();
-        }
-    }
 }

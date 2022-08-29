@@ -842,8 +842,10 @@ public class Registry {
             if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                 return;
             }
-            ConfigManager.registerConfig(field, modNamespace);
-        } catch (NoSuchFieldException e) {
+            var configObject = field.get(null);
+            var annotation = field.getAnnotation(RegisterConfig.class);
+            ConfigManager.registerConfig(configObject, annotation);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
     }

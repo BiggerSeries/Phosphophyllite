@@ -29,20 +29,32 @@ public class ROBN {
         var name = (String) map.get("name");
         Object val;
         switch (type) {
-            case String, Number, Boolean -> {
+            case String -> {
                 val = map.get("value");
                 if (!(val instanceof String)) {
                     throw new IllegalArgumentException();
                 }
             }
-            case Array, Section -> {
+            case Number -> {
+                val = map.get("value");
+                if (!(val instanceof Number)) {
+                    throw new IllegalArgumentException();
+                }
+            }
+            case Boolean -> {
+                val = map.get("value");
+                if (!(val instanceof Boolean)) {
+                    throw new IllegalArgumentException();
+                }
+            }
+            case Array, Map -> {
                 int length = (int) map.get("length");
                 var array = new Element[length];
                 for (int i = 0; i < length; i++) {
                     //noinspection unchecked
                     array[i] = parseROBNMap((Map<String, Object>) map.get(Integer.toString(i)));
                 }
-                val = array;
+                return new Element(type, null, name, array);
             }
             default -> throw new IllegalStateException("Unexpected value: " + type);
         }
@@ -67,10 +79,11 @@ public class ROBN {
         // comment is skipped, ROBN doesnt need it
         switch (element.type) {
             case String, Number, Boolean -> {
-                map.put("value", element.asString());
+                map.put("value", element.value);
             }
-            case Array, Section -> {
-                var array = element.asArray();
+            case Array, Map -> {
+                var array = element.subArray;
+                assert array != null;
                 map.put("length", array.length);
                 for (int i = 0; i < array.length; i++) {
                     map.put(Integer.toString(i), parseElementInternal(array[i]));

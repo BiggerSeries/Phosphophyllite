@@ -1,10 +1,11 @@
 package net.roguelogix.phosphophyllite;
 
+import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
 
 public class PhosphophylliteConfig {
     
-    @ConfigValue(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = true)
+    @ConfigValue(comment = "Recommended value: false\nNo really, it should be false, dont use performant, it breaks shit", hidden = ConfigValue.BoolOption.True)
     public final boolean bypassPerformantCheck;
     
     {
@@ -14,7 +15,7 @@ public class PhosphophylliteConfig {
     public static class GUI {
         @ConfigValue(range = "[50,)")
         public final long UpdateIntervalMS;
-    
+        
         {
             UpdateIntervalMS = 200;
         }
@@ -22,9 +23,4 @@ public class PhosphophylliteConfig {
     
     @ConfigValue
     public final GUI gui = new GUI();
-
-//    public static class Multiblock{
-//        @net.roguelogix.phosphophyllite.config.PhosphophylliteConfig.Value
-//        public static boolean StrictNBTConsistency = true;
-//    }
 }

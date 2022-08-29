@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.parsers;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+// TODO: 8/25/22 element tree safeties would be great, as is, these things are fragile AF
 public class Element {
     
     public Element(@Nonnull Type type, @Nullable String comment, @Nullable String name, @Nonnull Object value) {
@@ -10,6 +11,15 @@ public class Element {
         this.comment = comment;
         this.name = name;
         this.value = value;
+        subArray = null;
+    }
+    
+    public Element(@Nonnull Type type, @Nullable String comment, @Nullable String name, @Nonnull Element[] value) {
+        this.type = type;
+        this.comment = comment;
+        this.name = name;
+        this.value = null;
+        subArray = value;
     }
     
     public enum Type {
@@ -17,7 +27,7 @@ public class Element {
         Number,
         Boolean,
         Array,
-        Section
+        Map
     }
     
     @Nonnull
@@ -29,35 +39,28 @@ public class Element {
     @Nullable
     public final String name;
     
-    @Nonnull
+    @Nullable
     public final Object value;
+    @Nullable
+    public final Element[] subArray;
     
-    @Nonnull
-    public Element[] asArray() {
-        Element[] newArray = new Element[((Object[]) value).length];
-        for (int i = 0; i < newArray.length; i++) {
-            newArray[i] = (Element) ((Object[]) value)[i];
-        }
-        return newArray;
-    }
-    
-    public int subElemenets(){
-        if(type != Type.Section){
-            return -1;
-        }
-        return ((Object[]) value).length;
-    }
-    
-    @Nonnull
     public String asString() {
-        return (String) value;
+        assert value != null;
+        return value.toString();
+    }
+    
+    public boolean asBool(){
+        assert value != null;
+        return (boolean) value;
     }
     
     public long asLong() {
-        return Long.parseLong(asString());
+        assert value != null;
+        return ((Number)value).longValue();
     }
     
     public double asDouble() {
-        return Double.parseDouble(asString());
+        assert value != null;
+        return ((Number)value).doubleValue();
     }
 }

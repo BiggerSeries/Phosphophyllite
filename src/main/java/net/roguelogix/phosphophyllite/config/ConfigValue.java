@@ -1,5 +1,7 @@
 package net.roguelogix.phosphophyllite.config;
 
+import it.unimi.dsi.fastutil.booleans.Boolean2BooleanFunction;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -9,9 +11,26 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ConfigValue {
     
-    String comment() default "";
+    enum BoolOption {
+        Default(Boolean2BooleanFunction.identity()),
+        True(a -> true),
+        False(a -> false),
+        ;
+        
+        private final Boolean2BooleanFunction function;
     
-    boolean commentDefaultValue() default true;
+        BoolOption(Boolean2BooleanFunction function) {
+            this.function = function;
+        }
+    
+        public boolean from(boolean defaultValue) {
+            return function.apply(defaultValue);
+        }
+    }
+    
+    ConfigType configType() default ConfigType.NULL;
+    
+    String comment() default "";
     
     // only used for numbers
     String range() default "(,)";
@@ -19,12 +38,10 @@ public @interface ConfigValue {
     // only used for enums
     String[] allowedValues() default {};
     
-    boolean advanced() default false;
+    BoolOption advanced() default BoolOption.Default;
     
-    boolean hidden() default false;
+    BoolOption hidden() default BoolOption.Default;
     
-    boolean enableAdvanced() default false;
-    
-    boolean reloadable() default false;
+    BoolOption reloadable() default BoolOption.Default;
 }
 

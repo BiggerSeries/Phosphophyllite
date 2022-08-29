@@ -10,11 +10,12 @@ import java.lang.annotation.Target;
 
 import static net.roguelogix.phosphophyllite.config.ConfigFormat.JSON5;
 import static net.roguelogix.phosphophyllite.config.ConfigType.COMMON;
+import static net.roguelogix.phosphophyllite.config.ConfigType.NULL;
 
 /**
  * This is specific for Phosphophyllite configs
  * All this does is tell the config loader that this is the root of a config, and to start loading from here
- *
+ * <p>
  * you can do this manually via ConfigManager.registerConfig
  */
 @Target(ElementType.FIELD)
@@ -28,14 +29,17 @@ public @interface RegisterConfig {
     
     ConfigFormat format() default JSON5;
     
-    ConfigType type() default COMMON;
+    ConfigType[] type() default COMMON;
+    
+    ConfigType rootLevelType() default NULL;
+    
+    boolean rootLevelReloadable() default false;
     
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface Registration {
     }
     
-    boolean reloadable() default false;
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface PreLoad {

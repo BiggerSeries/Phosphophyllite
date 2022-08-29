@@ -14,6 +14,7 @@ import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.event.ReloadDataEvent;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
@@ -39,7 +40,7 @@ public class Phosphophyllite {
     // used to ensure i dont tick things twice
     private static long tick = 0;
     
-    @RegisterConfig(folder = modid, name = "general")
+    @RegisterConfig(folder = modid, name = "general", type = {ConfigType.CLIENT, ConfigType.COMMON, ConfigType.SERVER}, rootLevelType = ConfigType.SERVER)
     public static final PhosphophylliteConfig CONFIG = new PhosphophylliteConfig();
     
     public Phosphophyllite() {

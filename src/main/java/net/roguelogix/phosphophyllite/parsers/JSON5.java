@@ -25,23 +25,24 @@ public class JSON5 {
         if (obj instanceof Map) {
             final ArrayList<Element> subElements = new ArrayList<>();
             ((Map<?, ?>) obj).forEach((str, obj1) -> subElements.add(parseObject(obj1, (String) str)));
-            return new Element(Element.Type.Section, null, name, subElements.toArray());
+            return new Element(Element.Type.Map, null, name, subElements.toArray(new Element[0]));
         } else if (obj instanceof List) {
             final ArrayList<Element> subElements = new ArrayList<>();
             ((List<?>) obj).forEach(e -> subElements.add(parseObject(e, null)));
-            return new Element(Element.Type.Array, null, name, subElements.toArray());
+            return new Element(Element.Type.Array, null, name, subElements.toArray(new Element[0]));
         } else if (obj instanceof String) {
             return new Element(Element.Type.String, null, name, obj);
         } else if (obj instanceof Boolean) {
-            return new Element(Element.Type.Boolean, null, name, obj.toString());
-        } else {
-            return new Element(Element.Type.Number, null, name, obj.toString());
+            return new Element(Element.Type.Boolean, null, name, obj);
+        } else if (obj instanceof Number){
+            return new Element(Element.Type.Number, null, name, obj);
         }
+        throw new IllegalStateException("Unknown object type");
     }
     
     public static String parseElement(Element element) {
         StringBuilder builder = new StringBuilder();
-        parseElement(new Element(element.type, element.comment, null, element.value), 0, builder, false);
+        parseElement(element, 0, builder, false);
         return builder.substring(1, builder.length() - 2);
     }
     
@@ -89,7 +90,8 @@ public class JSON5 {
                 break;
             }
             case Array: {
-                Element[] elements = element.asArray();
+                Element[] elements = element.subArray;
+                assert elements != null;
                 builder.append("[");
                 for (int i = 0; i < elements.length; i++) {
                     parseElement(elements[i], indentLevel + 1, builder, i > 0);
@@ -100,8 +102,9 @@ public class JSON5 {
                 builder.append("]");
                 break;
             }
-            case Section: {
-                Element[] elements = element.asArray();
+            case Map: {
+                Element[] elements = element.subArray;
+                assert elements != null;
                 builder.append("{");
                 for (Element value : elements) {
                     parseElement(value, indentLevel + 1, builder, omitComments);
