@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.multiblock;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
+import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -12,7 +13,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public interface IMultiblockTile<
         TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
         ControllerType extends MultiblockController<TileType, ControllerType>
-        > extends IModularTile {
+        > extends IModularTile, IIsTickingTracker.Tile {
     
     ControllerType createController();
     

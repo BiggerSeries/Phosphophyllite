@@ -14,6 +14,7 @@ import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
+import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.Util;
 
@@ -27,7 +28,7 @@ import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSE
 public class MultiblockTileModule<
         TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
         ControllerType extends MultiblockController<TileType, ControllerType>
-        > extends TileModule<TileType> {
+        > extends TileModule<TileType> implements IIsTickingTracker {
     
     private final boolean ASSEMBLY_STATE = iface.getBlockState().hasProperty(ASSEMBLED);
     
@@ -92,7 +93,7 @@ public class MultiblockTileModule<
     
     long lastSavedTick = 0;
     
-    private boolean allowAttach = true;
+    private boolean allowAttach = false;
     boolean isSaveDelegate = false;
     
     protected BlockState assembledBlockState(BlockState state) {
@@ -195,8 +196,20 @@ public class MultiblockTileModule<
         assert iface.getLevel() != null;
         if (iface.getLevel().isClientSide) {
             controllerData = null;
-        } else {
-            attachToNeighbors();
+        }
+    }
+    
+    @Override
+    public void startTicking() {
+        allowAttach = true;
+        attachToNeighbors();
+    }
+    
+    @Override
+    public void stopTicking() {
+        if (controller != null) {
+            allowAttach = false;
+            controller.detach(this, true, false);
         }
     }
     
@@ -207,6 +220,8 @@ public class MultiblockTileModule<
         }
         allowAttach = false;
     }
+    
+
     
     @Nullable
     @Override
