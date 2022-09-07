@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
@@ -46,6 +47,13 @@ public final class MultiblockRegistry {
             newControllers.removeIf(multiblockController -> multiblockController.level == worldUnloadEvent.getLevel());
             oldControllers.removeIf(multiblockController -> multiblockController.level == worldUnloadEvent.getLevel());
         }
+    }
+    
+    @SubscribeEvent
+    static void onServerStop(final ServerStoppedEvent serverStoppedEvent) {
+        controllersToTick.clear();
+        newControllers.clear();
+        oldControllers.clear();
     }
     
     @SubscribeEvent
