@@ -31,7 +31,9 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class PhosphophylliteBlock extends Block implements IModularBlock {
     
-    public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularBlock");
+    public static final Logger MODULE_LOGGER = LogManager.getLogger("Phosphophyllite/ModularBlock");
+    @Deprecated(forRemoval = true)
+    public static final Logger LOGGER = MODULE_LOGGER;
     
     private Int2ObjectMap<BlockModule<?>> modules;
     
@@ -122,7 +124,7 @@ public class PhosphophylliteBlock extends Block implements IModularBlock {
             if (result == InteractionResult.PASS) {
                 result = moduleResult;
             } else if (moduleResult != InteractionResult.PASS) {
-                LOGGER.warn("Multiple modules using same onUse for block type \"" + getClass().getSimpleName() + "\" at " + pos);
+                MODULE_LOGGER.warn("Multiple modules using same onUse for block type \"" + getClass().getSimpleName() + "\" at " + pos);
             }
         }
         return result;

@@ -15,6 +15,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import static net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile.MODULE_LOGGER;
+
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface ISidedMultipart extends IModularTile {
@@ -100,7 +102,7 @@ public interface ISidedMultipart extends IModularTile {
                     CompoundTag subNBT = nbt.getCompound(value.toString());
                     TileModule<?> module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
+                        MODULE_LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
                         continue;
                     }
                     module.readNBT(subNBT);
@@ -143,7 +145,7 @@ public interface ISidedMultipart extends IModularTile {
                     CompoundTag subNBT = nbt.getCompound(value.toString());
                     var module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
+                        MODULE_LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
                         continue;
                     }
                     module.handleDataNBT(subNBT);
@@ -186,7 +188,7 @@ public interface ISidedMultipart extends IModularTile {
                     CompoundTag subNBT = nbt.getCompound(value.toString());
                     var module = sidedModules[value.get3DDataValue()];
                     if (module == null) {
-                        PhosphophylliteTile.LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
+                        MODULE_LOGGER.warn("Attempting to read NBT to side module that doesnt exist! " + iface + " : " + iface.as(BlockEntity.class).getBlockState());
                         continue;
                     }
                     module.handleUpdateNBT(subNBT);

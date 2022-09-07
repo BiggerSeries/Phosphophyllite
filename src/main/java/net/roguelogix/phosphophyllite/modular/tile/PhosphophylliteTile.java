@@ -36,7 +36,9 @@ import java.util.function.Function;
 @MethodsReturnNonnullByDefault
 public class PhosphophylliteTile extends BlockEntity implements IModularTile, IDebuggable {
     
-    public static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
+    public static final Logger MODULE_LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
+    @Deprecated(forRemoval = true)
+    public static final Logger LOGGER = MODULE_LOGGER;
     
     boolean removed = false;
     private final Object2ObjectOpenHashMap<Class<?>, TileModule<?>> modules = new Object2ObjectOpenHashMap<>();
@@ -173,7 +175,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
                 String key = module.saveKey();
                 if (key != null) {
                     if (subNBTs.contains(key)) {
-                        LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
+                        MODULE_LOGGER.warn("Multiple modules with the same save key \"" + key + "\" for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                     }
                     subNBTs.put(key, nbt);
                 }
@@ -224,7 +226,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
                 }
                 module.handleDataNBT(nbt);
                 if (nbt == EMPTY_TAG && !nbt.isEmpty()) {
-                    LOGGER.warn("Module " + key + " wrote to NBT in read!");
+                    MODULE_LOGGER.warn("Module " + key + " wrote to NBT in read!");
                     for (var str : EMPTY_TAG.getAllKeys().toArray(new String[0])) {
                         EMPTY_TAG.remove(str);
                     }
@@ -313,7 +315,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
             var moduleOptional = module.capability(cap, side);
             if (moduleOptional.isPresent()) {
                 if (optional.isPresent()) {
-                    LOGGER.warn("Multiple implementations of same capability \"" + cap.getName() + "\" on " + side + " side for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
+                    MODULE_LOGGER.warn("Multiple implementations of same capability \"" + cap.getName() + "\" on " + side + " side for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
                     continue;
                 }
                 optional = moduleOptional;
