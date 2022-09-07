@@ -15,6 +15,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
@@ -67,6 +68,9 @@ public class Registry {
     private RegisterEvent.RegisterHelper<BlockEntityType<?>> tileRegistryEvent;
     private final Map<Class<?>, LinkedList<Block>> tileBlocks = new HashMap<>();
     
+    private final WorkQueue registerCapabilityQueue = new WorkQueue();
+    private RegisterCapabilitiesEvent registerCapabilitiesEvent;
+    
     private final WorkQueue clientSetupQueue = new WorkQueue();
     private FMLClientSetupEvent clientSetupEvent;
     
@@ -84,6 +88,7 @@ public class Registry {
         annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
+        annotationMap.put(RegisterCapability.class.getName(), this::registerCapabilityAnnotation);
 //        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
     }
     
@@ -347,7 +352,6 @@ public class Registry {
             }
             
             if (annotation.registerItem()) {
-                
                 boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
                 itemRegistrationQueue.enqueue(() -> {
                     //noinspection ConstantConditions
@@ -484,22 +488,22 @@ public class Registry {
                         final ResourceLocation stillTexture = new ResourceLocation(modid, "fluid/" + name + "_still");
                         final ResourceLocation flowingTexture = new ResourceLocation(modid, "fluid/" + name + "_flowing");
                         final ResourceLocation overlayTexture = new ResourceLocation(modid, "fluid/" + name + "_overlay");
-                
+                        
                         @Override
                         public ResourceLocation getStillTexture() {
                             return stillTexture;
                         }
-                
+                        
                         @Override
                         public ResourceLocation getFlowingTexture() {
                             return flowingTexture;
                         }
-                
+                        
                         @Override
                         public ResourceLocation getOverlayTexture() {
                             return overlayTexture;
                         }
-                
+                        
                         @Override
                         public int getTintColor() {
                             return annotation.color();
@@ -571,7 +575,7 @@ public class Registry {
                     itemRegistryEvent.register(new ResourceLocation(baseRegistryName + "_bucket"), bucket);
                 });
             }
-    
+            
             fluidTypeRegistrationQueue.enqueueUntracked(() -> {
                 fluidTypeRegistryEvent.register(baseResourceLocation, fluidType);
             });
@@ -734,6 +738,8 @@ public class Registry {
             
             // this is safe, surely
             // should actually be, otherwise previous checks should have errored
+            // i was wrong, sorta, i do need to check that this is the correct type
+            // TODO: check this type, somehow
             Class<?> tileClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
             
             LinkedList<Block> blocks = tileBlocks.remove(tileClass);
@@ -754,6 +760,22 @@ public class Registry {
             
             tileRegistryEvent.register(new ResourceLocation(registryName), type);
         });
+    }
+    
+    private void registerCapabilityAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
+        try {
+            final var field = declaringClass.getDeclaredField(memberName);
+            
+            // this is literally how the capability token type is defined, so, yes, this is safe
+            final var capabilityClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+            
+            registerCapabilityQueue.enqueueUntracked(() -> {
+                registerCapabilitiesEvent.register(capabilityClass);
+            });
+            
+        } catch (NoSuchFieldException e) {
+            LOGGER.error("Failed to register capability field " + memberName + " in " + declaringClass.getSimpleName());
+        }
     }
 
 //    private void registerWorldGenAnnotation(String modNamespace, Class<?> oreClazz, final String memberName) {

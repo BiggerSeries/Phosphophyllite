@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.energy;
 
 import net.minecraftforge.energy.IEnergyStorage;
 
+@Deprecated(forRemoval = true)
 public interface IPhosphophylliteEnergyStorage extends IEnergyStorage {
     long insertEnergy(long maxInsert, boolean simulate);
     

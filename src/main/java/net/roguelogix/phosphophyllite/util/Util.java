@@ -439,9 +439,9 @@ public class Util {
     }
     
     public static Direction directionFromPositions(BlockPos reference, BlockPos neighbor) {
-        int xDifference = reference.getX() - neighbor.getX();
-        int yDifference = reference.getY() - neighbor.getY();
-        int zDifference = reference.getZ() - neighbor.getZ();
+        int xDifference = neighbor.getX() - reference.getX();
+        int yDifference = neighbor.getY() - reference.getY();
+        int zDifference = neighbor.getZ() - reference.getZ();
         if (Math.abs(xDifference) + Math.abs(yDifference) + Math.abs(zDifference) > 1) {
             throw new IllegalArgumentException("positions not neighbors");
         }
@@ -483,5 +483,10 @@ public class Util {
             }
         }
         return true;
+    }
+    
+    
+    public static int clampToInt(long val) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, val));
     }
 }

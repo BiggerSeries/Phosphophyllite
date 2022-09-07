@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite;
 
-import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
 
 public class PhosphophylliteConfig {
@@ -10,6 +9,13 @@ public class PhosphophylliteConfig {
     
     {
         bypassPerformantCheck = false;
+    }
+    
+    @ConfigValue(comment = "Enabled debug mode, creates additional warnings for testing")
+    public final boolean debugMode;
+    
+    {
+        debugMode = false;
     }
     
     public static class GUI {

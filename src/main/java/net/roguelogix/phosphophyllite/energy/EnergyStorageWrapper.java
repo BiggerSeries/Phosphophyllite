@@ -4,6 +4,7 @@ package net.roguelogix.phosphophyllite.energy;
 //import com.buuz135.industrial.item.infinity.InfinityEnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 
+@Deprecated(forRemoval = true)
 public class EnergyStorageWrapper implements IPhosphophylliteEnergyStorage {
     
 //    private static Class<?> infinityEnergyStorageClazz = null;
