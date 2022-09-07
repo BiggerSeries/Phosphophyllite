@@ -1,4 +1,4 @@
-package net.roguelogix.phosphophyllite.mixin;
+package net.roguelogix.phosphophyllite.mixin.mixins;
 
 import net.minecraft.server.level.ChunkMap;
 import org.spongepowered.asm.mixin.Mixin;
