@@ -469,10 +469,12 @@ public class Util {
         return item.builtInRegistryHolder().is(WRENCH_TAG_0) || item.builtInRegistryHolder().is(WRENCH_TAG_1);
     }
     
+    @Deprecated(forRemoval = true)
     public static boolean isEntireAreaLoaded(Level level, Vector3ic min, Vector3ic max) {
         return isEntireAreaLoaded(level, SectionPos.blockToSectionCoord(min.x()), SectionPos.blockToSectionCoord(min.z()), SectionPos.blockToSectionCoord(max.x()), SectionPos.blockToSectionCoord(max.z()));
     }
     
+    @Deprecated(forRemoval = true)
     public static boolean  isEntireAreaLoaded(Level level, int minCX, int minCZ,  int maxCX, int maxCZ) {
         // TODO: i need a faster way to do this
         for (int i = minCX; i <= maxCX; i++) {
