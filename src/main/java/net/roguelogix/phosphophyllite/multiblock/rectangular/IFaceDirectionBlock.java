@@ -13,6 +13,7 @@ import net.roguelogix.phosphophyllite.util.BlockStates;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IFaceDirectionBlock extends IModularBlock {

@@ -8,6 +8,7 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 @SuppressWarnings("unused")

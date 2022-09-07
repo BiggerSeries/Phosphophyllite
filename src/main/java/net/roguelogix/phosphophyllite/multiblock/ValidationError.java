@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class ValidationError extends IllegalStateException {

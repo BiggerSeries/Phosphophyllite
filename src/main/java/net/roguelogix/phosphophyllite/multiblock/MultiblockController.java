@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
+@Deprecated(forRemoval = true)
 public class MultiblockController<
         TileType extends BlockEntity & IMultiblockTile<TileType, ControllerType>,
         ControllerType extends MultiblockController<TileType, ControllerType>

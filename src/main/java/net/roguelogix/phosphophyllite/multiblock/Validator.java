@@ -4,6 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface Validator<T> {

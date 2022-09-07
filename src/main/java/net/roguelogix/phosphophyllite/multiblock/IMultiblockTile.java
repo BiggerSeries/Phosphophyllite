@@ -8,6 +8,7 @@ import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IMultiblockTile<

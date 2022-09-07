@@ -13,6 +13,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IAxisPositionBlock extends IModularBlock {

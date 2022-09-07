@@ -14,6 +14,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.Z_AXIS_POSITION;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class RectangularMultiblockTileModule<

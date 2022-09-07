@@ -15,6 +15,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
+@Deprecated(forRemoval = true)
 public class RectangularMultiblockController<
         TileType extends BlockEntity & IRectangularMultiblockTile<TileType, ControllerType>,
         ControllerType extends RectangularMultiblockController<TileType, ControllerType>

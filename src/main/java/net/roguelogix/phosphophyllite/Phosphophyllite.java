@@ -104,18 +104,24 @@ public class Phosphophyllite {
         return tick;
     }
     
+    @Deprecated(forRemoval = true)
     private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
+    @Deprecated(forRemoval = true)
     private static final ArrayList<MultiblockController<?, ?>> newControllers = new ArrayList<>();
+    @Deprecated(forRemoval = true)
     private static final ArrayList<MultiblockController<?, ?>> oldControllers = new ArrayList<>();
     
+    @Deprecated(forRemoval = true)
     public static void addController(MultiblockController<?, ?> controller) {
         newControllers.add(controller);
     }
     
+    @Deprecated(forRemoval = true)
     public static void removeController(MultiblockController<?, ?> controller) {
         oldControllers.add(controller);
     }
     
+    @Deprecated(forRemoval = true)
     @SubscribeEvent
     void onWorldUnload(final LevelEvent.Unload worldUnloadEvent) {
         if (!worldUnloadEvent.getLevel().isClientSide()) {
@@ -132,6 +138,7 @@ public class Phosphophyllite {
         }
     }
     
+    @Deprecated(forRemoval = true)
     @SubscribeEvent
     void onServerStop(final ServerStoppedEvent serverStoppedEvent) {
         controllersToTick.clear();

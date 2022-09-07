@@ -5,6 +5,7 @@ import net.roguelogix.phosphophyllite.multiblock.IMultiblockBlock;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IRectangularMultiblockBlock extends IMultiblockBlock {

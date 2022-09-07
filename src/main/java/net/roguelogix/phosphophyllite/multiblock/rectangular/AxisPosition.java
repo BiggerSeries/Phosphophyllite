@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Locale;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public enum AxisPosition implements StringRepresentable {

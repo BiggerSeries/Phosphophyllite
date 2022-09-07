@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock;
 
+@Deprecated(forRemoval = true)
 public interface IOnDisassemblyTile {
     /**
      * Called when a multiblock is disassembled

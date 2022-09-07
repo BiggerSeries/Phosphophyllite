@@ -18,6 +18,7 @@ import net.roguelogix.phosphophyllite.registry.OnModLoad;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IMultiblockBlock extends IModularBlock, EntityBlock {

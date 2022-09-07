@@ -23,6 +23,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
 
+@Deprecated(forRemoval = true)
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class MultiblockTileModule<

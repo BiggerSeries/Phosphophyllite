@@ -8,6 +8,7 @@ import net.roguelogix.phosphophyllite.multiblock.MultiblockTileModule;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
+@Deprecated(forRemoval = true)
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public interface IRectangularMultiblockTile<
