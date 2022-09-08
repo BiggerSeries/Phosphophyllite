@@ -120,7 +120,7 @@ public class SpecIntegralNode extends SpecNumberNode {
     
     @Override
     public void writeFromString(String string) {
-        type.write(field, parent.object, Long.parseLong(string));
+        type.write(field, parent.object(), Long.parseLong(string));
     }
     
     @Override
@@ -157,7 +157,7 @@ public class SpecIntegralNode extends SpecNumberNode {
     
     @Override
     public void writeDefault() {
-        type.write(field, parent.object, defaultValue);
+        type.write(field, parent.object(), defaultValue);
     }
     
     @Override
@@ -217,6 +217,6 @@ public class SpecIntegralNode extends SpecNumberNode {
     
     @Override
     public void writeElement(Element element) {
-        type.write(field, parent.object, element.asLong());
+        type.write(field, parent.object(), element.asLong());
     }
 }

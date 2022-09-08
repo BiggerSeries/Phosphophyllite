@@ -116,7 +116,7 @@ public class SpecFloatNode extends SpecNumberNode {
     
     @Override
     public void writeFromString(String string) {
-        type.write(field, parent.object, Double.parseDouble(string));
+        type.write(field, parent.object(), Double.parseDouble(string));
     }
     
     @Override
@@ -153,7 +153,7 @@ public class SpecFloatNode extends SpecNumberNode {
     
     @Override
     public void writeDefault() {
-        type.write(field, parent.object, defaultValue);
+        type.write(field, parent.object(), defaultValue);
     }
     
     @Override
@@ -213,6 +213,6 @@ public class SpecFloatNode extends SpecNumberNode {
     
     @Override
     public void writeElement(Element element) {
-        type.write(field, parent.object, element.asDouble());
+        type.write(field, parent.object(), element.asDouble());
     }
 }

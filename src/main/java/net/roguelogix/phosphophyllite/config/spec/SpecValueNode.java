@@ -19,7 +19,7 @@ public abstract class SpecValueNode extends SpecNode {
     
     protected Object currentValueObject() {
         try {
-            return field.get(parent.object);
+            return field.get(parent.object());
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -27,7 +27,7 @@ public abstract class SpecValueNode extends SpecNode {
     
     protected void writeObject(Object object) {
         try {
-            field.set(parent.object, object);
+            field.set(parent.object(), object);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

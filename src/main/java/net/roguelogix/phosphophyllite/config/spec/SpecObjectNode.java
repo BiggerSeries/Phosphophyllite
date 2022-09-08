@@ -17,7 +17,10 @@ public class SpecObjectNode extends SpecNode {
     @Nullable
     public SpecObjectNode parent;
     
-    public final Object object;
+    private final Object object;
+    @Nullable
+    private final Field field;
+    private Object activeObject;
     public final Map<String, SpecNode> subNodes;
     public final List<SpecNode> subNodeList;
     
@@ -73,23 +76,70 @@ public class SpecObjectNode extends SpecNode {
         // fuckery so i dont need to create two records
         super(field.getName(), field.getAnnotation(ConfigValue.class), defaults = defaults.transform(field.getAnnotation(ConfigValue.class)));
         this.parent = parent;
+        this.field = field;
         try {
             this.object = field.get(parent.object);
+            if (this.object == null) {
+                throw new IllegalArgumentException();
+            }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
         this.subNodeList = Collections.unmodifiableList(readObjectSubNodes(type, defaults));
-        subNodes = subNodeList.stream().collect(Collectors.toUnmodifiableMap(node -> node.name, node -> node));
+        subNodes = subNodeList.stream().collect(Collectors.toUnmodifiableMap(node -> Objects.requireNonNull(node.name), node -> node));
     }
     
     public SpecObjectNode(Object rootObject, String comment, ConfigType type, ConfigOptionsDefaults defaults) {
         super(null, comment, defaults.advanced(), defaults.hidden(), defaults.reloadable());
         object = rootObject;
+        this.field = null;
         final var modifiableSubNodes = readObjectSubNodes(type, defaults);
         modifiableSubNodes.add(0, new EnableAdvancedNode());
         this.subNodeList = Collections.unmodifiableList(modifiableSubNodes);
         //noinspection ConstantConditions
         subNodes = subNodeList.stream().collect(Collectors.toUnmodifiableMap(node -> node.name, node -> node));
+    }
+    
+    public Object object() {
+        return activeObject;
+    }
+    
+    public void resetObject() {
+        boolean reset = setActiveObject(object);
+        if (!reset) {
+            throw new IllegalStateException("Failed to reset to previous active object");
+        }
+    }
+    
+    public boolean setActiveObject(@Nullable Object newObject) {
+        if (newObject == null) {
+            resetObject();
+            return true;
+        }
+        if (newObject.getClass() != object.getClass()) {
+            return false;
+        }
+        for (SpecNode subNode : this.subNodeList) {
+            if (subNode instanceof SpecObjectNode subObjectNode) {
+                if (subObjectNode.field == null) {
+                    throw new IllegalStateException();
+                }
+                try {
+                    final var newSubObject = subObjectNode.field.get(newObject);
+                    if (!subObjectNode.setActiveObject(newSubObject)) {
+                        boolean reset = setActiveObject(activeObject);
+                        if (!reset) {
+                            throw new IllegalStateException("Failed to reset to previous active object");
+                        }
+                        return false;
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        activeObject = newObject;
+        return true;
     }
     
     private List<SpecNode> readObjectSubNodes(ConfigType type, ConfigOptionsDefaults defaults) {
