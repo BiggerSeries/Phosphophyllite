@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.config.spec;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
 import net.roguelogix.phosphophyllite.parsers.Element;
@@ -159,6 +160,8 @@ public class SpecObjectNode extends SpecNode {
             
             if (fieldClazz == String.class) {
                 subNode = new SpecStringNode(this, objectField, defaults);
+            } else if (fieldClazz == ResourceLocation.class) {
+                subNode = new SpecResourceLocationNode(this, objectField, defaults);
             } else if (fieldClazz.isPrimitive() || Boolean.class.isAssignableFrom(fieldClazz) || Number.class.isAssignableFrom(fieldClazz)) {
                 if (fieldClazz == boolean.class || fieldClazz == Boolean.class) {
                     subNode = new SpecBoolNode(this, objectField, defaults);
