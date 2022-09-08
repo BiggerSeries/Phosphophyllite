@@ -167,12 +167,12 @@ public class SpecIntegralNode extends SpecNumberNode {
     
     @Override
     public Element generateCurrentElement() {
-        return new Element(Element.Type.Number, generateComment(), name, defaultValue);
+        return new Element(Element.Type.Number, generateComment(), name, currentValueObject());
     }
     
     @Override
     public Element generateSyncElement() {
-        return new Element(Element.Type.Number, null, name, defaultValue);
+        return new Element(Element.Type.Number, null, name, currentValueObject());
     }
     
     @Override

@@ -90,12 +90,12 @@ public class SpecEnumNode extends SpecValueNode {
     
     @Override
     public Element generateCurrentElement() {
-        return new Element(Element.Type.String, generateComment(), name, defaultValue.toString());
+        return new Element(Element.Type.String, generateComment(), name, currentValueObject().toString());
     }
     
     @Override
     public Element generateSyncElement() {
-        return new Element(Element.Type.String, null, name, defaultValue.toString());
+        return new Element(Element.Type.String, null, name, currentValueObject().toString());
     }
     
     @Override

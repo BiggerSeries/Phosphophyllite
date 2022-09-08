@@ -47,12 +47,12 @@ public class SpecStringNode extends SpecValueNode {
     
     @Override
     public Element generateCurrentElement() {
-        return new Element(Element.Type.String, generateComment(), name, defaultString);
+        return new Element(Element.Type.String, generateComment(), name, currentValueAsString());
     }
     
     @Override
     public Element generateSyncElement() {
-        return new Element(Element.Type.String, null, name, defaultString);
+        return new Element(Element.Type.String, null, name, currentValueAsString());
     }
     
     
