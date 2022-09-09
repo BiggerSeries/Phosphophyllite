@@ -83,6 +83,7 @@ public class SpecObjectNode extends SpecNode {
             if (this.object == null) {
                 throw new IllegalArgumentException();
             }
+            this.activeObject = object;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -93,6 +94,7 @@ public class SpecObjectNode extends SpecNode {
     public SpecObjectNode(Object rootObject, String comment, ConfigType type, ConfigOptionsDefaults defaults) {
         super(null, comment, defaults.advanced(), defaults.hidden(), defaults.reloadable());
         object = rootObject;
+        this.activeObject = object;
         this.field = null;
         final var modifiableSubNodes = readObjectSubNodes(type, defaults);
         modifiableSubNodes.add(0, new EnableAdvancedNode());
