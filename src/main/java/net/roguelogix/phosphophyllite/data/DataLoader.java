@@ -20,6 +20,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+/*
+ * use DatapackLoader instead
+ */
+@Deprecated(forRemoval = true)
 public class DataLoader<T> {
     
     @Retention(RetentionPolicy.RUNTIME)
