@@ -1,12 +1,11 @@
 package net.roguelogix.phosphophyllite.multiblock2.modular;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
-import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
-import net.roguelogix.phosphophyllite.multiblock2.ValidationException;
+import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
@@ -17,18 +16,27 @@ import java.util.List;
 public abstract class MultiblockControllerModule<
         TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IMultiblockBlock,
-        ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
-        > {
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IModularMultiblockController<TileType, BlockType, ControllerType>
+        > implements IDebuggable {
     
     public final ControllerType controller;
     
+    public MultiblockControllerModule(ControllerType controller) {
+        this.controller = controller;
+    }
+    
     public MultiblockControllerModule(IModularMultiblockController<TileType, BlockType, ControllerType> controller) {
         //noinspection unchecked
-        this.controller = (ControllerType) controller;
+        this((ControllerType) controller);
     }
     
     public void postModuleConstruction() {
     }
+    
+    public List<MultiblockControllerModule<TileType, BlockType, ControllerType>> modules() {
+        return controller.modules();
+    }
+    
     
     public boolean canAttachPart(TileType tile) {
         return true;
@@ -64,18 +72,12 @@ public abstract class MultiblockControllerModule<
     public void split(List<ControllerType> others) {
     }
     
-    public void onStateTransition(MultiblockController.AssemblyState oldAssemblyState, MultiblockController.AssemblyState newAssemblyState) {
+    public void update() {
     }
     
-    public void preTick() {
-    }
-    
-    public void postTick() {
-    }
-    
-    public void preValidate() throws ValidationException {
-    }
-    
-    public void validate() throws ValidationException {
+    @Nullable
+    @Override
+    public String getDebugString() {
+        return null;
     }
 }

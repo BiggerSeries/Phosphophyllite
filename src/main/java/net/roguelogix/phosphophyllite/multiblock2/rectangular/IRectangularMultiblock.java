@@ -4,12 +4,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.ValidationException;
-import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockControllerModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -23,7 +23,7 @@ public interface IRectangularMultiblock<
         TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IRectangularMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
-        > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
+        > extends IValidatedMultiblock<TileType, BlockType, ControllerType> {
     
     @Nullable
     default Vector3ic minSize() {
@@ -43,6 +43,14 @@ public interface IRectangularMultiblock<
         return true;
     }
     
+    default boolean cornerSpecificValidation() {
+        return true;
+    }
+    
+    default boolean frameSpecificValidation() {
+        return true;
+    }
+    
     default void rectangularValidationStarted() {
     }
     
@@ -57,7 +65,10 @@ public interface IRectangularMultiblock<
             TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
-            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IValidatedMultiblockControllerModule {
+        
+        private boolean cornerSpecificValidation;
+        private boolean frameSpecificValidation;
         
         @OnModLoad
         public static void register() {
@@ -69,7 +80,7 @@ public interface IRectangularMultiblock<
         }
         
         @Override
-        public void preValidate() throws ValidationException {
+        public void validateStage1() throws ValidationException {
             final var min = controller.min();
             final var max = controller.max();
             int minX = min.x();
@@ -136,19 +147,11 @@ public interface IRectangularMultiblock<
         }
         
         @Override
-        public void validate() throws ValidationException {
+        public void validateStage2() throws ValidationException {
             controller.rectangularValidationStarted();
-            try {
-                Util.chunkCachedBlockStateIteration(controller.min(), controller.max(), controller.level, (blockState, pos) -> {
-                    try {
-                        blockValidation(blockState, pos);
-                    } catch (ValidationException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            } catch (RuntimeException e) {
-                throw (ValidationException) e.getCause();
-            }
+            cornerSpecificValidation = controller.cornerSpecificValidation();
+            frameSpecificValidation = controller.frameSpecificValidation();
+            Util.chunkCachedBlockStateIteration(controller.min(), controller.max(), controller.level, this::blockValidation);
         }
         
         private void blockValidation(BlockState blockState, Vector3ic pos) throws ValidationException {
@@ -173,28 +176,32 @@ public interface IRectangularMultiblock<
                 extremes++;
             }
             switch (extremes) {
-                case 3 -> {
-                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
-                        if (!((IRectangularMultiblockBlock) block).isGoodForCorner()) {
-                            throw new InvalidBlock(block, pos, "corner");
-                        } else {
-                            break;
+                case 3: {
+                    if (cornerSpecificValidation) {
+                        if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
+                            if (!((IRectangularMultiblockBlock) block).isGoodForCorner()) {
+                                throw new InvalidBlock(block, pos, "corner");
+                            } else {
+                                break;
+                            }
                         }
+                        throw new InvalidBlock(block, pos, "corner");
                     }
-                    throw new InvalidBlock(block, pos, "corner");
                 }
-                case 2 -> {
-                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
-                        if (!((IRectangularMultiblockBlock) block).isGoodForFrame()) {
-                            throw new InvalidBlock(block, pos, "frame");
-                        } else {
-                            break;
+                case 2: {
+                    if (frameSpecificValidation) {
+                        if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
+                            if (!((IRectangularMultiblockBlock) block).isGoodForFrame()) {
+                                throw new InvalidBlock(block, pos, "frame");
+                            } else {
+                                break;
+                            }
                         }
+                        throw new InvalidBlock(block, pos, "frame");
                     }
-                    throw new InvalidBlock(block, pos, "frame");
                 }
-                case 1 -> {
-                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                case 1: {
+                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
                         if (!((IRectangularMultiblockBlock) block).isGoodForExterior()) {
                             throw new InvalidBlock(block, pos, "exterior");
                         } else {
@@ -203,8 +210,8 @@ public interface IRectangularMultiblock<
                     }
                     throw new InvalidBlock(block, pos, "exterior");
                 }
-                default -> {
-                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                default: {
+                    if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
                         if (!((IRectangularMultiblockBlock) block).isGoodForInterior()) {
                             throw new InvalidBlock(block, pos, "interior");
                         } else {

@@ -12,6 +12,8 @@ import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerMo
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblock;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockTile;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockControllerModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
@@ -32,7 +34,7 @@ public interface ITouchingMultiblock<
             TileType extends BlockEntity & ITouchingMultiblockTile<TileType, BlockType, ControllerType> & IRectangularMultiblockTile<TileType, BlockType, ControllerType> & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITouchingMultiblock<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
-            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IValidatedMultiblockControllerModule {
         
         private boolean assembled = false;
         
@@ -52,7 +54,7 @@ public interface ITouchingMultiblock<
         }
         
         @Override
-        public void onStateTransition(MultiblockController.AssemblyState oldAssemblyState, MultiblockController.AssemblyState newAssemblyState) {
+        public void onStateTransition(IValidatedMultiblock.AssemblyState oldAssemblyState, IValidatedMultiblock.AssemblyState newAssemblyState) {
             switch (newAssemblyState) {
                 case ASSEMBLED -> {
                     assembled = true;
@@ -68,7 +70,7 @@ public interface ITouchingMultiblock<
                     }
                 }
                 case DISASSEMBLED -> {
-                    if (oldAssemblyState == MultiblockController.AssemblyState.DISASSEMBLED) {
+                    if (oldAssemblyState == IValidatedMultiblock.AssemblyState.DISASSEMBLED) {
                         break;
                     }
                     final var minE = controller.min();

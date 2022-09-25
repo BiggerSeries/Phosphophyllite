@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite.multiblock2.rectangular;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -10,11 +9,9 @@ import net.roguelogix.phosphophyllite.modular.api.IModularBlock;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.BlockStates;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public interface IFaceDirectionBlock extends IModularBlock {
     class Module extends BlockModule<IFaceDirectionBlock> {
     

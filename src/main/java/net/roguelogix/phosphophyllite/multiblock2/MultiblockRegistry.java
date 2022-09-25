@@ -12,8 +12,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.Util;
 
-import java.util.ArrayList;
-
 public final class MultiblockRegistry {
     
     private static final Object2ObjectOpenHashMap<ServerLevel, ObjectArrayList<MultiblockController<?, ?, ?>>> controllersToTick = new Object2ObjectOpenHashMap<>();

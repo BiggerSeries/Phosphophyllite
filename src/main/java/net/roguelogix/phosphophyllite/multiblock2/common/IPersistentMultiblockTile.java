@@ -5,11 +5,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
-import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
+import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockTileModule;
-import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.modular.ICoreMultiblockTileModule;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
@@ -20,13 +21,13 @@ public interface IPersistentMultiblockTile<
         TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IRectangularMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
-        > extends IMultiblockTile<TileType, BlockType, ControllerType> {
+        > extends IValidatedMultiblockTile<TileType, BlockType, ControllerType> {
     
     final class Module<
             TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
-            > extends ExtendedMultiblockTileModule<TileType, BlockType, ControllerType> {
+            > extends TileModule<TileType> implements ICoreMultiblockTileModule<TileType, BlockType, ControllerType> {
         
         @Nullable
         CompoundTag nbt;

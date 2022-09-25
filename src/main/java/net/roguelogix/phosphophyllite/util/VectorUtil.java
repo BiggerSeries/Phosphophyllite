@@ -3,7 +3,12 @@ package net.roguelogix.phosphophyllite.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+
+import java.text.NumberFormat;
+import java.util.Locale;
 
 @NonnullDefault
 public class VectorUtil {
@@ -48,7 +53,48 @@ public class VectorUtil {
         return left.x() >= right.getX() && left.y() >= right.getY() && left.z() >= right.getZ();
     }
     
-    public static long blockPosToChunkPosLon(Vector3ic blockpos) {
+    public static Vector3i fromBlockPos(BlockPos blockPos) {
+        return fromBlockPos(blockPos, new Vector3i());
+    }
+    
+    public static Vector3i fromBlockPos(BlockPos blockPos, Vector3i vector) {
+        return vector.set(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+    }
+    
+    public static Vector3i fromBlockPos(long blockPos) {
+        return fromBlockPos(blockPos, new Vector3i());
+    }
+    
+    public static Vector3i fromBlockPos(long blockPos, Vector3i vector) {
+        return vector.set(BlockPos.getX(blockPos), BlockPos.getY(blockPos), BlockPos.getZ(blockPos));
+    }
+    
+    public static long toBlockPosLong(Vector3ic vector) {
+        return BlockPos.asLong(vector.x(), vector.y(), vector.z());
+    }
+    
+    public static Vector2i fromChunkPos(ChunkPos chunkPos) {
+        return fromChunkPos(chunkPos, new Vector2i());
+    }
+    
+    public static Vector2i fromChunkPos(ChunkPos chunkPos, Vector2i vector) {
+        return vector.set(chunkPos.x, chunkPos.z);
+    }
+    
+    public static Vector2i fromChunkPos(long chunkPos) {
+        return fromChunkPos(chunkPos, new Vector2i());
+    }
+    
+    public static Vector2i fromChunkPos(long chunkPos, Vector2i vector) {
+        return vector.set(ChunkPos.getX(chunkPos), ChunkPos.getZ(chunkPos));
+    }
+    
+    public static long blockPosToChunkPosLong(Vector3ic blockpos) {
         return ChunkPos.asLong(SectionPos.blockToSectionCoord(blockpos.x()), SectionPos.blockToSectionCoord(blockpos.z()));
+    }
+    
+    public static String asString(Vector3ic vector) {
+        final var formatter = NumberFormat.getNumberInstance(Locale.ENGLISH);
+        return "(" + formatter.format(vector.x()) + " " + formatter.format(vector.y()) + " " + formatter.format(vector.z()) + ")";
     }
 }

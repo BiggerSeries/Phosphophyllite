@@ -1,9 +1,12 @@
 package net.roguelogix.phosphophyllite.multiblock2.modular;
 
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
+
 import java.util.LinkedHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+@NonnullDefault
 public class MultiblockControllerModuleRegistry {
     
     private static final LinkedHashMap<Class<? extends IModularMultiblockController<?, ?, ?>>, Function<IModularMultiblockController<?, ?, ?>, MultiblockControllerModule<?, ?, ?>>> moduleRegistry = new LinkedHashMap<>();

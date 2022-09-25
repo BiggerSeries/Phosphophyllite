@@ -3,11 +3,12 @@ package net.roguelogix.phosphophyllite.multiblock2.common;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockControllerModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.Util;
@@ -23,7 +24,7 @@ public interface IPersistentMultiblock<
         TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IRectangularMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
-        > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
+        > extends IValidatedMultiblock<TileType, BlockType, ControllerType> {
     
     CompoundTag mergeNBTs(CompoundTag nbtA, CompoundTag nbtB);
     
@@ -47,7 +48,7 @@ public interface IPersistentMultiblock<
             TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IPersistentMultiblock<TileType, BlockType, ControllerType>
-            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IValidatedMultiblockControllerModule {
         @Nullable
         private TileType saveDelegate;
         @Nullable
@@ -66,12 +67,12 @@ public interface IPersistentMultiblock<
         
         @Override
         public void postModuleConstruction() {
-            controller.transitionToState(MultiblockController.AssemblyState.PAUSED);
+            controller.transitionToState(AssemblyState.PAUSED);
         }
         
         private void pausedToDisassembled() {
-            if (controller.assemblyState() == MultiblockController.AssemblyState.PAUSED) {
-                controller.transitionToState(MultiblockController.AssemblyState.DISASSEMBLED);
+            if (controller.assemblyState() == AssemblyState.PAUSED) {
+                controller.transitionToState(AssemblyState.DISASSEMBLED);
             }
         }
         
@@ -111,8 +112,8 @@ public interface IPersistentMultiblock<
         
         public void onPartUnloaded(TileType tile) {
             partRemoved(tile);
-            if (controller.assemblyState() != MultiblockController.AssemblyState.PAUSED) {
-                controller.transitionToState(MultiblockController.AssemblyState.PAUSED);
+            if (controller.assemblyState() != AssemblyState.PAUSED) {
+                controller.transitionToState(AssemblyState.PAUSED);
             }
         }
         
@@ -135,8 +136,8 @@ public interface IPersistentMultiblock<
         }
         
         @Override
-        public void onStateTransition(MultiblockController.AssemblyState oldAssemblyState, MultiblockController.AssemblyState newAssemblyState) {
-            if (newAssemblyState != MultiblockController.AssemblyState.ASSEMBLED) {
+        public void onStateTransition(AssemblyState oldAssemblyState, AssemblyState newAssemblyState) {
+            if (newAssemblyState != AssemblyState.ASSEMBLED) {
                 return;
             }
             if (saveDelegate == null) {
@@ -146,7 +147,7 @@ public interface IPersistentMultiblock<
                 return;
             }
             assert saveDelegateModule != null;
-            if (oldAssemblyState != MultiblockController.AssemblyState.ASSEMBLED && nbt != null) {
+            if (oldAssemblyState != AssemblyState.ASSEMBLED && nbt != null) {
                 controller.read(nbt);
             }
         }

@@ -1,18 +1,17 @@
 package net.roguelogix.phosphophyllite.multiblock2.rectangular;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
-import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockBlock;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
-public interface IRectangularMultiblockBlock extends IMultiblockBlock {
+@NonnullDefault
+public interface IRectangularMultiblockBlock extends IValidatedMultiblockBlock {
     boolean isGoodForInterior();
     
     boolean isGoodForExterior();
     
-    boolean isGoodForFrame();
+    default boolean isGoodForFrame() {
+        return isGoodForExterior();
+    }
     
     default boolean isGoodForCorner() {
         return isGoodForFrame();

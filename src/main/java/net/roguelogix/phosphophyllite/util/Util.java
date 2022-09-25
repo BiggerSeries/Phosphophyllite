@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -15,11 +16,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
-import net.minecraft.network.protocol.game.ClientboundLightUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerChunkCache;
-import net.minecraft.server.level.ThreadedLevelLightEngine;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ChunkPos;
@@ -27,8 +26,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.*;
-import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -36,11 +37,11 @@ import org.jetbrains.annotations.Contract;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
 
 public class Util {
     
@@ -105,11 +106,11 @@ public class Util {
         return null;
     }
     
-    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func) {
+    public static <T extends Exception> void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, LamdbaExceptionUtils.BiConsumer_WithExceptions<BlockState, Vector3i, T> func) throws T {
         chunkCachedBlockStateIteration(start, end, world, func, new Vector3i());
     }
     
-    public static void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, BiConsumer<BlockState, Vector3i> func, Vector3i scratchVector) {
+    public static <T extends Exception> void chunkCachedBlockStateIteration(Vector3ic start, Vector3ic end, Level world, LamdbaExceptionUtils.BiConsumer_WithExceptions<BlockState, Vector3i, T> func, Vector3i scratchVector) throws T {
         final int minx = start.x();
         final int miny = start.y();
         final int minz = start.z();
@@ -475,11 +476,11 @@ public class Util {
     }
     
     @Deprecated(forRemoval = true)
-    public static boolean  isEntireAreaLoaded(Level level, int minCX, int minCZ,  int maxCX, int maxCZ) {
+    public static boolean isEntireAreaLoaded(Level level, int minCX, int minCZ, int maxCX, int maxCZ) {
         // TODO: i need a faster way to do this
         for (int i = minCX; i <= maxCX; i++) {
             for (int j = minCZ; j <= maxCZ; j++) {
-                if(level.getChunk(i, j, ChunkStatus.FULL, false) == null){
+                if (level.getChunk(i, j, ChunkStatus.FULL, false) == null) {
                     return false;
                 }
             }

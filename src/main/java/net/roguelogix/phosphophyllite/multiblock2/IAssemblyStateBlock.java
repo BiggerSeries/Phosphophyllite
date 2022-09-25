@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite.multiblock2;
 
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -9,11 +8,9 @@ import net.roguelogix.phosphophyllite.modular.api.BlockModule;
 import net.roguelogix.phosphophyllite.modular.api.IModularBlock;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public interface IAssemblyStateBlock extends IModularBlock {
     
     BooleanProperty ASSEMBLED = BooleanProperty.create("assembled");

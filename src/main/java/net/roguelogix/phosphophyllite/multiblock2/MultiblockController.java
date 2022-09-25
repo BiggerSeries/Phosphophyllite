@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite.multiblock2;
 
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -9,10 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
-import net.roguelogix.phosphophyllite.multiblock.Validator;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
@@ -21,12 +18,13 @@ import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.AStarList;
 import net.roguelogix.phosphophyllite.util.ModuleMap;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
-import net.roguelogix.phosphophyllite.util.Util;
+import net.roguelogix.phosphophyllite.util.VectorUtil;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static net.roguelogix.phosphophyllite.util.Util.DIRECTIONS;
 
@@ -37,25 +35,13 @@ public class MultiblockController<
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType>
         > implements IModularMultiblockController<TileType, BlockType, ControllerType>, IDebuggable {
     
-    public enum AssemblyState {
-        ASSEMBLED,
-        DISASSEMBLED,
-        // TODO: it would be good if this could be part of a module alone and not the core controller
-        PAUSED,
-    }
     
     public final Level level;
     @SuppressWarnings("unchecked")
-    protected final ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType>(new MultiblockTileModule[0]);
+    public final ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType> blocks = new ModuleMap<MultiblockTileModule<TileType, BlockType, ControllerType>, TileType>(new MultiblockTileModule[0]);
     
-    public final Validator<BlockEntity> tileTypeValidator;
-    public final Validator<Block> blockTypeValidator;
-    
-    private long updateAssemblyAtTick = Long.MAX_VALUE;
-    protected AssemblyState assemblyState = AssemblyState.DISASSEMBLED;
-    
-    @Nullable
-    protected ValidationException lastValidationError = null;
+    public final Predicate<BlockEntity> tileTypeValidator;
+    public final Predicate<Block> blockTypeValidator;
     
     private boolean updateExtremes = true;
     private final Vector3i minCoord = new Vector3i();
@@ -140,9 +126,6 @@ public class MultiblockController<
         return moduleListRO;
     }
     
-    public AssemblyState assemblyState() {
-        return assemblyState;
-    }
     
     @Nullable
     public MultiblockTileModule<TileType, BlockType, ControllerType> tileModule(int x, int y, int z) {
@@ -160,7 +143,7 @@ public class MultiblockController<
     
     @Contract(pure = true)
     public boolean canAttachTile(IMultiblockTile<?, ?, ?> tile) {
-        return tileTypeValidator.validate((BlockEntity) tile);
+        return tileTypeValidator.test((BlockEntity) tile);
     }
     
     public void attemptAttach(@Nonnull MultiblockTileModule<?, ?, ?> toAttachGeneric) {
@@ -266,7 +249,6 @@ public class MultiblockController<
         }
         
         toAttachModule.updateNeighbors();
-        requestValidation();
     }
     
     public void detach(@Nonnull MultiblockTileModule<TileType, BlockType, ControllerType> toDetachModule, boolean chunkUnload, boolean merging, boolean checkForDetachments) {
@@ -348,8 +330,6 @@ public class MultiblockController<
             toDetachModule.nullNeighbors();
         }
         toDetachModule.controller(null);
-        
-        requestValidation();
     }
     
     private void updateMinMaxCoordinates() {
@@ -400,26 +380,6 @@ public class MultiblockController<
         });
     }
     
-    private void updateAssemblyState() {
-        if (updateAssemblyAtTick > Phosphophyllite.tickNumber()) {
-            return;
-        }
-        updateAssemblyAtTick = Long.MAX_VALUE;
-        lastValidationError = null;
-        try {
-            for (final var tileTypeControllerTypeMultiblockControllerModule : modules()) {
-                tileTypeControllerTypeMultiblockControllerModule.preValidate();
-            }
-            preValidate();
-            for (final var tileTypeControllerTypeMultiblockControllerModule : modules()) {
-                tileTypeControllerTypeMultiblockControllerModule.validate();
-            }
-            validate();
-        } catch (ValidationException validationError) {
-            lastValidationError = validationError;
-        }
-        transitionToState(lastValidationError == null ? AssemblyState.ASSEMBLED : assemblyState == AssemblyState.PAUSED ? AssemblyState.PAUSED : AssemblyState.DISASSEMBLED);
-    }
     
     private void processDetachments() {
         if (checkForDetachmentsAtTick > Phosphophyllite.tickNumber()) {
@@ -506,8 +466,6 @@ public class MultiblockController<
             module.split(newMultiblocks);
         }
         split(newMultiblocks);
-        
-        updateAssemblyAtTick = Long.MIN_VALUE;
     }
     
     private void processMerges() {
@@ -516,7 +474,6 @@ public class MultiblockController<
             for (MultiblockController<TileType, BlockType, ControllerType> otherController : controllersToMerge) {
                 //noinspection unchecked
                 final var otherCased = (ControllerType) otherController;
-                otherController.disassembledBlockStates();
                 MultiblockRegistry.removeController(otherController);
                 otherController.controllersToMerge.remove(self());
                 newToMerge.addAll(otherController.controllersToMerge);
@@ -543,7 +500,6 @@ public class MultiblockController<
                     attemptAttach(module, true);
                 }
                 otherController.blocks.clear();
-                updateAssemblyAtTick = Long.MIN_VALUE;
                 otherController.mergedInto = this;
             }
             controllersToMerge.clear();
@@ -577,81 +533,8 @@ public class MultiblockController<
         processDetachments();
         processMerges();
         updateMinMaxCoordinates();
-        updateAssemblyState();
+        modules().forEach(MultiblockControllerModule::update);
         
-        modules().forEach(MultiblockControllerModule::preTick);
-        if (assemblyState == AssemblyState.ASSEMBLED) {
-            tick();
-        } else if (assemblyState == AssemblyState.DISASSEMBLED) {
-            disassembledTick();
-        }
-        modules().forEach(MultiblockControllerModule::postTick);
-    }
-    
-    public final void transitionToState(AssemblyState newAssemblyState) {
-        switch (newAssemblyState) {
-            case ASSEMBLED -> assembledBlockStates();
-            case DISASSEMBLED -> disassembledBlockStates();
-        }
-        final var oldAssemblyState = assemblyState;
-        for (var module : modules()) {
-            module.onStateTransition(oldAssemblyState, newAssemblyState);
-        }
-        onStateTransition(oldAssemblyState, newAssemblyState);
-        assemblyState = newAssemblyState;
-    }
-    
-    private final Long2ObjectLinkedOpenHashMap<BlockState> newStates = new Long2ObjectLinkedOpenHashMap<>();
-    
-    private void assembledBlockStates() {
-        newStates.clear();
-        
-        final int size = blocks.size();
-        final TileType[] tileElements = blocks.tileElements();
-        final MultiblockTileModule<TileType, BlockType, ControllerType>[] moduleElements = blocks.moduleElements();
-        final var posElements = blocks.posElements();
-        if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
-            throw new IllegalStateException("Arrays too short");
-        }
-        for (int i = 0; i < size; i++) {
-            final var entity = tileElements[i];
-            final var module = moduleElements[i];
-            final var pos = posElements[i];
-            final BlockState oldState = entity.getBlockState();
-            BlockState newState = module.assembledBlockState(oldState);
-            if (newState != oldState) {
-                newStates.put(pos, newState);
-                entity.setBlockState(newState);
-            }
-        }
-        if (!newStates.isEmpty()) {
-            Util.setBlockStates(newStates, level);
-        }
-    }
-    
-    private void disassembledBlockStates() {
-        newStates.clear();
-        final int size = blocks.size();
-        final TileType[] tileElements = blocks.tileElements();
-        final MultiblockTileModule<TileType, BlockType, ControllerType>[] moduleElements = blocks.moduleElements();
-        final var posElements = blocks.posElements();
-        if (tileElements.length < size || moduleElements.length < size || posElements.length < size) {
-            throw new IllegalStateException("Arrays too short");
-        }
-        for (int i = 0; i < size; i++) {
-            final var entity = tileElements[i];
-            final var module = moduleElements[i];
-            final var pos = posElements[i];
-            final BlockState oldState = entity.getBlockState();
-            BlockState newState = module.disassembledBlockState(oldState);
-            if (newState != oldState) {
-                newStates.put(pos, newState);
-                entity.setBlockState(newState);
-            }
-        }
-        if (!newStates.isEmpty()) {
-            Util.setBlockStates(newStates, level);
-        }
     }
     
     /**
@@ -662,33 +545,33 @@ public class MultiblockController<
      * @return string to print
      */
     @Nonnull
+    @Override
     public String getDebugString() {
-        return "BlockCount: " + blocks.size() + "\n" +
-                "Min " + minCoord + "\n" +
-                "Max " + maxCoord + "\n" +
-                "Controller: " + this + "\n" +
-                "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
-                "AssemblyState: " + assemblyState + "\n";
+        StringBuilder builder = new StringBuilder();
+        builder.append("MultiBlockControllerModule").append("\n");
+        builder.append("Controller: ").append(this).append("\n");
+        builder.append("BlockCount: ").append(blocks.size()).append("\n");
+        builder.append("Min: ").append(VectorUtil.asString(minCoord)).append("\n");
+        builder.append("Max: ").append(VectorUtil.asString(maxCoord)).append("\n");
+        builder.append("Size: ").append(VectorUtil.asString(new Vector3i(1, 1, 1).add(maxCoord).sub(minCoord))).append("\n");
+        for (var module : moduleListRO) {
+            String debugString = module.getDebugString();
+            if (debugString != null) {
+                builder.append("\n");
+                builder.append(module.getClass().getSimpleName());
+                builder.append(":");
+                var lines = debugString.split("\n");
+                for (String line : lines) {
+                    builder.append("\n    ");
+                    builder.append(line);
+                }
+            }
+        }
+        builder.append("\n\n");
+        return builder.toString();
     }
     
     // ------------------------------------ API ------------------------------------
-    
-    public void requestValidation() {
-        updateAssemblyAtTick = Phosphophyllite.tickNumber() + 1;
-    }
-    
-    protected void preValidate() throws ValidationException {
-    }
-    
-    protected void validate() throws ValidationException {
-    }
-    
-    // TODO: potentially remove ticking from core multiblock
-    protected void tick() {
-    }
-    
-    protected void disassembledTick() {
-    }
     
     protected void onPartAdded(@Nonnull TileType tile) {
     }
@@ -718,46 +601,5 @@ public class MultiblockController<
     }
     
     protected void split(List<ControllerType> others) {
-    }
-    
-    protected void onStateTransition(AssemblyState oldAssemblyState, AssemblyState newAssemblyState) {
-        switch (oldAssemblyState) {
-            case ASSEMBLED -> {
-                switch (newAssemblyState) {
-                    case DISASSEMBLED -> onDisassembled();
-                    case ASSEMBLED -> onReassembled();
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                }
-            }
-            case DISASSEMBLED -> {
-                switch (newAssemblyState) {
-                    case ASSEMBLED -> onAssembled();
-                    case DISASSEMBLED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                }
-            }
-            case PAUSED -> {
-                switch (newAssemblyState) {
-                    case ASSEMBLED -> onUnpaused();
-                    case DISASSEMBLED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                }
-            }
-        }
-    }
-    
-    protected void undefinedStateTransition(AssemblyState oldAssemblyState, AssemblyState newAssemblyState) {
-    }
-    
-    protected void onAssembled() {
-    }
-    
-    protected void onReassembled() {
-    }
-    
-    protected void onDisassembled() {
-    }
-    
-    protected void onUnpaused() {
     }
 }

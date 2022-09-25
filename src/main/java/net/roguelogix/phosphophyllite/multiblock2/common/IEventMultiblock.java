@@ -8,6 +8,8 @@ import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockControllerModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -22,13 +24,14 @@ public interface IEventMultiblock<
         > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     // TODO: more multiblock events, there are more of them
+    // TODO: find a way to make this generic, or integrated into the modules better
     interface AssemblyStateTransition {
-        void onAssemblyStateTransition(MultiblockController.AssemblyState oldState, MultiblockController.AssemblyState newState);
+        void onAssemblyStateTransition(IValidatedMultiblock.AssemblyState oldState, IValidatedMultiblock.AssemblyState newState);
         
         interface OnAssembly extends AssemblyStateTransition {
             @Override
-            default void onAssemblyStateTransition(MultiblockController.AssemblyState oldState, MultiblockController.AssemblyState newState) {
-                if (newState == MultiblockController.AssemblyState.ASSEMBLED) {
+            default void onAssemblyStateTransition(IValidatedMultiblock.AssemblyState oldState, IValidatedMultiblock.AssemblyState newState) {
+                if (newState == IValidatedMultiblock.AssemblyState.ASSEMBLED) {
                     onAssembly();
                 }
             }
@@ -41,7 +44,7 @@ public interface IEventMultiblock<
             TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IEventMultiblock<TileType, BlockType, ControllerType>
-            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IValidatedMultiblockControllerModule {
         
         FastArraySet<AssemblyStateTransition> assemblyStateTransitionTiles = new FastArraySet<>();
         
@@ -69,7 +72,7 @@ public interface IEventMultiblock<
         }
     
         @Override
-        public void onStateTransition(MultiblockController.AssemblyState oldAssemblyState, MultiblockController.AssemblyState newAssemblyState) {
+        public void onStateTransition(IValidatedMultiblock.AssemblyState oldAssemblyState, IValidatedMultiblock.AssemblyState newAssemblyState) {
             for (final var element : assemblyStateTransitionTiles.elements()) {
                 element.onAssemblyStateTransition(oldAssemblyState, newAssemblyState);
             }

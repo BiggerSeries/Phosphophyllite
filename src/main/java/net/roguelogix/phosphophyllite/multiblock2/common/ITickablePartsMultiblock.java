@@ -2,21 +2,26 @@ package net.roguelogix.phosphophyllite.multiblock2.common;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IAssembledTickMultiblockModule;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
 
+@NonnullDefault
 public interface ITickablePartsMultiblock<
-        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
-        BlockType extends Block & IMultiblockBlock,
-        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITickablePartsMultiblock<TileType, BlockType, ControllerType>
+        TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType> & IValidatedMultiblockTile<TileType, BlockType, ControllerType>,
+        BlockType extends Block & IValidatedMultiblockBlock,
+        ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITickablePartsMultiblock<TileType, BlockType, ControllerType> & IValidatedMultiblock<TileType, BlockType, ControllerType>
         > extends IModularMultiblockController<TileType, BlockType, ControllerType> {
     
     
@@ -30,10 +35,10 @@ public interface ITickablePartsMultiblock<
     }
     
     final class Module<
-            TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType>,
-            BlockType extends Block & IMultiblockBlock,
-            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITickablePartsMultiblock<TileType, BlockType, ControllerType>
-            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> {
+            TileType extends BlockEntity & IMultiblockTile<TileType, BlockType, ControllerType> & IValidatedMultiblockTile<TileType, BlockType, ControllerType>,
+            BlockType extends Block & IValidatedMultiblockBlock,
+            ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & ITickablePartsMultiblock<TileType, BlockType, ControllerType> & IValidatedMultiblock<TileType, BlockType, ControllerType>
+            > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IAssembledTickMultiblockModule {
         
         private final FastArraySet<Tickable> tickables = new FastArraySet<>();
         

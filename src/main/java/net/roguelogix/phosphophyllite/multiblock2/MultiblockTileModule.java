@@ -6,12 +6,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
-import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.modular.ICoreMultiblockTileModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -21,7 +20,6 @@ import org.jetbrains.annotations.Contract;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-import static net.roguelogix.phosphophyllite.multiblock.IAssemblyStateBlock.ASSEMBLED;
 import static net.roguelogix.phosphophyllite.util.Util.DIRECTIONS;
 
 @NonnullDefault
@@ -43,9 +41,7 @@ public final class MultiblockTileModule<
     final MultiblockTileModule<TileType, BlockType, ControllerType>[] neighbors = new MultiblockTileModule[6];
     final BlockEntity[] neighborTiles = new BlockEntity[6];
     
-    private final ObjectArrayList<ExtendedMultiblockTileModule<TileType, BlockType, ControllerType>> extendedMultiblockTileModules = new ObjectArrayList<>();
-    
-    private final boolean ASSEMBLY_STATE = iface.getBlockState().hasProperty(ASSEMBLED);
+    private final ObjectArrayList<ICoreMultiblockTileModule<TileType, BlockType, ControllerType>> coreMultiblockTileModules = new ObjectArrayList<>();
     
     @OnModLoad
     private static void onModLoad() {
@@ -59,9 +55,9 @@ public final class MultiblockTileModule<
     @Override
     public void postModuleConstruction() {
         for (TileModule<?> module : iface.modules()) {
-            if (module instanceof ExtendedMultiblockTileModule<?, ?, ?>) {
+            if (module instanceof ICoreMultiblockTileModule<?, ?, ?>) {
                 //noinspection unchecked
-                extendedMultiblockTileModules.add((ExtendedMultiblockTileModule<TileType, BlockType, ControllerType>) module);
+                coreMultiblockTileModules.add((ICoreMultiblockTileModule<TileType, BlockType, ControllerType>) module);
             }
         }
     }
@@ -102,7 +98,7 @@ public final class MultiblockTileModule<
     ControllerType controller(@Nullable ControllerType newController) {
         if (controller != newController) {
             controller = newController;
-            extendedMultiblockTileModules.forEach(ExtendedMultiblockTileModule::onControllerChange);
+            coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::onControllerChange);
         }
         return controller;
     }
@@ -146,15 +142,15 @@ public final class MultiblockTileModule<
         assert otherModule != null;
         final var oppositeDirection = direction.getOpposite();
         
-        for (int i = 0; i < extendedMultiblockTileModules.size(); i++) {
-            final var extensionModule = extendedMultiblockTileModules.get(i);
+        for (int i = 0; i < coreMultiblockTileModules.size(); i++) {
+            final var extensionModule = coreMultiblockTileModules.get(i);
             if (!extensionModule.shouldConnectTo(otherTile, direction)) {
                 return false;
             }
         }
         
-        for (int i = 0; i < otherModule.extendedMultiblockTileModules.size(); i++) {
-            final var extensionModule = otherModule.extendedMultiblockTileModules.get(i);
+        for (int i = 0; i < otherModule.coreMultiblockTileModules.size(); i++) {
+            final var extensionModule = otherModule.coreMultiblockTileModules.get(i);
             if (!extensionModule.shouldConnectTo(iface, oppositeDirection)) {
                 return false;
             }
@@ -223,7 +219,7 @@ public final class MultiblockTileModule<
         if (iface.getLevel().getBlockEntity(pos) != iface) {
             return;
         }
-        extendedMultiblockTileModules.forEach(ExtendedMultiblockTileModule::aboutToAttemptAttach);
+        coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToAttemptAttach);
         BlockPos.MutableBlockPos possibleTilePos = new BlockPos.MutableBlockPos();
         for (Direction direction : DIRECTIONS) {
             possibleTilePos.set(pos);
@@ -245,33 +241,9 @@ public final class MultiblockTileModule<
         }
     }
     
-    @Contract(pure = true)
-    BlockState assembledBlockState(BlockState state) {
-        if (ASSEMBLY_STATE) {
-            state = state.setValue(ASSEMBLED, true);
-        }
-        // TODO: this is going to have one hell of a performance impact
-        for (var extendedMultiblockTileModule : extendedMultiblockTileModules) {
-            state = extendedMultiblockTileModule.assembledBlockState(state);
-        }
-        return state;
-    }
-    
-    @Contract(pure = true)
-    BlockState disassembledBlockState(BlockState state) {
-        if (ASSEMBLY_STATE) {
-            state = state.setValue(ASSEMBLED, false);
-        }
-        for (var extendedMultiblockTileModule : extendedMultiblockTileModules) {
-            state = extendedMultiblockTileModule.disassembledBlockState(state);
-        }
-        return state;
-    }
-    
     @Override
     public String getDebugString() {
         var controller = controller();
-        //noinspection ConstantConditions
         if (controller == null) {
             return "Null controller";
         }

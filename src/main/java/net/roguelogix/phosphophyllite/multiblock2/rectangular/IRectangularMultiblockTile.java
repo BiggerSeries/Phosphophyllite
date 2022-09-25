@@ -6,26 +6,30 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
+import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition;
-import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
-import net.roguelogix.phosphophyllite.multiblock2.modular.ExtendedMultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.modular.ICoreMultiblockTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IAssemblyStateTileModule;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.BlockStates;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import static net.roguelogix.phosphophyllite.multiblock.rectangular.AxisPosition.*;
 
+@NonnullDefault
 public interface IRectangularMultiblockTile<
         TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
         BlockType extends Block & IRectangularMultiblockBlock,
         ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
-        > extends IMultiblockTile<TileType, BlockType, ControllerType> {
+        > extends IValidatedMultiblockTile<TileType, BlockType, ControllerType> {
     
     final class Module<
             TileType extends BlockEntity & IRectangularMultiblockTile<TileType, BlockType, ControllerType>,
             BlockType extends Block & IRectangularMultiblockBlock,
             ControllerType extends MultiblockController<TileType, BlockType, ControllerType> & IRectangularMultiblock<TileType, BlockType, ControllerType>
-            > extends ExtendedMultiblockTileModule<TileType, BlockType, ControllerType> {
+            > extends TileModule<TileType> implements ICoreMultiblockTileModule<TileType, BlockType, ControllerType>, IAssemblyStateTileModule {
         
         private final boolean AXIS_POSITIONS = iface.getBlockState().hasProperty(X_AXIS_POSITION);
         private final boolean FACE_DIRECTION = iface.getBlockState().hasProperty(BlockStates.FACING);
