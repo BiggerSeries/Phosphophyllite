@@ -314,8 +314,17 @@ public class Util {
                 final var state = entry1.getValue();
                 LevelChunkSection section = chunkSections[(BlockPos.getY(bPosLong) >> 4) - chunk.getMinSection()];
                 if (section != null) {
-                    section.getStates().set(BlockPos.getX(bPosLong) & 15, BlockPos.getY(bPosLong) & 15, BlockPos.getZ(bPosLong) & 15, state);
+                    final var oldState = section.getStates().getAndSet(BlockPos.getX(bPosLong) & 15, BlockPos.getY(bPosLong) & 15, BlockPos.getZ(bPosLong) & 15, state);
                     markForUpdatePacket(bPosLong);
+                    // this does add some overhead, but in many cases both the new and old state are repeated  for a *lot* of blocks, so this shouldn't cause a bunch of cache misses
+                    // the renderchunk rebuild on the client is also much more intensive than this, so *meh*
+                    // TODO: add this check to the other setblockstate functions
+                    if (oldState == state) {
+                        return;
+                    }
+                    if (oldState.getBlock() != state.getBlock()) {
+                        throw new IllegalStateException("Phosphophyllite Util fast setBlockStates does not handle changing block type");
+                    }
                 }
             });
             existingMaps.add(states);
