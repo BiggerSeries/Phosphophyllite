@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.util;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jetbrains.annotations.Contract;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,27 +14,37 @@ public class FastArraySet<T> {
     private final ObjectArrayList<T> elementList = new ObjectArrayList<>();
     private final List<T> unmodifiableList = Collections.unmodifiableList(elementList);
     
-    public void add(T element) {
-        if (indexMap.containsKey(element)) {
-            return;
+    private int version = 0;
+    
+    @Contract
+    public int add(T element) {
+        int index = indexMap.getOrDefault(element, -1);
+        if (index != -1) {
+            return index;
         }
-        indexMap.put(element, elementList.size());
+        // because this always adds to the end of the list, this doesnt invalidate previous indices
+        index = elementList.size();
+        indexMap.put(element, index);
         elementList.add(element);
+        return index;
     }
     
-    public void remove(T element) {
+    public boolean remove(T element) {
         if (!indexMap.containsKey(element)) {
-            return;
+            return false;
         }
         int index = indexMap.removeInt(element);
         final var popped = elementList.pop();
         if (index == elementList.size()) {
-            return;
+            return false;
         }
+        // moving an item around, this invalidates previously fetches indices
+        version++;
         // the element we popped off wasn't the one that is getting removed
         assert elementList.get(index) == element;
         elementList.set(index, popped);
         indexMap.put(popped, index);
+        return true;
     }
     
     public boolean contains(T element) {
@@ -50,5 +61,13 @@ public class FastArraySet<T> {
     
     public T get(int i) {
         return elementList.get(i);
+    }
+    
+    public int version() {
+        return version;
+    }
+    
+    public int indexOf(T element) {
+        return indexMap.getInt(element);
     }
 }
