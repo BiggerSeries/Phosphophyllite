@@ -1,3 +1,12 @@
+# 1.19.2-0.6.0-beta.6
+ - new multiblock system will pause on part unload
+ - require touching multiblocks to also be persistent
+ - add tile module for tracking ticking status, and use it for multiblock system attachments
+ - new config system
+ - new data loading system based off new config system
+ - new energy capability wrapper system, transparent when used with tile module
+ - multiblock validation moved to module, allows non-validated multiblock types
+
 # 1.19.2-0.6.0-beta.5
  - 1.19.2
  - Initial work on new multiblock system
