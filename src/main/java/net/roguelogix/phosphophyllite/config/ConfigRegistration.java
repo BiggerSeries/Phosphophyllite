@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.config;
 
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.roguelogix.phosphophyllite.config.spec.ConfigOptionsDefaults;
 import net.roguelogix.phosphophyllite.config.spec.SpecObjectNode;
 import net.roguelogix.phosphophyllite.parsers.Element;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Locale;
 
 public class ConfigRegistration {
@@ -25,10 +27,18 @@ public class ConfigRegistration {
     public final File baseFile;
     public final File writeFile;
     
+    private final List<Runnable> preLoadCallbacks;
+    private final List<Runnable> postLoadCallbacks;
+    
     @Nullable
     private Element savedLocalConfig;
     
-    ConfigRegistration(Object rootConfigObject, String modName, String name, String folder, String comment, ConfigFormat format, ConfigType configType, ConfigType rootLevelDefaultType, boolean rootLevelReloadableDefault) {
+    
+    ConfigRegistration(
+            Object rootConfigObject, String modName, String name, String folder,
+            String comment, ConfigFormat format, ConfigType configType, ConfigType rootLevelDefaultType, boolean rootLevelReloadableDefault,
+            List<Runnable> preLoadCallbacks, List<Runnable> postLoadCallbacks
+    ) {
         this.configType = configType;
         this.rootConfigObject = rootConfigObject;
         final var defaultConfigOptions = new ConfigOptionsDefaults(rootLevelDefaultType, false, false, rootLevelReloadableDefault);
@@ -38,16 +48,17 @@ public class ConfigRegistration {
         this.fileFormat = format;
         this.baseFile = new File("config/" + folder + "/" + name + "-" + configType.toString().toLowerCase(Locale.US));
         this.writeFile = new File(baseFile + "." + format.toString().toLowerCase(Locale.US));
-        if (!isEmpty()) {
-            loadLocalConfigFile(false);
-        }
+        this.preLoadCallbacks = new ObjectArrayList<>(preLoadCallbacks);
+        this.postLoadCallbacks = new ObjectArrayList<>(postLoadCallbacks);
     }
     
     public void loadLocalConfigFile(boolean reload) {
+        preLoadCallbacks.forEach(Runnable::run);
         savedLocalConfig = null;
         final var foundFile = findFile(baseFile, fileFormat);
         if (foundFile == null) {
             generateFile(reload);
+            postLoadCallbacks.forEach(Runnable::run);
             return;
         }
         
@@ -57,12 +68,14 @@ public class ConfigRegistration {
         }
         if (fileElement == null) {
             generateFile(reload);
+            postLoadCallbacks.forEach(Runnable::run);
             return;
         }
         final var orderCorrectedTree = rootConfigSpecNode.correctElementOrder(fileElement);
         final var valueCorrectedTree = rootConfigSpecNode.correctToValidState(orderCorrectedTree);
         if (valueCorrectedTree == null) {
             generateFile(reload);
+            postLoadCallbacks.forEach(Runnable::run);
             return;
         }
         final var reloadTrimmed = reload ? rootConfigSpecNode.trimToReloadable(valueCorrectedTree) : valueCorrectedTree;
@@ -71,6 +84,7 @@ public class ConfigRegistration {
         }
         final var regeneratedTree = rootConfigSpecNode.regenerateMissingElements(valueCorrectedTree);
         writeFile(regeneratedTree, writeFile, fileFormat);
+        postLoadCallbacks.forEach(Runnable::run);
     }
     
     private void generateFile(boolean reload) {
@@ -84,6 +98,7 @@ public class ConfigRegistration {
         if (configType != ConfigType.COMMON) {
             return;
         }
+        preLoadCallbacks.forEach(Runnable::run);
         if (savedLocalConfig == null) {
             savedLocalConfig = rootConfigSpecNode.generateSyncElement();
         }
@@ -99,9 +114,11 @@ public class ConfigRegistration {
             elementTree = rootConfigSpecNode.trimToReloadable(elementTree);
         }
         if (elementTree == null) {
+            postLoadCallbacks.forEach(Runnable::run);
             return;
         }
         rootConfigSpecNode.writeElement(elementTree);
+        postLoadCallbacks.forEach(Runnable::run);
     }
     
     public void unloadRemoteConfig() {

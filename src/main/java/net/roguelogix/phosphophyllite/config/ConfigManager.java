@@ -23,11 +23,14 @@ import net.roguelogix.phosphophyllite.parsers.ROBN;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.phosphophyllite.util.ReflectionUtil;
+import net.roguelogix.phosphophyllite.util.TriConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,10 +67,48 @@ public class ConfigManager {
     }
     
     public static void registerConfig(Object rootConfigObject, String modName, RegisterConfig annotation) {
-        registerConfig(rootConfigObject, modName, annotation.name(), annotation.folder(), annotation.comment(), annotation.format(), annotation.type(), annotation.rootLevelType(), annotation.rootLevelReloadable());
+        TriConsumer<Map<ConfigType, List<Runnable>>, Method, ConfigType[]> createCallback = (callbacks, method, applicableTypes) -> {
+            if (applicableTypes.length == 0) {
+                applicableTypes = ConfigType.values();
+            }
+            final var runnable = ReflectionUtil.createRunnableForFunction(method);
+            for (final var type : applicableTypes) {
+                var list = callbacks.get(type);
+                if (list == null) {
+                    list = new ObjectArrayList<>();
+                    callbacks.put(type, list);
+                }
+                list.add(runnable);
+            }
+        };
+        Map<ConfigType, List<Runnable>> registrationCallbacks = new Object2ObjectOpenHashMap<>();
+        Map<ConfigType, List<Runnable>> preLoadCallbacks = new Object2ObjectOpenHashMap<>();
+        Map<ConfigType, List<Runnable>> postLoadCallbacks = new Object2ObjectOpenHashMap<>();
+        for (final var method : rootConfigObject.getClass().getDeclaredMethods()) {
+            if (method.isAnnotationPresent(RegisterConfig.Registration.class)) {
+                final var callbackAnnotation = method.getAnnotation(RegisterConfig.Registration.class);
+                createCallback.accept(registrationCallbacks, method, callbackAnnotation.type());
+            }
+            if (method.isAnnotationPresent(RegisterConfig.PreLoad.class)) {
+                final var callbackAnnotation = method.getAnnotation(RegisterConfig.PreLoad.class);
+                createCallback.accept(preLoadCallbacks, method, callbackAnnotation.type());
+            }
+            if (method.isAnnotationPresent(RegisterConfig.PostLoad.class)) {
+                final var callbackAnnotation = method.getAnnotation(RegisterConfig.PostLoad.class);
+                createCallback.accept(postLoadCallbacks, method, callbackAnnotation.type());
+            }
+        }
+        registerConfig(
+                rootConfigObject, modName, annotation.name(), annotation.folder(),
+                annotation.comment(), annotation.format(), annotation.type(), annotation.rootLevelType(), annotation.rootLevelReloadable(),
+                registrationCallbacks, preLoadCallbacks, postLoadCallbacks
+        );
     }
     
-    public static void registerConfig(Object rootConfigObject, String modName, String name, String folder, String comment, ConfigFormat format, ConfigType[] configTypes, ConfigType rootLevelDefaultType, boolean rootLevelReloadableDefault) {
+    public static void registerConfig(
+            Object rootConfigObject, String modName, String name, String folder,
+            String comment, ConfigFormat format, ConfigType[] configTypes, ConfigType rootLevelDefaultType, boolean rootLevelReloadableDefault,
+            Map<ConfigType, List<Runnable>> registrationCallbacks, Map<ConfigType, List<Runnable>> preLoadCallbacks, Map<ConfigType, List<Runnable>> postLoadCallbacks) {
         if (configTypes.length == 1) {
             rootLevelDefaultType = rootLevelDefaultType.from(configTypes[0]);
         } else {
@@ -89,11 +130,16 @@ public class ConfigManager {
                 case SERVER -> serverConfigs;
             };
             assert configs != null;
-            final var registration = new ConfigRegistration(rootConfigObject, modName, name, folder, comment, format, configType, rootLevelDefaultType, rootLevelReloadableDefault);
+            final var registration = new ConfigRegistration(rootConfigObject, modName, name, folder, comment, format, configType, rootLevelDefaultType, rootLevelReloadableDefault, preLoadCallbacks.getOrDefault(configType, new ObjectArrayList<>()), postLoadCallbacks.getOrDefault(configType, new ObjectArrayList<>()));
             if (registration.isEmpty()) {
                 continue;
             }
             configs.put(name, registration);
+            final var callbacks = registrationCallbacks.get(configType);
+            if (callbacks != null) {
+                callbacks.forEach(Runnable::run);
+            }
+            registration.loadLocalConfigFile(false);
         }
     }
     
@@ -102,8 +148,8 @@ public class ConfigManager {
         for (final var value : clientConfigs.values()) {
             value.loadLocalConfigFile(true);
         }
-        if (FMLEnvironment.dist.isDedicatedServer() || server != null && !server.isDedicatedServer()) {
-            // dedicated servers and disconnected clients reload common and server configs too
+        if (FMLEnvironment.dist.isDedicatedServer() || server == null || !server.isDedicatedServer()) {
+            // dedicated servers, disconnected clients, and integrated servers reload common and server configs too
             for (final var value : commonConfigs.values()) {
                 value.loadLocalConfigFile(true);
             }

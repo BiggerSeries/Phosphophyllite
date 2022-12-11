@@ -38,16 +38,18 @@ public @interface RegisterConfig {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface Registration {
+        ConfigType[] type() default {};
     }
     
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface PreLoad {
-    
+        ConfigType[] type() default {};
     }
     
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface PostLoad {
+        ConfigType[] type() default {};
     }
 }

@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite;
 
 import net.roguelogix.phosphophyllite.config.ConfigValue;
+import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 
 public class PhosphophylliteConfig {
     
@@ -29,4 +30,18 @@ public class PhosphophylliteConfig {
     
     @ConfigValue
     public final GUI gui = new GUI();
+    
+    
+    @RegisterConfig.Registration
+    public static void registration() {
+        Phosphophyllite.LOGGER.debug("Config registration callback");
+    }
+    @RegisterConfig.PreLoad
+    public static void preLoad() {
+        Phosphophyllite.LOGGER.debug("Config pre load callback");
+    }
+    @RegisterConfig.PostLoad
+    public static void postLoad() {
+        Phosphophyllite.LOGGER.debug("Config post load callback");
+    }
 }
