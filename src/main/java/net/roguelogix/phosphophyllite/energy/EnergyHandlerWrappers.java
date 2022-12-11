@@ -4,6 +4,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import mekanism.api.Action;
+import mekanism.api.energy.EnergyConversionHelper;
+import mekanism.api.energy.IEnergyConversion;
 import mekanism.api.energy.IStrictEnergyHandler;
 import mekanism.api.math.FloatingLong;
 import net.minecraft.core.Direction;
@@ -74,13 +76,13 @@ public class EnergyHandlerWrappers {
                 continue;
             }
             final var wrappedOptional = registration.wrapTo(capabilityOptional).cast();
-            if(wrappedOptional == capabilityOptional) {
+            if (wrappedOptional == capabilityOptional) {
                 // early out for identity
                 return wrappedOptional.cast();
             }
             NonNullConsumer<LazyOptional<?>> listener = opt -> wrappedOptional.invalidate();
             CLEANER.register(wrappedOptional, () -> {
-                if(capabilityOptional instanceof IPhosphophylliteLazyOptional phosOpt){
+                if (capabilityOptional instanceof IPhosphophylliteLazyOptional phosOpt) {
                     //noinspection unchecked
                     phosOpt.removeListener(listener);
                 }
@@ -98,13 +100,13 @@ public class EnergyHandlerWrappers {
             return LazyOptional.empty();
         }
         final var wrappedOptional = registration.wrapFrom(handler);
-        if(wrappedOptional == handler) {
+        if (wrappedOptional == handler) {
             // early out for identity
             return handler;
         }
         NonNullConsumer<LazyOptional<IPhosphophylliteEnergyHandler>> listener = opt -> wrappedOptional.invalidate();
         CLEANER.register(wrappedOptional, () -> {
-            if(handler instanceof IPhosphophylliteLazyOptional<?> ){
+            if (handler instanceof IPhosphophylliteLazyOptional<?>) {
                 //noinspection unchecked
                 ((IPhosphophylliteLazyOptional<IPhosphophylliteEnergyHandler>) handler).removeListener(listener);
             }
@@ -196,10 +198,7 @@ public class EnergyHandlerWrappers {
     
     private static class Mekanism {
         
-        // TODO: get this from mekanism's API, its not exposed in there yet
-        private static final FloatingLong RFToJRate = FloatingLong.parseFloatingLong("2.5");
-        private static final FloatingLong JToRFRate = FloatingLong.parseFloatingLong("0.4");
-        
+        private static final IEnergyConversion JouleFEConversion = EnergyConversionHelper.feConversion();
         public static final Capability<IStrictEnergyHandler> STRICT_ENERGY = CapabilityManager.get(new CapabilityToken<>() {
         });
         
@@ -220,17 +219,17 @@ public class EnergyHandlerWrappers {
                 long inserted = 0;
                 final int containers = mekHandler.getEnergyContainerCount();
                 for (int i = 0; i < containers; i++) {
-                    final var attemptInsertJ = FloatingLong.create(maxInsert - inserted).multiply(RFToJRate);
-                    final var simulatedInsertJRemaining = mekHandler.insertEnergy(i, attemptInsertJ, Action.SIMULATE);
-                    final var RFAbleToInsert = attemptInsertJ.subtract(simulatedInsertJRemaining).multiply(JToRFRate).floor();
+                    final var toInsertRF = FloatingLong.create(maxInsert - inserted);
+                    final var toInsertJ = JouleFEConversion.convertInPlaceFrom(toInsertRF);
+                    final var simulatedInsertRemainingJ = mekHandler.insertEnergy(i, toInsertJ, Action.SIMULATE);
+                    final var simulatedInsertedRF = JouleFEConversion.convertInPlaceTo(toInsertJ.minusEqual(simulatedInsertRemainingJ)).floor();
+                    inserted += simulatedInsertedRF.longValue();
                     if (!simulate) {
-                        final var JAfterInsert = mekHandler.insertEnergy(i, RFAbleToInsert.multiply(RFToJRate), Action.EXECUTE);
+                        final var JAfterInsert = mekHandler.insertEnergy(i, JouleFEConversion.convertInPlaceFrom(simulatedInsertedRF), Action.EXECUTE);
                         if (!JAfterInsert.isZero()) {
                             throw new IllegalStateException("Mekanism energy handler state changed between simulation and push");
                         }
                     }
-                    
-                    inserted += RFAbleToInsert.longValue();
                 }
                 return inserted;
             }
@@ -240,17 +239,18 @@ public class EnergyHandlerWrappers {
                 long extracted = 0;
                 final int containers = mekHandler.getEnergyContainerCount();
                 for (int i = 0; i < containers; i++) {
-                    final var attemptExtractJ = FloatingLong.create(maxExtract - extracted).multiply(RFToJRate);
+                    final var attemptExtractRF = FloatingLong.create(maxExtract - extracted);
+                    final var attemptExtractJ = JouleFEConversion.convertInPlaceFrom(attemptExtractRF);
                     final var amountExtractedJ = mekHandler.extractEnergy(i, attemptExtractJ, Action.SIMULATE);
-                    final var ableToExtractRF = amountExtractedJ.multiply(JToRFRate).floor();
-                    final var ableToExtractJ = ableToExtractRF.multiply(RFToJRate);
+                    final var ableToExtractRF = JouleFEConversion.convertInPlaceTo(amountExtractedJ).floor();
+                    extracted += ableToExtractRF.longValue();
                     if (!simulate) {
+                        final var ableToExtractJ = JouleFEConversion.convertInPlaceTo(ableToExtractRF);
                         final var totalExtracted = mekHandler.extractEnergy(i, ableToExtractJ, Action.EXECUTE);
-                        if(!totalExtracted.equals(ableToExtractJ)) {
+                        if (!totalExtracted.equals(ableToExtractJ)) {
                             throw new IllegalStateException("Mekanism energy handler state changed between simulation and pull");
                         }
                     }
-                    extracted += ableToExtractRF.longValue();
                 }
                 return extracted;
             }
@@ -259,8 +259,12 @@ public class EnergyHandlerWrappers {
             public long energyStored() {
                 long stored = 0;
                 final int containers = mekHandler.getEnergyContainerCount();
+                var scratchFloatingLong = FloatingLong.create(0);
                 for (int i = 0; i < containers; i++) {
-                    final var containerStored = mekHandler.getEnergy(i).multiply(JToRFRate).longValue();
+                    scratchFloatingLong = scratchFloatingLong.minusEqual(scratchFloatingLong);
+                    scratchFloatingLong = scratchFloatingLong.plusEqual(mekHandler.getEnergy(i));
+                    scratchFloatingLong = JouleFEConversion.convertInPlaceTo(scratchFloatingLong);
+                    final var containerStored = scratchFloatingLong.longValue();
                     // overflow check
                     if (stored + containerStored < stored) {
                         return Long.MAX_VALUE;
@@ -274,8 +278,12 @@ public class EnergyHandlerWrappers {
             public long maxEnergyStored() {
                 long maxStored = 0;
                 final int containers = mekHandler.getEnergyContainerCount();
+                var scratchFloatingLong = FloatingLong.create(0);
                 for (int i = 0; i < containers; i++) {
-                    final var containerMaxStored = mekHandler.getMaxEnergy(i).multiply(JToRFRate).longValue();
+                    scratchFloatingLong = scratchFloatingLong.minusEqual(scratchFloatingLong);
+                    scratchFloatingLong = scratchFloatingLong.plusEqual(mekHandler.getMaxEnergy(i));
+                    scratchFloatingLong = JouleFEConversion.convertInPlaceTo(scratchFloatingLong);
+                    final var containerMaxStored = scratchFloatingLong.longValue();
                     // overflow check
                     if (maxStored + containerMaxStored < maxStored) {
                         return Long.MAX_VALUE;
@@ -336,7 +344,7 @@ public class EnergyHandlerWrappers {
                 referenceValue.minusEqual(referenceValue);
                 returnedValue.minusEqual(returnedValue);
                 
-                referenceValue.plusEqual(FloatingLong.create(phosHandler.maxEnergyStored()).multiply(RFToJRate));
+                referenceValue.plusEqual(JouleFEConversion.convertInPlaceFrom(FloatingLong.create(phosHandler.maxEnergyStored())));
                 returnedValue.plusEqual(referenceValue);
                 
                 return returnedValue;
@@ -352,7 +360,7 @@ public class EnergyHandlerWrappers {
                 referenceValue.minusEqual(referenceValue);
                 returnedValue.minusEqual(returnedValue);
                 
-                referenceValue.plusEqual(FloatingLong.create(phosHandler.maxEnergyStored() - phosHandler.energyStored()).multiply(RFToJRate));
+                referenceValue.plusEqual(JouleFEConversion.convertInPlaceFrom(FloatingLong.create(phosHandler.maxEnergyStored() - phosHandler.energyStored())));
                 returnedValue.plusEqual(referenceValue);
                 
                 return returnedValue;
@@ -379,24 +387,24 @@ public class EnergyHandlerWrappers {
             @Override
             public FloatingLong insertEnergy(FloatingLong amount, Action action) {
                 verifyUnchanged();
-                final var toInsert = amount.multiply(JToRFRate).longValue();
+                final var toInsert = JouleFEConversion.convertTo(amount).longValue();
                 final var inserted = phosHandler.insertEnergy(toInsert, action.simulate());
                 final var remaining = toInsert - inserted;
                 if (remaining == 0) {
                     return FloatingLong.ZERO;
                 }
-                return FloatingLong.create(remaining).multiply(RFToJRate);
+                return JouleFEConversion.convertInPlaceFrom(FloatingLong.create(remaining));
             }
             
             @Override
             public FloatingLong extractEnergy(FloatingLong amount, Action action) {
                 verifyUnchanged();
-                final var toExtract = amount.multiply(JToRFRate).longValue();
+                final var toExtract = JouleFEConversion.convertTo(amount).longValue();
                 final var extracted = phosHandler.extractEnergy(toExtract, action.simulate());
                 if (extracted == 0) {
                     return FloatingLong.ZERO;
                 }
-                return FloatingLong.create(extracted).multiply(RFToJRate);
+                return JouleFEConversion.convertInPlaceFrom(FloatingLong.create(extracted));
             }
         }
     }
