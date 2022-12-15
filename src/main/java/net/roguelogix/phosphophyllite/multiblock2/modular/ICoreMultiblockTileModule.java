@@ -22,6 +22,12 @@ public interface ICoreMultiblockTileModule<
     default void aboutToAttemptAttach() {
     }
     
+    default void aboutToUnloadDetach() {
+    }
+    
+    default void aboutToRemovedDetach() {
+    }
+    
     default void onControllerChange() {
     }
 }

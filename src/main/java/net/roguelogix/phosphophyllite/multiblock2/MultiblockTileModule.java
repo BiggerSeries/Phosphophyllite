@@ -77,6 +77,7 @@ public final class MultiblockTileModule<
         if (controller != null) {
             allowAttach = false;
             // effectively chunk unload, if a player is going to remove it, it will be ticking again when that happens
+            coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToUnloadDetach);
             controller.detach(this, true, false, true);
         }
     }
@@ -84,6 +85,7 @@ public final class MultiblockTileModule<
     @Override
     public void onRemoved(boolean chunkUnload) {
         if (controller != null) {
+            coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToRemovedDetach);
             controller.detach(this, chunkUnload, false, true);
         }
     }
