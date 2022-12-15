@@ -1,4 +1,7 @@
 # 1.19.2-0.6.0-beta.6
+ - fix NBT saving bug
+
+# 1.19.2-0.6.0-beta.6
  - new multiblock system will pause on part unload
  - require touching multiblocks to also be persistent
  - add tile module for tracking ticking status, and use it for multiblock system attachments
