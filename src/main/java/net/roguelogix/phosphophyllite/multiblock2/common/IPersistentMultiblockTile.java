@@ -66,14 +66,20 @@ public interface IPersistentMultiblockTile<
         @Override
         public CompoundTag writeNBT() {
             if (controllerPersistentModule == null || !controllerPersistentModule.isSaveDelegate(iface)) {
-                return null;
+                return nbt;
             }
             if (nbt == null) {
                 nbt = controllerPersistentModule.getNBT();
             }
             return nbt;
         }
-        
+    
+        @Override
+        public void aboutToUnloadDetach() {
+            nbt = null;
+            writeNBT();
+        }
+    
         @Override
         public void onControllerChange() {
             final var controller = multiblockModule.controller();

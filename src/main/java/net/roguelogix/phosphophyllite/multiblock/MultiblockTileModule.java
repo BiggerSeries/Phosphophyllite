@@ -170,6 +170,7 @@ public class MultiblockTileModule<
     
     boolean preExistingBlock = false;
     CompoundTag controllerData = null;
+    CompoundTag cachedNBT = null;
     
     @Override
     public void readNBT(CompoundTag compound) {
@@ -183,13 +184,15 @@ public class MultiblockTileModule<
     @Nullable
     @Override
     public CompoundTag writeNBT() {
+        if(cachedNBT != null){
+            return cachedNBT;
+        }
+        CompoundTag compound = new CompoundTag();
         if (isSaveDelegate && controller != null && controller.blocks.containsModule(this)) {
-            CompoundTag compound = new CompoundTag();
             compound.put("controllerData", controller.getNBT());
             compound.putBoolean("isSaveDelegate", isSaveDelegate);
-            return compound;
         }
-        return null;
+        return compound;
     }
     
     @Override
@@ -204,12 +207,14 @@ public class MultiblockTileModule<
     public void startTicking() {
         allowAttach = true;
         attachToNeighbors();
+        cachedNBT = null;
     }
     
     @Override
     public void stopTicking() {
         if (controller != null) {
             allowAttach = false;
+            cachedNBT = writeNBT();
             controller.detach(this, true, false);
         }
     }

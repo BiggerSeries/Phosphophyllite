@@ -144,6 +144,9 @@ public interface IPersistentMultiblock<
                 saveDelegate = controller.randomTile();
                 //noinspection unchecked
                 saveDelegateModule = saveDelegate.module(IPersistentMultiblockTile.class, IPersistentMultiblockTile.Module.class);
+                if (saveDelegateModule != null) {
+                    saveDelegateModule.nbt = null;
+                }
                 return;
             }
             assert saveDelegateModule != null;
