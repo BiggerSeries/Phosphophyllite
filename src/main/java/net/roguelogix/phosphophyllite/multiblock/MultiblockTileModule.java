@@ -206,8 +206,9 @@ public class MultiblockTileModule<
     @Override
     public void startTicking() {
         allowAttach = true;
-        attachToNeighbors();
+        readNBT(cachedNBT);
         cachedNBT = null;
+        attachToNeighbors();
     }
     
     @Override

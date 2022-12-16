@@ -79,13 +79,19 @@ public final class MultiblockTileModule<
             // effectively chunk unload, if a player is going to remove it, it will be ticking again when that happens
             coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToUnloadDetach);
             controller.detach(this, true, false, true);
+            // in the event we start ticking again, we are a pre-existing block
+            preExistingBlock = true;
         }
     }
     
     @Override
     public void onRemoved(boolean chunkUnload) {
         if (controller != null) {
-            coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToRemovedDetach);
+            if (chunkUnload) {
+                coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToUnloadDetach);
+            } else {
+                coreMultiblockTileModules.forEach(ICoreMultiblockTileModule::aboutToRemovedDetach);
+            }
             controller.detach(this, chunkUnload, false, true);
         }
     }
@@ -122,7 +128,7 @@ public final class MultiblockTileModule<
     
     @Contract(pure = true)
     private boolean shouldConnectTo(IMultiblockTile<?, ?, ?> otherRawTile, Direction direction) {
-        if(!allowAttach) {
+        if (!allowAttach) {
             return false;
         }
         if (this.controller != null) {
