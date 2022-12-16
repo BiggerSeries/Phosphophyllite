@@ -1,4 +1,7 @@
-# 1.19.2-0.6.0-beta.6
+# 1.19.2-0.6.0-beta.6.2
+- fix NBT saving bug, again, very similar thing, but different situation 
+
+# 1.19.2-0.6.0-beta.6.1
  - fix NBT saving bug
 
 # 1.19.2-0.6.0-beta.6
