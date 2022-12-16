@@ -150,7 +150,7 @@ public class MultiblockTileModule<
             possibleTilePos.set(pos);
             possibleTilePos.move(value);
             long currentChunkPos = ChunkPos.asLong(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4);
-            if(lastChunk == null || currentChunkPos != lastChunkPos) {
+            if (lastChunk == null || currentChunkPos != lastChunkPos) {
                 lastChunkPos = currentChunkPos;
                 lastChunk = iface.getLevel().getChunk(possibleTilePos.getX() >> 4, possibleTilePos.getZ() >> 4, ChunkStatus.FULL, false);
             }
@@ -184,7 +184,7 @@ public class MultiblockTileModule<
     @Nullable
     @Override
     public CompoundTag writeNBT() {
-        if(cachedNBT != null){
+        if (cachedNBT != null) {
             return cachedNBT;
         }
         CompoundTag compound = new CompoundTag();
@@ -206,8 +206,10 @@ public class MultiblockTileModule<
     @Override
     public void startTicking() {
         allowAttach = true;
-        readNBT(cachedNBT);
-        cachedNBT = null;
+        if (cachedNBT != null) {
+            readNBT(cachedNBT);
+            cachedNBT = null;
+        }
         attachToNeighbors();
     }
     
@@ -228,7 +230,6 @@ public class MultiblockTileModule<
         allowAttach = false;
     }
     
-
     
     @Nullable
     @Override
