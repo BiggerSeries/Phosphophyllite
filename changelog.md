@@ -1,3 +1,6 @@
+# 1.19.2-0.6.0-beta.6.3
+ - fix #26
+
 # 1.19.2-0.6.0-beta.6.2
 - fix NBT saving bug, again, very similar thing, but different situation 
 
