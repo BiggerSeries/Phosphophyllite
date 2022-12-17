@@ -255,9 +255,9 @@ public class MultiblockController<
         
         toAttachModule.controller = self();
         if (toAttachModule.preExistingBlock) {
-            if (toAttachModule.controllerData != null) {
-                onBlockWithNBTAttached(toAttachModule.controllerData);
-                toAttachModule.controllerData = null;
+            if (toAttachModule.cachedNBT != null && toAttachModule.cachedNBT.contains("controllerData")) {
+                onBlockWithNBTAttached(toAttachModule.cachedNBT.getCompound("controllerData"));
+                toAttachModule.cachedNBT = null;
             }
             if (state == AssemblyState.DISASSEMBLED && !isMergingControllers) {
                 state = AssemblyState.PAUSED;

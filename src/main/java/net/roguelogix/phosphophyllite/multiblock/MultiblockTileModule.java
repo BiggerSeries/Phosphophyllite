@@ -169,14 +169,11 @@ public class MultiblockTileModule<
     }
     
     boolean preExistingBlock = false;
-    CompoundTag controllerData = null;
     CompoundTag cachedNBT = null;
     
     @Override
     public void readNBT(CompoundTag compound) {
-        if (compound.contains("controllerData")) {
-            controllerData = compound.getCompound("controllerData");
-        }
+        cachedNBT = compound;
         isSaveDelegate = compound.getBoolean("isSaveDelegate");
         preExistingBlock = true;
     }
@@ -199,7 +196,7 @@ public class MultiblockTileModule<
     public void onAdded() {
         assert iface.getLevel() != null;
         if (iface.getLevel().isClientSide) {
-            controllerData = null;
+            cachedNBT = null;
         }
     }
     
@@ -207,8 +204,7 @@ public class MultiblockTileModule<
     public void startTicking() {
         allowAttach = true;
         if (cachedNBT != null) {
-            readNBT(cachedNBT);
-            cachedNBT = null;
+            preExistingBlock = true;
         }
         attachToNeighbors();
     }
