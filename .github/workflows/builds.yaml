@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: ./gradlew build
-      - run: ./gradlew publish
+      - run: ./gradlew publishToMavenLocal
       - run: mkdir jars
       - run: mv build/libs/phosphophyllite-* jars/
       - uses: actions/upload-artifact@v2
