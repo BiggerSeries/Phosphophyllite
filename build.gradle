@@ -139,6 +139,7 @@ repositories {
     maven {
         url =  'https://modmaven.dev/'
     }
+    maven { url "https://nexus.resourcefulbees.com/repository/maven-public/" }
 }
 
 dependencies {
@@ -169,8 +170,6 @@ jar {
         ])
     }
 }
-
-publish.dependsOn('reobfJar')
 
 gradle.projectsEvaluated {
     def resource_targets = ["META-INF/mods.toml", "pack.mcmeta"]
@@ -205,6 +204,38 @@ gradle.projectsEvaluated {
 
         from(sourceSets.main.resources) {
             exclude resource_targets
+        }
+    }
+}
+
+//publish.dependsOn('reobfJar')
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+def reobfFile = file("$buildDir/reobfJar/output.jar")
+def reobfArtifact = artifacts.add('default', reobfFile) {
+    type 'jar'
+    builtBy 'reobfJar'
+}
+
+def ENV = System.getenv()
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact reobfArtifact
+            artifact sourcesJar
+        }
+    }
+
+    repositories {
+        maven {
+            url = "https://nexus.resourcefulbees.com/repository/roguelogix/"
+            credentials {
+                username ENV.MAVEN_USER
+                password ENV.MAVEN_PASS
+            }
         }
     }
 }
