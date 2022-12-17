@@ -1,0 +1,24 @@
+{
+    "itemGroup.phosphophyllite": "Phosphophyllite",
+    "multiblock.error.phosphophyllite.invalid_block.frame": "Bloco inválido (%s) para quadro em %s",
+    "multiblock.error.phosphophyllite.invalid_block.exterior": "Bloco inválido (%s) para exterior em %s",
+    "multiblock.error.phosphophyllite.invalid_block.interior": "Bloco inválido (%s) para interior em %s",
+    "multiblock.error.phosphophyllite.invalid_block.corner": "Bloco inválido (%s) para canto em %s",
+    "multiblock.error.phosphophyllite.invalid_block.generic": "Bloco inválido (%s) em %s",
+    "multiblock.error.phosphophyllite.unknown": "Ocorreu um erro multibloco desconhecido, reporte ao autor do mod",
+    "multiblock.error.phosphophyllite.null_controller": "O sistema multiblock apresentou um erro interno desconhecido, reporte para Phosphophyllite",
+    "multiblock.error.phosphophyllite.dimensions": "Dimensões não permitidas \nAtual: %d, %d, %d, \nMínimo permitido: %d, %d, %d, \nMáximo permitido: %d, %d, %d,",
+
+    "block.phosphophyllite.item_black_hole": "Item Buraco Negro",
+    "block.phosphophyllite.item_white_hole": "Item Buraco Branco",
+    "block.phosphophyllite.fluid_black_hole": "Buraco Negro Fluido",
+    "block.phosphophyllite.fluid_white_hole": "Fluido Branco Buraco",
+    "block.phosphophyllite.power_black_hole": "Poder Buraco Negro",
+    "block.phosphophyllite.power_white_hole": "Poder Buraco Branco",
+
+    "block.phosphophyllite.phosphophyllite_ore": "Phosphophyllite Minério",
+
+    "item.phosphophyllite.debug_tool": "Debeefer",
+
+    "random.bullshit.that.doesnt.actually.get.used.anywhere": "é por poder ter uma vírgula 'final', ok"
+}
