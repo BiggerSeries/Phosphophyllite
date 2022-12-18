@@ -1,3 +1,7 @@
+# 1.19.2-0.6.0-beta.6.4
+- fix bug where loading and unloading a legacy multiblock outside ticking chunks would cause NBT to be voided 
+- fix bug where a multiblock2 structure wouldn't merge together correctly when reloaded due to chunk caching
+
 # 1.19.2-0.6.0-beta.6.3
  - fix #26
 
