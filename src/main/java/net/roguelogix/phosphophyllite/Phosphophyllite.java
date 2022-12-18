@@ -173,6 +173,8 @@ public class Phosphophyllite {
             controllers.remove(oldController);
         }
         oldControllers.clear();
+        
+        Util.serverTick();
     }
     
     @SubscribeEvent
@@ -187,6 +189,8 @@ public class Phosphophyllite {
         while (run[0]) {
             Queues.clientThread.runOne();
         }
+    
+        Util.clientTick();
     }
     
     @SubscribeEvent

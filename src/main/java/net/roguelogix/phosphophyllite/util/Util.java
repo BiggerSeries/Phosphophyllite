@@ -417,6 +417,14 @@ public class Util {
         }
     }
     
+    public static void clientTick() {
+        lastLevel[1] = null;
+    }
+    
+    public static void serverTick() {
+        lastLevel[0] = null;
+    }
+    
     public static void worldTickEndEvent(Level level) {
         if (!endOfTickStates.isEmpty()) {
             setBlockStates(endOfTickStates, level);
