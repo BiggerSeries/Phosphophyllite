@@ -264,6 +264,7 @@ public class MultiblockController<
             }
             onPartAttached(toAttachTile);
         } else {
+            state = AssemblyState.DISASSEMBLED;
             onPartPlaced(toAttachTile);
         }
         toAttachModule.updateNeighbors();
