@@ -23,4 +23,12 @@ public interface IValidatedMultiblockControllerModule {
     
     default void validateStage3() throws ValidationException {
     }
+    
+    default boolean canValidate() {
+        return true;
+    }
+    
+    default boolean canTick(){
+        return true;
+    }
 }

@@ -91,8 +91,6 @@ public interface ITouchingMultiblock<
                     min.set(0);
                     max.set(0);
                 }
-                case PAUSED -> {
-                }
             }
         }
         

@@ -51,10 +51,15 @@ public interface IPersistentMultiblock<
             > extends MultiblockControllerModule<TileType, BlockType, ControllerType> implements IValidatedMultiblockControllerModule {
         @Nullable
         private TileType saveDelegate;
+        private boolean hasSaveDelegate = false;
         @Nullable
         private IPersistentMultiblockTile.Module<TileType, BlockType, ControllerType> saveDelegateModule;
         @Nullable
         private CompoundTag nbt;
+        private boolean shouldReadNBT = false;
+        private int expectedBlocks = 0;
+        @Nullable
+        private IValidatedMultiblock.AssemblyState lastAssemblyState;
         
         @OnModLoad
         public static void register() {
@@ -65,20 +70,20 @@ public interface IPersistentMultiblock<
             super(controller);
         }
         
-        @Override
-        public void postModuleConstruction() {
-            controller.transitionToState(AssemblyState.PAUSED);
-        }
-        
-        private void pausedToDisassembled() {
-            if (controller.assemblyState() == AssemblyState.PAUSED) {
-                controller.transitionToState(AssemblyState.DISASSEMBLED);
-            }
-        }
-        
         private void partAdded(TileType newPart) {
             final var persistentModule = newPart.module(IPersistentMultiblockTile.class, IPersistentMultiblockTile.Module.class);
             assert persistentModule != null;
+            if (expectedBlocks == 0) {
+                expectedBlocks = persistentModule.expectedBlocks;
+            }
+            if (persistentModule.expectedBlocks != 0 && persistentModule.expectedBlocks != expectedBlocks) {
+                // merging controllers, reset to zero
+                expectedBlocks = 0;
+            }
+            if (lastAssemblyState == null) {
+                lastAssemblyState = persistentModule.lastAssemblyState;
+            }
+            
             final var newNBT = persistentModule.nbt;
             persistentModule.nbt = null;
             if (newNBT == null) {
@@ -97,6 +102,7 @@ public interface IPersistentMultiblock<
             } else {
                 nbt = newNBT;
             }
+            shouldReadNBT = true;
         }
         
         private void partRemoved(TileType oldPart) {
@@ -112,9 +118,6 @@ public interface IPersistentMultiblock<
         
         public void onPartUnloaded(TileType tile) {
             partRemoved(tile);
-            if (controller.assemblyState() != AssemblyState.PAUSED) {
-                controller.transitionToState(AssemblyState.PAUSED);
-            }
         }
         
         public void onPartAttached(TileType tile) {
@@ -126,36 +129,53 @@ public interface IPersistentMultiblock<
         }
         
         public void onPartPlaced(TileType tile) {
-            pausedToDisassembled();
             // cannot have nbt when first placed
+            expectedBlocks = 0;
         }
         
         public void onPartBroken(TileType tile) {
-            pausedToDisassembled();
+            expectedBlocks = 0;
             partRemoved(tile);
+            if (tile == saveDelegate) {
+                hasSaveDelegate = false;
+            }
+        }
+        
+        private void pickDelegate() {
+            if (hasSaveDelegate) {
+                return;
+            }
+            saveDelegate = controller.randomTile();
+            //noinspection unchecked
+            saveDelegateModule = saveDelegate.module(IPersistentMultiblockTile.class, IPersistentMultiblockTile.Module.class);
+            if (saveDelegateModule != null) {
+                saveDelegateModule.nbt = null;
+            }
+            hasSaveDelegate = true;
+        }
+        
+        @Override
+        public boolean canValidate() {
+            return expectedBlocks <= controller.blocks.size();
+        }
+    
+        @Override
+        public boolean canTick() {
+            return canValidate();
         }
         
         @Override
         public void onStateTransition(AssemblyState oldAssemblyState, AssemblyState newAssemblyState) {
-            if (newAssemblyState != AssemblyState.ASSEMBLED) {
-                return;
-            }
-            if (saveDelegate == null) {
-                saveDelegate = controller.randomTile();
-                //noinspection unchecked
-                saveDelegateModule = saveDelegate.module(IPersistentMultiblockTile.class, IPersistentMultiblockTile.Module.class);
-                if (saveDelegateModule != null) {
-                    saveDelegateModule.nbt = null;
+            if (shouldReadNBT) {
+                shouldReadNBT = false;
+                if (nbt != null) {
+                    controller.read(nbt);
                 }
-                return;
-            }
-            assert saveDelegateModule != null;
-            if (oldAssemblyState != AssemblyState.ASSEMBLED && nbt != null) {
-                controller.read(nbt);
             }
         }
         
         void dirty() {
+            pickDelegate();
             nbt = null;
             if (saveDelegateModule != null) {
                 saveDelegateModule.nbt = null;
@@ -164,6 +184,7 @@ public interface IPersistentMultiblock<
         }
         
         boolean isSaveDelegate(TileType tile) {
+            pickDelegate();
             return tile == saveDelegate;
         }
         

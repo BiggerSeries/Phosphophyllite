@@ -29,12 +29,11 @@ public interface IValidatedMultiblock<
     
     enum AssemblyState {
         ASSEMBLED,
-        DISASSEMBLED,
-        // TODO: it would be good if this could be part of a module alone and not the core controller
-        PAUSED,
+        DISASSEMBLED
     }
     
     default Module<TileType, BlockType, ControllerType> validatedModule() {
+        //noinspection unchecked,ConstantConditions
         return module(IValidatedMultiblock.class, Module.class);
     }
     
@@ -72,21 +71,12 @@ public interface IValidatedMultiblock<
                 switch (newAssemblyState) {
                     case DISASSEMBLED -> onDisassembled();
                     case ASSEMBLED -> onReassembled();
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
                 }
             }
             case DISASSEMBLED -> {
                 switch (newAssemblyState) {
                     case ASSEMBLED -> onAssembled();
-                    case DISASSEMBLED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                }
-            }
-            case PAUSED -> {
-                switch (newAssemblyState) {
-                    case ASSEMBLED -> onUnpaused();
-                    case DISASSEMBLED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
-                    case PAUSED -> undefinedStateTransition(oldAssemblyState, newAssemblyState);
+                    case DISASSEMBLED -> onRedisassembled();
                 }
             }
         }
@@ -104,7 +94,7 @@ public interface IValidatedMultiblock<
     default void onDisassembled() {
     }
     
-    default void onUnpaused() {
+    default void onRedisassembled() {
     }
     
     default void tick() {
@@ -127,7 +117,7 @@ public interface IValidatedMultiblock<
         
         private final ObjectArrayList<IAssembledTickMultiblockModule> assembledTickMultiblockModules = new ObjectArrayList<>();
         private final ObjectArrayList<IValidatedMultiblockControllerModule> validatedMultiblockModules = new ObjectArrayList<>();
-    
+        
         @OnModLoad
         public static void register() {
             MultiblockControllerModuleRegistry.registerModule(IValidatedMultiblock.class, Module::new);
@@ -137,19 +127,19 @@ public interface IValidatedMultiblock<
         public Module(IValidatedMultiblock<TileType, BlockType, ControllerType> controller) {
             super(controller);
         }
-    
+        
         @Override
         public void postModuleConstruction() {
             for (final var value : modules()) {
-                if(value instanceof IAssembledTickMultiblockModule module) {
+                if (value instanceof IAssembledTickMultiblockModule module) {
                     assembledTickMultiblockModules.add(module);
                 }
-                if(value instanceof IValidatedMultiblockControllerModule module) {
+                if (value instanceof IValidatedMultiblockControllerModule module) {
                     validatedMultiblockModules.add(module);
                 }
             }
         }
-    
+        
         @Override
         public void split(List<ControllerType> others) {
             updateAssemblyAtTick = Long.MIN_VALUE;
@@ -180,6 +170,11 @@ public interface IValidatedMultiblock<
                 return;
             }
             updateAssemblyAtTick = Long.MAX_VALUE;
+            for (final var tileTypeControllerTypeMultiblockControllerModule : validatedMultiblockModules) {
+                if (!tileTypeControllerTypeMultiblockControllerModule.canValidate()) {
+                    return;
+                }
+            }
             lastValidationError = null;
             try {
                 for (final var tileTypeControllerTypeMultiblockControllerModule : validatedMultiblockModules) {
@@ -197,7 +192,7 @@ public interface IValidatedMultiblock<
             } catch (ValidationException validationError) {
                 lastValidationError = validationError;
             }
-            transitionToState(lastValidationError == null ? IValidatedMultiblock.AssemblyState.ASSEMBLED : assemblyState == IValidatedMultiblock.AssemblyState.PAUSED ? IValidatedMultiblock.AssemblyState.PAUSED : IValidatedMultiblock.AssemblyState.DISASSEMBLED);
+            transitionToState(lastValidationError == null ? IValidatedMultiblock.AssemblyState.ASSEMBLED : IValidatedMultiblock.AssemblyState.DISASSEMBLED);
         }
         
         public final void transitionToState(IValidatedMultiblock.AssemblyState newAssemblyState) {
@@ -270,6 +265,12 @@ public interface IValidatedMultiblock<
         @Override
         public void update() {
             updateAssemblyState();
+    
+            for (final var tileTypeControllerTypeMultiblockControllerModule : validatedMultiblockModules) {
+                if (!tileTypeControllerTypeMultiblockControllerModule.canTick()) {
+                    return;
+                }
+            }
             
             if (assemblyState == AssemblyState.ASSEMBLED) {
                 assembledTickMultiblockModules.forEach(IAssembledTickMultiblockModule::preTick);
@@ -281,7 +282,7 @@ public interface IValidatedMultiblock<
                 assembledTickMultiblockModules.forEach(IAssembledTickMultiblockModule::postDisassembledTick);
             }
         }
-    
+        
         @Nullable
         @Override
         public String getDebugString() {

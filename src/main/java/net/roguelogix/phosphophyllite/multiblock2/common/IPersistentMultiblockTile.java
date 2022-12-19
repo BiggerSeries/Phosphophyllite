@@ -10,6 +10,7 @@ import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockTileModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.ICoreMultiblockTileModule;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
 import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -31,6 +32,8 @@ public interface IPersistentMultiblockTile<
         
         @Nullable
         CompoundTag nbt;
+        IValidatedMultiblock.AssemblyState lastAssemblyState = IValidatedMultiblock.AssemblyState.DISASSEMBLED;
+        int expectedBlocks = 0;
         
         MultiblockTileModule<TileType, BlockType, ControllerType> multiblockModule;
         @Nullable
@@ -59,27 +62,40 @@ public interface IPersistentMultiblockTile<
         
         @Override
         public void readNBT(CompoundTag nbt) {
+            // backwards compat with opening older worlds
+            // TODO: require this
+            if (nbt.contains("last_assembly_state")) {
+                lastAssemblyState = IValidatedMultiblock.AssemblyState.valueOf(nbt.getString("last_assembly_state"));
+            }
+            if (nbt.contains("expected_blocks")) {
+                expectedBlocks = nbt.getInt("expected_blocks");
+            }
+            if (nbt.contains("controller_data")) {
+                this.nbt = nbt.getCompound("controller_data");
+                return;
+            }
             this.nbt = nbt;
         }
         
-        @Nullable
         @Override
         public CompoundTag writeNBT() {
-            if (controllerPersistentModule == null || !controllerPersistentModule.isSaveDelegate(iface)) {
-                return nbt;
-            }
-            if (nbt == null) {
+            if (controllerPersistentModule != null && controllerPersistentModule.isSaveDelegate(iface) && nbt == null) {
                 nbt = controllerPersistentModule.getNBT();
             }
-            return nbt;
+            final var toReturn = new CompoundTag();
+            toReturn.putString("last_assembly_state", lastAssemblyState.toString());
+            if (nbt != null) {
+                toReturn.put("controller_data", nbt);
+            }
+            return toReturn;
         }
-    
+        
         @Override
         public void aboutToUnloadDetach() {
             nbt = null;
             writeNBT();
         }
-    
+        
         @Override
         public void onControllerChange() {
             final var controller = multiblockModule.controller();
