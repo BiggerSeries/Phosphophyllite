@@ -6,6 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
@@ -222,43 +223,44 @@ public interface ISidedMultipart extends IModularTile {
         
         @Nullable
         @Override
-        public String getDebugString() {
-            var hasDebug = false;
-            StringBuilder builder = new StringBuilder();
-            var debugString = coreModule.getDebugString();
-            builder.append("SidedModules:\n");
-            if (debugString != null) {
-                hasDebug = true;
-                builder.append("    Core:\n");
-                var lines = debugString.split("\n");
-                for (String line : lines) {
-                    builder.append("    ");
-                    builder.append(line);
-                }
-            }
-            for (Direction value : Direction.values()) {
-                var module = sidedModules[value.get3DDataValue()];
-                if (module != null) {
-                    debugString = module.getDebugString();
-                    if (debugString == null) {
-                        continue;
-                    }
-                    hasDebug = true;
-                    builder.append("\n    ");
-                    builder.append(value);
-                    builder.append(":\n");
-                    var lines = debugString.split("\n");
-                    for (String line : lines) {
-                        builder.append("        ");
-                        builder.append(line);
-                    }
-                }
-            }
-            if (!hasDebug) {
-                return null;
-            }
-            builder.append("\n");
-            return builder.toString();
+        public DebugInfo getDebugInfo() {
+            return null;
+//            var hasDebug = false;
+//            StringBuilder builder = new StringBuilder();
+//            var debugString = coreModule.getDebugInfo();
+//            builder.append("SidedModules:\n");
+//            if (debugString != null) {
+//                hasDebug = true;
+//                builder.append("    Core:\n");
+//                var lines = debugString.split("\n");
+//                for (String line : lines) {
+//                    builder.append("    ");
+//                    builder.append(line);
+//                }
+//            }
+//            for (Direction value : Direction.values()) {
+//                var module = sidedModules[value.get3DDataValue()];
+//                if (module != null) {
+//                    debugString = module.getDebugInfo();
+//                    if (debugString == null) {
+//                        continue;
+//                    }
+//                    hasDebug = true;
+//                    builder.append("\n    ");
+//                    builder.append(value);
+//                    builder.append(":\n");
+//                    var lines = debugString.split("\n");
+//                    for (String line : lines) {
+//                        builder.append("        ");
+//                        builder.append(line);
+//                    }
+//                }
+//            }
+//            if (!hasDebug) {
+//                return null;
+//            }
+//            builder.append("\n");
+//            return builder.toString();
         }
         
         @Override

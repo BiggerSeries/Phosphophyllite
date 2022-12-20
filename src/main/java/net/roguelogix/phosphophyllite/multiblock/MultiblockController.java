@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
@@ -161,7 +162,7 @@ public class MultiblockController<
         if (!tileTypeValidator.validate(toAttachGeneric.iface)) {
             return;
         }
-    
+        
         if (isUpdatingState) {
             throw new IllegalStateException("Attempt to add block while updating multiblock state");
         }
@@ -288,7 +289,7 @@ public class MultiblockController<
             return;
         }
         TileType toDetachTile = toDetachModule.iface;
-    
+        
         if (isUpdatingState) {
             throw new IllegalStateException("Attempt to remove block while updating multiblock state");
         }
@@ -681,13 +682,16 @@ public class MultiblockController<
      * @return string to print
      */
     @Nonnull
-    public String getDebugString() {
-        return "BlockCount: " + blocks.size() + "\n" +
-                       "Min " + minCoord + "\n" +
-                       "Max " + maxCoord + "\n" +
-                       "Controller: " + this + "\n" +
-                       "Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()) + "\n" +
-                       "AssemblyState: " + state + "\n";
+    public DebugInfo getDebugInfo() {
+        final var debugInfo = new DebugInfo(this.getClass().getSimpleName());
+        debugInfo.add("BlockCount: " + blocks.size());
+        debugInfo.add("Min " + minCoord);
+        debugInfo.add("Max " + maxCoord);
+        debugInfo.add("Controller class: " + this.getClass().getCanonicalName().substring(this.getClass().getPackageName().length() + 1));
+        debugInfo.add("Controller hash:  " + Integer.toHexString(hashCode()));
+        debugInfo.add("Last Error: " + (lastValidationError == null ? "N/A" : lastValidationError.getTextComponent().getString()));
+        debugInfo.add("AssemblyState: " + state);
+        return debugInfo;
     }
     
     

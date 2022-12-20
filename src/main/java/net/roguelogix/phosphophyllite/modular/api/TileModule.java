@@ -5,6 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 
 import javax.annotation.Nonnull;
@@ -98,7 +99,7 @@ public class TileModule<InterfaceType extends IModularTile> implements IDebuggab
     }
     
     @Nullable
-    public String getDebugString() {
+    public DebugInfo getDebugInfo() {
         return null;
     }
 }

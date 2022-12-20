@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
@@ -537,38 +538,31 @@ public class MultiblockController<
         
     }
     
-    /**
-     * Gets the info printed to chat when block is clicked with the @DebugTool
-     * safe to override, just append to the string returned by super.getDebugString
-     * not my fault if you manage to break it
-     *
-     * @return string to print
-     */
+    @Nullable
+    public DebugInfo getControllerDebugInfo() {
+        return null;
+    }
+    
     @Nonnull
     @Override
-    public String getDebugString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("MultiBlockControllerModule").append("\n");
-        builder.append("Controller: ").append(this).append("\n");
-        builder.append("BlockCount: ").append(blocks.size()).append("\n");
-        builder.append("Min: ").append(VectorUtil.asString(minCoord)).append("\n");
-        builder.append("Max: ").append(VectorUtil.asString(maxCoord)).append("\n");
-        builder.append("Size: ").append(VectorUtil.asString(new Vector3i(1, 1, 1).add(maxCoord).sub(minCoord))).append("\n");
-        for (var module : moduleListRO) {
-            String debugString = module.getDebugString();
-            if (debugString != null) {
-                builder.append("\n");
-                builder.append(module.getClass().getSimpleName());
-                builder.append(":");
-                var lines = debugString.split("\n");
-                for (String line : lines) {
-                    builder.append("\n    ");
-                    builder.append(line);
-                }
+    public final DebugInfo getDebugInfo() {
+        final var debugInfo = new DebugInfo("MultiblockController");
+        debugInfo.add("Controller class: " + this.getClass().getCanonicalName().substring(this.getClass().getPackageName().length() + 1));
+        debugInfo.add("Controller hash:  " + Integer.toHexString(hashCode()));
+        debugInfo.add("BlockCount: " + blocks.size());
+        debugInfo.add("Min: " + VectorUtil.asString(minCoord));
+        debugInfo.add("Max: " + VectorUtil.asString(maxCoord));
+        debugInfo.add("Size: " + VectorUtil.asString(new Vector3i(1, 1, 1).add(maxCoord).sub(minCoord)));
+        for (final var moduleEntry : modules.entrySet()) {
+            final var moduleDebugInfo = moduleEntry.getValue().getDebugInfo();
+            if (moduleDebugInfo == null) {
+                debugInfo.add(new DebugInfo(moduleEntry.getKey().getSimpleName()));
+                continue;
             }
+            debugInfo.add(moduleDebugInfo);
         }
-        builder.append("\n\n");
-        return builder.toString();
+        debugInfo.add(getControllerDebugInfo());
+        return debugInfo;
     }
     
     // ------------------------------------ API ------------------------------------

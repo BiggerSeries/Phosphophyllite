@@ -6,6 +6,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
@@ -250,11 +251,15 @@ public final class MultiblockTileModule<
     }
     
     @Override
-    public String getDebugString() {
+    public DebugInfo getDebugInfo() {
+        final var debugInfo = new DebugInfo(this.getClass().getSimpleName());
+        
         var controller = controller();
         if (controller == null) {
-            return "Null controller";
+            debugInfo.add("Null Multiblock controller");
+        } else {
+            debugInfo.add(controller.getDebugInfo());
         }
-        return controller.getDebugString();
+        return debugInfo;
     }
 }

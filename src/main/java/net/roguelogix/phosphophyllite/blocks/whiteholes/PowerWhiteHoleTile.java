@@ -13,11 +13,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.energy.IEnergyTile;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyHandler;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -135,7 +137,7 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
                 return Long.MAX_VALUE;
             }
         });
-        if(player != null) {
+        if (player != null) {
             player.sendSystemMessage(Component.literal("Capability invalidated"));
         }
     }
@@ -183,12 +185,14 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
         return tag;
     }
     
+    @Nonnull
     @Override
-    public String getDebugString() {
-        return super.getDebugString() + "\n" +
-                "SentLastTick: " + sentLastTick + "\n" +
-                "DoPush " + doPush + "\n" +
-                "AllowPull " + allowPull;
+    public DebugInfo getDebugInfo() {
+        return super.getDebugInfo()
+                .add("SentLastTick: " + sentLastTick)
+                .add("DoPush " + doPush)
+                .add("AllowPull " + allowPull)
+                ;
     }
     
     public void updateCapability(Direction updateDirection, @Nullable Block oldBlock, BlockPos updatePos) {

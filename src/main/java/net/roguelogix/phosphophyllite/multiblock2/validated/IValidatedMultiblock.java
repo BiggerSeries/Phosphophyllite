@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.ValidationException;
 import net.roguelogix.phosphophyllite.multiblock2.modular.IModularMultiblockController;
@@ -265,7 +266,7 @@ public interface IValidatedMultiblock<
         @Override
         public void update() {
             updateAssemblyState();
-    
+            
             for (final var tileTypeControllerTypeMultiblockControllerModule : validatedMultiblockModules) {
                 if (!tileTypeControllerTypeMultiblockControllerModule.canTick()) {
                     return;
@@ -285,9 +286,11 @@ public interface IValidatedMultiblock<
         
         @Nullable
         @Override
-        public String getDebugString() {
-            return "AssemblyState: " + assemblyState + "\n" +
-                    "LastValidationError: " + lastValidationError + "\n";
+        public DebugInfo getDebugInfo() {
+            final var debugInfo = new DebugInfo("ValidatedMultiblock");
+            debugInfo.add("AssemblyState: " + assemblyState);
+            debugInfo.add("LastValidationError: " + lastValidationError);
+            return debugInfo;
         }
     }
 }

@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite.debug;
 
-import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -22,18 +21,16 @@ public class DebugTool extends Item {
         var player = context.getPlayer();
         if (player != null) {
             if (context.getLevel().getBlockEntity(context.getClickedPos()) instanceof IDebuggable debuggable) {
-                
-                var debugString = debuggable.getDebugString();
-                if (debugString == null) {
-                    debugString = "Null debug string returned";
+                var debugInfo = debuggable.getDebugInfo();
+                if (debugInfo == null) {
+                    var toPrint = "Null debug info returned on " + (context.getLevel().isClientSide() ? " Client" : " Server");
+                    player.sendSystemMessage(Component.literal("Null debug info returned"));
+                    System.out.println();
+                    return InteractionResult.SUCCESS;
                 }
-                if (context.getLevel().isClientSide()) {
-                    debugString = "\nClient:\n" + debugString;
-                }else {
-                    debugString = "\nServer:\n" + debugString;
-                }
-                player.sendSystemMessage(Component.literal(debugString));
-                System.out.println(debugString);
+                var toPrint = new DebugInfo(debugInfo.name() + (context.getLevel().isClientSide() ? " (Client)" : " (Server)"), debugInfo).toString();
+                player.sendSystemMessage(Component.literal(toPrint));
+                System.out.println(toPrint);
             } else {
                 player.sendSystemMessage(Component.literal("Non-debuggable block"));
             }

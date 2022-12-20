@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.multiblock2.common;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.multiblock2.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModule;
 import net.roguelogix.phosphophyllite.multiblock2.modular.MultiblockControllerModuleRegistry;
@@ -194,6 +195,13 @@ public interface IPersistentMultiblock<
                 nbt = controller.write();
             }
             return nbt;
+        }
+    
+        @Nullable
+        @Override
+        public DebugInfo getDebugInfo() {
+            final var debugInfo = new DebugInfo("PersistentMultiblock");
+            return null;
         }
     }
 }

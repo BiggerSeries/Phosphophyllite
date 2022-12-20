@@ -17,10 +17,12 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,8 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class PhosphophylliteTile extends BlockEntity implements IModularTile, IDebuggable {
     
     public static final Logger MODULE_LOGGER = LogManager.getLogger("Phosphophyllite/ModularTile");
@@ -347,24 +348,23 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         return LazyOptional.empty();
     }
     
+    @Nonnull
     @Override
-    public String getDebugString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Module Debug Info:\n");
-        for (TileModule<?> tileTypeITileModule : moduleList) {
-            String debugString = tileTypeITileModule.getDebugString();
-            if (debugString != null) {
-                builder.append("\n");
-                builder.append(tileTypeITileModule.getClass().getSimpleName());
-                builder.append(":");
-                var lines = debugString.split("\n");
-                for (String line : lines) {
-                    builder.append("\n    ");
-                    builder.append(line);
-                }
+    public DebugInfo getDebugInfo() {
+        final var moduleInfo = new DebugInfo("Module Debug Info");
+    
+        for (final var moduleEntry : modules.entrySet()) {
+            final var moduleDebugInfo = moduleEntry.getValue().getDebugInfo();
+            if (moduleDebugInfo == null) {
+                final var interfaceClass = moduleEntry.getKey();
+                moduleInfo.add(new DebugInfo(interfaceClass.getCanonicalName().substring(interfaceClass.getPackageName().length() + 1)));
+                continue;
             }
+            moduleInfo.add(moduleDebugInfo);
         }
-        builder.append("\n\n");
-        return builder.toString();
+    
+        final var debugInfo = new DebugInfo(this.getClass().getSimpleName());
+        debugInfo.add(moduleInfo);
+        return debugInfo;
     }
 }

@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.multiblock2.modular;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.IMultiblockTile;
@@ -77,7 +78,7 @@ public abstract class MultiblockControllerModule<
     
     @Nullable
     @Override
-    public String getDebugString() {
+    public DebugInfo getDebugInfo() {
         return null;
     }
 }

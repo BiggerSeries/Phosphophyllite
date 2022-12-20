@@ -4,5 +4,5 @@ import javax.annotation.Nullable;
 
 public interface IDebuggable {
     @Nullable
-    String getDebugString();
+    DebugInfo getDebugInfo();
 }

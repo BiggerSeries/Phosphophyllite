@@ -13,16 +13,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.energy.IEnergyTile;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyHandler;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTile {
     
     @RegisterTile("power_black_hole")
@@ -181,12 +183,14 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
         return tag;
     }
     
+    @Nonnull
     @Override
-    public String getDebugString() {
-        return super.getDebugString() + "\n" +
-                "ReceivedLastTick: " + receivedLastTick + "\n" +
-                "DoPull " + doPull + "\n" +
-                "AllowPush " + allowPush;
+    public DebugInfo getDebugInfo() {
+        return super.getDebugInfo()
+                .add("ReceivedLastTick: " + receivedLastTick)
+                .add("DoPull " + doPull)
+                .add("AllowPush " + allowPush)
+                ;
     }
     
     public void updateCapability(Direction updateDirection, @Nullable Block oldBlock, BlockPos updatePos) {

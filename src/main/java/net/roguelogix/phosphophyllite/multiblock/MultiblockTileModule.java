@@ -10,13 +10,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
-import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.tile.IIsTickingTracker;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
-import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -229,12 +228,16 @@ public class MultiblockTileModule<
     
     @Nullable
     @Override
-    public String getDebugString() {
+    public DebugInfo getDebugInfo() {
+        final var debugInfo = new DebugInfo(this.getClass().getSimpleName());
+        
         var controller = controller();
         //noinspection ConstantConditions
         if (controller == null) {
-            return "Null controller";
+            debugInfo.add("Null Multiblock controller");
+        } else {
+            debugInfo.add(controller.getDebugInfo());
         }
-        return controller.getDebugString();
+        return debugInfo;
     }
 }
