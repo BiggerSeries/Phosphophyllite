@@ -35,6 +35,9 @@ public @interface RegisterConfig {
     
     boolean rootLevelReloadable() default false;
     
+    // TODO: default to true in 0.7.0
+    boolean required() default false;
+    
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface Registration {

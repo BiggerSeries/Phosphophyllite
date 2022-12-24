@@ -8,4 +8,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OnModLoad {
+    // TODO: default to true in 0.7.0
+    boolean required() default false;
 }

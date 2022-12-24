@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.registry;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.NonNullList;
@@ -45,7 +46,7 @@ import static net.minecraft.core.Registry.*;
 
 public class Registry {
     
-    private static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Registry");
+    private final Logger LOGGER;
     
     private final WorkQueue blockRegistrationQueue = new WorkQueue();
     
@@ -80,7 +81,7 @@ public class Registry {
 //    private final ArrayList<Runnable> biomeLoadingEventHandlers = new ArrayList<>();
 //    private BiomeLoadingEvent biomeLoadingEvent;
     
-    private final Map<String, AnnotationHandler> annotationMap = new HashMap<>();
+    private final Map<String, AnnotationHandler> annotationMap = new Object2ObjectOpenHashMap<>();
     
     {
         annotationMap.put(RegisterBlock.class.getName(), this::registerBlockAnnotation);
@@ -98,6 +99,8 @@ public class Registry {
         String modNamespace = callerPackage.substring(callerPackage.lastIndexOf(".") + 1);
         ModFileScanData modFileScanData = FMLLoader.getLoadingModList().getModFileById(modNamespace).getFile().getScanResult();
         
+        LOGGER = LogManager.getLogger("Phosphophyllite/Registry/" + modNamespace);
+        
         itemGroup = new CreativeModeTab(modNamespace) {
             @Override
             @Nonnull
@@ -112,38 +115,18 @@ public class Registry {
             }
         };
         
+        final Map<String, AnnotationHandler> onModLoadMap = new Object2ObjectOpenHashMap<>();
+        onModLoadMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
+        final Map<String, AnnotationHandler> registerConfigMap = new Object2ObjectOpenHashMap<>();
+        registerConfigMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
+        
         // these two are special cases that need to be handled first
         // in case anything needs config options during static construction
-        handleAnnotationType(modFileScanData, callerPackage, modNamespace, RegisterConfig.class.getName(), this::registerConfigAnnotation);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, registerConfigMap, true);
         // this is used for module registration, which need to happen before block registration
-        handleAnnotationType(modFileScanData, callerPackage, modNamespace, OnModLoad.class.getName(), this::onModLoadAnnotation);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, onModLoadMap, true);
         
-        
-        for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
-            AnnotationHandler handler = annotationMap.get(annotation.annotationType().getClassName());
-            if (handler == null) {
-                // not an annotation i handle
-                continue;
-            }
-            String className = annotation.clazz().getClassName();
-            if (className.startsWith(callerPackage)) {
-                try {
-                    Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
-                    if (clazz.isAnnotationPresent(ClientOnly.class) && !FMLEnvironment.dist.isClient()) {
-                        continue;
-                    }
-                    if (clazz.isAnnotationPresent(SideOnly.class)) {
-                        var sideOnly = clazz.getAnnotation(SideOnly.class);
-                        if (sideOnly.value() != FMLEnvironment.dist) {
-                            continue;
-                        }
-                    }
-                    // class loaded, so, pass it off to the handler
-                    handler.run(modNamespace, clazz, annotation.memberName());
-                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-                }
-            }
-        }
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false);
         
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -158,14 +141,19 @@ public class Registry {
         }
     }
     
-    private static void handleAnnotationType(ModFileScanData modFileScanData, String callerPackage, String modNamespace, String name, AnnotationHandler handler) {
+    private void handleAnnotationTypes(ModFileScanData modFileScanData, String callerPackage, String modNamespace, Map<String, AnnotationHandler> annotations, boolean requiredCheck) {
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
-            if (!annotation.annotationType().getClassName().equals(name)) {
-                // not the annotation handled here
+            final var annotationClassName = annotation.annotationType().getClassName();
+            AnnotationHandler handler = annotations.get(annotationClassName);
+            if (handler == null) {
+                // not an annotation i handle
                 continue;
             }
             String className = annotation.clazz().getClassName();
             if (className.startsWith(callerPackage)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Attempting to handle " + annotationClassName + " in class " + className + " on member " + annotation.memberName());
+                }
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
                     if (clazz.isAnnotationPresent(ClientOnly.class) && !FMLEnvironment.dist.isClient()) {
@@ -179,7 +167,17 @@ public class Registry {
                     }
                     // class loaded, so, pass it off to the handler
                     handler.run(modNamespace, clazz, annotation.memberName());
-                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Failed to handle required annotation " + annotation.annotationType().getClassName() + " in class " + className + " on member " + annotation.memberName() + " with error " + e);
+                    }
+                    if (requiredCheck) {
+                        var isRequired = annotation.annotationData().get("required");
+                        if (isRequired instanceof Boolean && (Boolean) isRequired) {
+                            e.printStackTrace();
+                            throw new IllegalStateException("Failed to handle required annotation " + annotation.annotationType().getClassName() + " in class " + className);
+                        }
+                    }
                 }
             }
         }
@@ -254,6 +252,9 @@ public class Registry {
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
         if (blockClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registration of block at " + memberName + " in " + blockClazz.getName() + " ignored");
+            }
             return;
         }
         
@@ -263,6 +264,9 @@ public class Registry {
             try {
                 final Field field = blockClazz.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Registration of block at " + memberName + " in " + blockClazz.getName() + " ignored");
+                    }
                     return;
                 }
                 if (!Modifier.isStatic(field.getModifiers())) {
@@ -313,6 +317,10 @@ public class Registry {
             
             blockRegistryEvent.register(new ResourceLocation(registryName), block);
             
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Block registered: " + registryName);
+            }
+            
             if (FMLEnvironment.dist.isClient()) {
                 clientSetupQueue.enqueue(() -> {
                     RenderType renderType = null;
@@ -358,7 +366,13 @@ public class Registry {
                     var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */));
                     itemRegistryEvent.register(new ResourceLocation(registryName), item);
                     if (creativeTabBlock) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Creative tab item set as " + registryName + " for mod " + modNamespace);
+                        }
                         itemGroupItem = item;
+                    }
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("BlockItem registered for " + registryName);
                     }
                 });
             }
@@ -383,6 +397,9 @@ public class Registry {
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
         if (itemClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registration of item at " + memberName + " in " + itemClazz.getName() + " ignored");
+            }
             return;
         }
         
@@ -393,6 +410,9 @@ public class Registry {
             try {
                 final Field field = itemClazz.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Registration of item at " + memberName + " in " + itemClazz.getName() + " ignored");
+                    }
                     return;
                 }
                 field.setAccessible(true);
@@ -437,11 +457,18 @@ public class Registry {
             }
             
             itemRegistryEvent.register(new ResourceLocation(registryName), item);
+            
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Item registered: " + registryName);
+            }
         });
     }
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
         if (fluidClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registration of fluid at " + memberName + " in " + fluidClazz.getName() + " ignored");
+            }
             return;
         }
         
@@ -556,6 +583,9 @@ public class Registry {
             }
             
             blockRegistryEvent.register(baseResourceLocation, blockArray[0]);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("FluidBlock registered: " + baseResourceLocation);
+            }
             
             fluidRegistrationQueue.enqueue(() -> {
                 PhosphophylliteFluid still = fluids[0];
@@ -566,6 +596,9 @@ public class Registry {
                 
                 fluidRegistryEvent.register(baseResourceLocation, still);
                 fluidRegistryEvent.register(new ResourceLocation(baseRegistryName + "_flowing"), flowing);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Fluid registered: " + baseResourceLocation);
+                }
             });
             
             if (annotation.registerBucket()) {
@@ -573,17 +606,27 @@ public class Registry {
                     BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
                     bucketArray[0] = bucket;
                     itemRegistryEvent.register(new ResourceLocation(baseRegistryName + "_bucket"), bucket);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Bucket registered: " + baseResourceLocation);
+                    }
                 });
             }
             
             fluidTypeRegistrationQueue.enqueueUntracked(() -> {
                 fluidTypeRegistryEvent.register(baseResourceLocation, fluidType);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("FluidType registered: " + baseResourceLocation);
+                }
             });
         });
     }
     
+    // TODO: move this to solution similar to what is used for tile entities
     private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
         if (containerClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registration of container at " + memberName + " in " + containerClazz.getName() + " ignored");
+            }
             return;
         }
         
@@ -675,6 +718,9 @@ public class Registry {
                 return;
             }
             containerRegistryEvent.register(new ResourceLocation(registryName), type);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Container registered: " + registryName);
+            }
         });
     }
     
@@ -690,6 +736,13 @@ public class Registry {
     }
     
     private void registerTileAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
+        if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+            }
+            return;
+        }
+        
         tileRegistrationQueue.enqueue(() -> {
             
             final Field field;
@@ -704,6 +757,9 @@ public class Registry {
                 }
                 annotation = field.getAnnotation(RegisterTile.class);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+                    }
                     return;
                 }
                 field.setAccessible(true);
@@ -745,6 +801,9 @@ public class Registry {
             LinkedList<Block> blocks = tileBlocks.remove(tileClass);
             
             if (blocks == null) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("TileEntity has no blocks, ignoring registration: " + registryName);
+                }
                 return;
             }
             
@@ -759,10 +818,14 @@ public class Registry {
             }
             
             tileRegistryEvent.register(new ResourceLocation(registryName), type);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("TileEntity registered: " + registryName);
+            }
         });
     }
     
     private void registerCapabilityAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
+        // TODO: ignore registration
         try {
             final var field = declaringClass.getDeclaredField(memberName);
             
@@ -771,6 +834,9 @@ public class Registry {
             
             registerCapabilityQueue.enqueueUntracked(() -> {
                 registerCapabilitiesEvent.register(capabilityClass);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Capability registered: " + capabilityClass.getName());
+                }
             });
             
         } catch (NoSuchFieldException e) {
@@ -862,11 +928,17 @@ public class Registry {
         try {
             Field field = configClazz.getDeclaredField(memberName);
             if (field.isAnnotationPresent(IgnoreRegistration.class)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of config at " + memberName + " in " + configClazz.getName() + " ignored");
+                }
                 return;
             }
             var configObject = field.get(null);
             var annotation = field.getAnnotation(RegisterConfig.class);
             ConfigManager.registerConfig(configObject, annotation);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Config registered: " + annotation.name() + " for " + modNamespace);
+            }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
@@ -876,6 +948,9 @@ public class Registry {
         try {
             Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
             if (method.isAnnotationPresent(IgnoreRegistration.class)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Running of @OnModLoad for " + memberName + " in " + modLoadClazz.getName() + " ignored");
+                }
                 return;
             }
             if (!Modifier.isStatic(method.getModifiers())) {
@@ -890,6 +965,10 @@ public class Registry {
             
             method.setAccessible(true);
             method.invoke(null);
+            
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("@OnModLoad for " + memberName + " in " + modLoadClazz.getName() + " run");
+            }
             
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
