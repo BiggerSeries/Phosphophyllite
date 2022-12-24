@@ -494,7 +494,6 @@ public class Util {
     
     @Deprecated(forRemoval = true)
     public static boolean isEntireAreaLoaded(Level level, int minCX, int minCZ, int maxCX, int maxCZ) {
-        // TODO: i need a faster way to do this
         for (int i = minCX; i <= maxCX; i++) {
             for (int j = minCZ; j <= maxCZ; j++) {
                 if (level.getChunk(i, j, ChunkStatus.FULL, false) == null) {

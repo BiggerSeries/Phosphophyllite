@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 
 import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
 
-// TODO: 8/28/22 registration/preload/postload
 @NonnullDefault
 public class ConfigManager {
     static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Config");

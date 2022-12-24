@@ -16,10 +16,6 @@ import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nullable;
 
-/**
- * TODO: this is currently basically just mimicking the current functionality of the old system
- *       should there be better support for splitting up a multiblock piece by piece?
- */
 @NonnullDefault
 public interface IPersistentMultiblock<
         TileType extends BlockEntity & IPersistentMultiblockTile<TileType, BlockType, ControllerType>,
