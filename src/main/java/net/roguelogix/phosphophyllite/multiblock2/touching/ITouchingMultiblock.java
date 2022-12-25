@@ -15,10 +15,10 @@ import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultib
 import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
 import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblockControllerModule;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.VectorUtil;
+import org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;

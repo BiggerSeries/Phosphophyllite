@@ -3,9 +3,9 @@ package net.roguelogix.phosphophyllite.util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import org.joml.Vector2i;
+import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
 import java.text.NumberFormat;
 import java.util.Locale;

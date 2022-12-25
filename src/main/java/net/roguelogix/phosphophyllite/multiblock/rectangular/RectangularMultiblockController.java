@@ -8,8 +8,8 @@ import net.roguelogix.phosphophyllite.multiblock.IMultiblockTile;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
 import net.roguelogix.phosphophyllite.multiblock.ValidationError;
 import net.roguelogix.phosphophyllite.multiblock.Validator;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.Util;
+import org.joml.Vector3i;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

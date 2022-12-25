@@ -4,7 +4,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.roguelogix.phosphophyllite.multiblock.ValidationError;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import org.joml.Vector3i;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 

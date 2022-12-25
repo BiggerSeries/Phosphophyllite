@@ -3,8 +3,8 @@ package net.roguelogix.phosphophyllite.multiblock2.rectangular;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.Block;
 import net.roguelogix.phosphophyllite.multiblock2.ValidationException;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import org.joml.Vector3ic;
 
 @NonnullDefault
 @SuppressWarnings("unused")

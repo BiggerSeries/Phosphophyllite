@@ -10,13 +10,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.util.AStarList;
 import net.roguelogix.phosphophyllite.util.ModuleMap;
 import net.roguelogix.phosphophyllite.util.Util;
+import org.joml.Vector2i;
+import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

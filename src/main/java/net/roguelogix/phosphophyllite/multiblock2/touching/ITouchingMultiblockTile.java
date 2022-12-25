@@ -16,9 +16,9 @@ import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultib
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockBlock;
 import net.roguelogix.phosphophyllite.multiblock2.rectangular.IRectangularMultiblockTile;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.VectorUtil;
+import org.joml.Vector3i;
 
 @NonnullDefault
 public interface ITouchingMultiblockTile<
