@@ -1,9 +1,8 @@
 package net.roguelogix.phosphophyllite.registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.NonNullList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -18,6 +17,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
@@ -34,15 +34,12 @@ import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import static net.minecraft.core.Registry.*;
 
 public class Registry {
     
@@ -54,8 +51,11 @@ public class Registry {
     
     private final WorkQueue itemRegistrationQueue = new WorkQueue();
     private RegisterEvent.RegisterHelper<Item> itemRegistryEvent;
-    private final CreativeModeTab itemGroup;
+    
+    private final ResourceLocation creativeTabResourceLocation;
+    private final Component creativeTabTitle;
     private Item itemGroupItem = Items.STONE;
+    private final ObjectArrayList<Item> creativeTabItems = new ObjectArrayList<>();
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
     private RegisterEvent.RegisterHelper<Fluid> fluidRegistryEvent;
@@ -101,19 +101,8 @@ public class Registry {
         
         LOGGER = LogManager.getLogger("Phosphophyllite/Registry/" + modNamespace);
         
-        itemGroup = new CreativeModeTab(modNamespace) {
-            @Override
-            @Nonnull
-            public ItemStack makeIcon() {
-                return new ItemStack(itemGroupItem);
-            }
-            
-            @Override
-            public void fillItemList(@Nonnull NonNullList<ItemStack> items) {
-                super.fillItemList(items);
-                items.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
-            }
-        };
+        creativeTabResourceLocation = new ResourceLocation(modNamespace, "creative_tab");
+        creativeTabTitle = Component.translatable("item_group." + modNamespace);
         
         final Map<String, AnnotationHandler> onModLoadMap = new Object2ObjectOpenHashMap<>();
         onModLoadMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
@@ -135,6 +124,7 @@ public class Registry {
 
 //        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
+        ModBus.addListener(this::creativeTabEvent);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModBus.addListener(this::clientSetupEventHandler);
@@ -183,13 +173,29 @@ public class Registry {
         }
     }
     
+    private void creativeTabEvent(CreativeModeTabEvent.Register event) {
+        if (creativeTabItems.isEmpty()) {
+            return;
+        }
+        event.registerCreativeModeTab(creativeTabResourceLocation, builder -> {
+            builder.title(creativeTabTitle);
+            builder.icon(() -> new ItemStack(itemGroupItem));
+            builder.displayItems((enabledFlags, populator, hasPermissions) -> {
+                final var creativeTabItemStacks = new ObjectArrayList<ItemStack>(creativeTabItems.size());
+                creativeTabItems.forEach(item -> creativeTabItemStacks.add(new ItemStack(item)));
+                creativeTabItemStacks.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
+                creativeTabItemStacks.forEach(populator::accept);
+            });
+        });
+    }
+    
     private void registerEvent(RegisterEvent registerEvent) {
-        registerEvent.register(BLOCK_REGISTRY, this::blockRegistration);
-        registerEvent.register(ITEM_REGISTRY, this::itemRegistration);
-        registerEvent.register(FLUID_REGISTRY, this::fluidRegistration);
+        registerEvent.register(ForgeRegistries.Keys.BLOCKS, this::blockRegistration);
+        registerEvent.register(ForgeRegistries.Keys.ITEMS, this::itemRegistration);
+        registerEvent.register(ForgeRegistries.Keys.FLUIDS, this::fluidRegistration);
         registerEvent.register(ForgeRegistries.Keys.FLUID_TYPES, this::fluidTypeRegistration);
-        registerEvent.register(MENU_REGISTRY, this::containerRegistration);
-        registerEvent.register(BLOCK_ENTITY_TYPE_REGISTRY, this::tileEntityRegistration);
+        registerEvent.register(ForgeRegistries.Keys.MENU_TYPES, this::containerRegistration);
+        registerEvent.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, this::tileEntityRegistration);
     }
     
     private void blockRegistration(RegisterEvent.RegisterHelper<Block> event) {
@@ -321,49 +327,13 @@ public class Registry {
                 LOGGER.debug("Block registered: " + registryName);
             }
             
-            if (FMLEnvironment.dist.isClient()) {
-                clientSetupQueue.enqueue(() -> {
-                    RenderType renderType = null;
-                    for (Method declaredMethod : blockClazz.getDeclaredMethods()) {
-                        if (declaredMethod.isAnnotationPresent(RegisterBlock.RenderLayer.class)) {
-                            if (Modifier.isStatic(declaredMethod.getModifiers())) {
-                                LOGGER.error("Cannot call static render layer method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName());
-                                continue;
-                            }
-                            if (!RenderType.class.isAssignableFrom(declaredMethod.getReturnType())) {
-                                LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " does not return RenderType");
-                                continue;
-                            }
-                            if (declaredMethod.getParameterCount() != 0) {
-                                LOGGER.error("RenderLayer annotated method " + declaredMethod.getName() + " in " + blockClazz.getSimpleName() + " requires arguments");
-                                continue;
-                            }
-                            if (renderType != null) {
-                                LOGGER.error("Duplicate RenderLayer methods in " + blockClazz.getSimpleName());
-                                continue;
-                            }
-                            declaredMethod.setAccessible(true);
-                            try {
-                                Object obj = declaredMethod.invoke(block);
-                                renderType = (RenderType) obj;
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
-                                continue;
-                            }
-                            final RenderType finalRenderType = renderType;
-                            // parallel dispatch, and non-synchronized
-                            //noinspection removal
-                            clientSetupEvent.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(block, finalRenderType));
-                        }
-                    }
-                });
-            }
-            
             if (annotation.registerItem()) {
                 boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
                 itemRegistrationQueue.enqueue(() -> {
-                    //noinspection ConstantConditions
-                    var item = new BlockItem(block, new Item.Properties().tab(annotation.creativeTab() ? itemGroup : null /* its fine */));
+                    var item = new BlockItem(block, new Item.Properties());
+                    if (annotation.creativeTab()) {
+                        creativeTabItems.add(item);
+                    }
                     itemRegistryEvent.register(new ResourceLocation(registryName), item);
                     if (creativeTabBlock) {
                         if (LOGGER.isDebugEnabled()) {
@@ -377,22 +347,6 @@ public class Registry {
                 });
             }
         });
-    }
-    
-    private static final Field itemCreativeModeTabField;
-    
-    static {
-        Field itemField = null;
-        for (Field declaredField : Item.class.getDeclaredFields()) {
-            if (declaredField.getType().equals(CreativeModeTab.class)) {
-                itemField = declaredField;
-            }
-        }
-        if (itemField == null) {
-            throw new IllegalStateException("Unable to find category field in Item.class");
-        }
-        itemField.setAccessible(true);
-        itemCreativeModeTabField = itemField;
     }
     
     private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
@@ -448,12 +402,7 @@ public class Registry {
             final String registryName = modid + ":" + name;
             
             if (annotation.creativeTab()) {
-                try {
-                    itemCreativeModeTabField.set(item, itemGroup);
-                } catch (IllegalAccessException e) {
-                    LOGGER.error("Failed to set item category when registering " + registryName);
-                    return;
-                }
+                creativeTabItems.add(item);
             }
             
             itemRegistryEvent.register(new ResourceLocation(registryName), item);
@@ -603,7 +552,8 @@ public class Registry {
             
             if (annotation.registerBucket()) {
                 itemRegistrationQueue.enqueue(() -> {
-                    BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1).tab(itemGroup));
+                    BucketItem bucket = new BucketItem(() -> fluids[0], new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1));
+                    creativeTabItems.add(bucket);
                     bucketArray[0] = bucket;
                     itemRegistryEvent.register(new ResourceLocation(baseRegistryName + "_bucket"), bucket);
                     if (LOGGER.isDebugEnabled()) {

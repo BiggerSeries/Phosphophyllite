@@ -149,13 +149,11 @@ dependencies {
 
 //    compileOnly fg.deobf('curse.maven:tita-287342:3346366')
 //    compileOnly fg.deobf('curse.maven:ifag-266515:3386008')
-    runtimeOnly fg.deobf('curse.maven:pipz-443900:3920730')
-    runtimeOnly fg.deobf('curse.maven:meka-268560:4041164')
-    runtimeOnly fg.deobf('curse.maven:wand-399558:3926815')
+//    runtimeOnly fg.deobf('curse.maven:pipz-443900:3920730')
+//    runtimeOnly fg.deobf('curse.maven:meka-268560:4041164')
+//    runtimeOnly fg.deobf('curse.maven:wand-399558:3926815')
 
     compileOnly "mekanism:Mekanism:1.19.2-10.3.5.474:api"
-
-    compileOnly "org.lwjgl:lwjgl-vulkan:3.2.2"
 }
 
 jar {

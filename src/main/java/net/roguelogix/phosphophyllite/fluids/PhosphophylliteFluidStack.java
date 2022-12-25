@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.fluids;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,7 +22,7 @@ import java.util.Objects;
 /**
  * Re-writable long capable version of a FluidStack
  */
-
+@NonnullDefault
 public class PhosphophylliteFluidStack extends FluidStack {
     
     // forge, you dont need to be a PITA about this
@@ -58,14 +60,14 @@ public class PhosphophylliteFluidStack extends FluidStack {
         setAmount(amount);
     }
     
-    public PhosphophylliteFluidStack(Fluid fluid, int amount, CompoundTag nbt) {
+    public PhosphophylliteFluidStack(Fluid fluid, int amount, @Nullable CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
         setDelegate(delegateWrapper);
         setFluid(fluid);
         setAmount(amount);
     }
     
-    public PhosphophylliteFluidStack(Fluid fluid, long amount, CompoundTag nbt) {
+    public PhosphophylliteFluidStack(Fluid fluid, long amount, @Nullable CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
         setDelegate(delegateWrapper);
         setFluid(fluid);
@@ -91,12 +93,17 @@ public class PhosphophylliteFluidStack extends FluidStack {
         this(stack, stack instanceof PhosphophylliteFluidStack ? ((PhosphophylliteFluidStack) stack).getLongAmount() : stack.getAmount());
     }
     
+    @Nullable
     Fluid fluid;
     
-    Holder.Reference<Fluid> delegateWrapper = new Holder.Reference<>(Holder.Reference.Type.STAND_ALONE, Registry.FLUID, null, null) {
+    Holder.Reference<Fluid> delegateWrapper = new Holder.Reference<Fluid>(Holder.Reference.Type.STAND_ALONE, BuiltInRegistries.FLUID.holderOwner(), null, null) {
         @Override
-        public void bind(ResourceKey<Fluid> key, Fluid fluid) {
+        public void bindKey(ResourceKey<Fluid> key) {
             this.key = key;
+        }
+        
+        @Override
+        public void bindValue(Fluid fluid) {
             this.value = fluid;
         }
     };
@@ -105,10 +112,11 @@ public class PhosphophylliteFluidStack extends FluidStack {
     
     public void setFluid(Fluid fluid) {
         this.fluid = fluid;
-        delegateWrapper.bind(ResourceKey.create(Registry.FLUID_REGISTRY, Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid))), fluid);
+        delegateWrapper.bindKey(ResourceKey.create(ForgeRegistries.Keys.FLUIDS, Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid))));
+        delegateWrapper.bindValue(fluid);
     }
     
-    public static FluidStack loadFromNBT(CompoundTag nbt) {
+    public static FluidStack loadFromNBT(@Nullable CompoundTag nbt) {
         if (nbt == null) {
             return EMPTY;
         }
@@ -187,12 +195,14 @@ public class PhosphophylliteFluidStack extends FluidStack {
         super.setAmount((int) amount);
     }
     
+    @Nullable
     private CompoundTag tag;
     
     public boolean hasTag() {
         return tag != null;
     }
     
+    @Nullable
     public CompoundTag getTag() {
         return tag;
     }
@@ -208,6 +218,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         return tag;
     }
     
+    @Nullable
     public CompoundTag getChildTag(String childName) {
         if (tag == null) {
             return null;
@@ -215,8 +226,10 @@ public class PhosphophylliteFluidStack extends FluidStack {
         return tag.getCompound(childName);
     }
     
+    
     public CompoundTag getOrCreateChildTag(String childName) {
         getOrCreateTag();
+        assert tag != null;
         CompoundTag child = tag.getCompound(childName);
         if (!tag.contains(childName, Tag.TAG_STRING)) {
             tag.put(childName, child);

@@ -7,6 +7,7 @@ import mekanism.api.chemical.gas.IGasHandler;
 import mekanism.api.recipes.RotaryRecipe;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -166,7 +167,7 @@ public class MekanismGasWrappers {
         fluidToGasMap.clear();
         
         @SuppressWarnings("unchecked")
-        RecipeType<RotaryRecipe> type = (RecipeType<RotaryRecipe>) Registry.RECIPE_TYPE.get(new ResourceLocation("mekanism:rotary"));
+        RecipeType<RotaryRecipe> type = (RecipeType<RotaryRecipe>) ForgeRegistries.RECIPE_TYPES.getValue(new ResourceLocation("mekanism:rotary"));
         if (type == null || server == null) {
             return;
         }

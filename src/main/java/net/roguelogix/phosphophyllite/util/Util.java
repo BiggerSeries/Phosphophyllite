@@ -30,6 +30,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector2i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -480,8 +481,8 @@ public class Util {
     }
     
     
-    private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:tools/wrench"));
-    private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation("forge:wrenches"));
+    private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(ForgeRegistries.Keys.ITEMS, new ResourceLocation("forge:tools/wrench"));
+    private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(ForgeRegistries.Keys.ITEMS, new ResourceLocation("forge:wrenches"));
     
     public static boolean isWrench(Item item) {
         return item.builtInRegistryHolder().is(WRENCH_TAG_0) || item.builtInRegistryHolder().is(WRENCH_TAG_1);

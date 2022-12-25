@@ -20,12 +20,4 @@ public @interface RegisterBlock {
     boolean creativeTab() default true;
     
     Class<? extends BlockEntity> tileEntityClass() default BlockEntity.class;
-    
-    /**
-     * this is set in the model json now
-     */
-    @Deprecated(since = "0.6.0-beta.7", forRemoval = true)
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface RenderLayer {
-    }
 }
