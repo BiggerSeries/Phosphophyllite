@@ -265,7 +265,7 @@ public class MultiblockController<
             }
             onPartAttached(toAttachTile);
         } else {
-            state = AssemblyState.DISASSEMBLED;
+            // state will transition accordingly after validation fails
             onPartPlaced(toAttachTile);
         }
         toAttachModule.updateNeighbors();
