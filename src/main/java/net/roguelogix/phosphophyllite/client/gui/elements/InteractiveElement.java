@@ -2,6 +2,7 @@ package net.roguelogix.phosphophyllite.client.gui.elements;
 
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -83,7 +84,16 @@ public class InteractiveElement<T extends AbstractContainerMenu> extends Rendere
         super(parent, x, y, width, height, u, v, tooltip);
         this.actionEnable = true;
     }
-
+    
+    /**
+     * Play a sound.
+     *
+     * @param sound The sound to play.
+     */
+    public void playSound(Holder.Reference<SoundEvent> sound) {
+        playSound(sound.get());
+    }
+    
     /**
      * Play a sound.
      *
