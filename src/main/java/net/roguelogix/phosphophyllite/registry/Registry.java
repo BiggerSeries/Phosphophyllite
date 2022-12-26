@@ -421,12 +421,11 @@ public class Registry {
             return;
         }
         
-        blockRegistrationQueue.enqueue(() -> {
-            
+        fluidRegistrationQueue.enqueue(() -> {
             assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
-            
+
             final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
-            
+
             String modid = annotation.modid().equals("") ? modNamespace : annotation.modid();
             String name = annotation.name();
             if (modid.equals("")) {
@@ -531,22 +530,22 @@ public class Registry {
                 }
             }
             
-            blockRegistryEvent.register(baseResourceLocation, blockArray[0]);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("FluidBlock registered: " + baseResourceLocation);
+            PhosphophylliteFluid still = fluids[0];
+            PhosphophylliteFluid flowing = fluids[1];
+            if (still == null || flowing == null) {
+                return;
             }
             
-            fluidRegistrationQueue.enqueue(() -> {
-                PhosphophylliteFluid still = fluids[0];
-                PhosphophylliteFluid flowing = fluids[1];
-                if (still == null || flowing == null) {
-                    return;
-                }
-                
-                fluidRegistryEvent.register(baseResourceLocation, still);
-                fluidRegistryEvent.register(new ResourceLocation(baseRegistryName + "_flowing"), flowing);
+            fluidRegistryEvent.register(baseResourceLocation, still);
+            fluidRegistryEvent.register(new ResourceLocation(baseRegistryName + "_flowing"), flowing);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Fluid registered: " + baseResourceLocation);
+            }
+            
+            blockRegistrationQueue.enqueue(() -> {
+                blockRegistryEvent.register(baseResourceLocation, blockArray[0]);
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Fluid registered: " + baseResourceLocation);
+                    LOGGER.debug("FluidBlock registered: " + baseResourceLocation);
                 }
             });
             
