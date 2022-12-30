@@ -1,11 +1,14 @@
 package net.roguelogix.phosphophyllite.robn;
 
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public interface ROBNObject {
-    default ArrayList<Byte> toROBN() {
+    default ByteArrayList toROBN() {
         return ROBN.toROBN(toROBNMap());
     }
     

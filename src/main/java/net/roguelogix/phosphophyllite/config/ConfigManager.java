@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.config;
 
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
@@ -217,7 +218,7 @@ public class ConfigManager {
     }
     
     private static void sendConfigToPlayer(ServerPlayer player, boolean initialLogin) {
-        final var configs = new Object2ObjectOpenHashMap<String, ArrayList<Byte>>();
+        final var configs = new Object2ObjectOpenHashMap<String, ByteArrayList>();
         for (ConfigRegistration modConfig : commonConfigs.values()) {
             var configTree = modConfig.rootConfigSpecNode.generateSyncElement();
             var configROBN = ROBN.parseElement(configTree);
@@ -250,7 +251,7 @@ public class ConfigManager {
                     buf.add(aByte);
                 }
                 //noinspection unchecked
-                final var pair = (Pair<Boolean, Map<String, ArrayList<Byte>>>) net.roguelogix.phosphophyllite.robn.ROBN.fromROBN(buf);
+                final var pair = (Pair<Boolean, Map<String, List<Byte>>>) net.roguelogix.phosphophyllite.robn.ROBN.fromROBN(buf);
                 boolean initialLogin = pair.getFirst();
                 final var configs = pair.getSecond();
                 for (final var entry : configs.entrySet()) {
