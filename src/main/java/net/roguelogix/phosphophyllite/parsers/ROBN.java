@@ -1,17 +1,19 @@
 package net.roguelogix.phosphophyllite.parsers;
 
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @NonnullDefault
 public class ROBN {
     
     @Nullable
-    public static Element parseROBN(ArrayList<Byte> robn) {
+    public static Element parseROBN(List<Byte> robn) {
         try {
             var robnObject = net.roguelogix.phosphophyllite.robn.ROBN.fromROBN(robn);
             if (robnObject instanceof Map<?, ?> map) {
@@ -62,7 +64,7 @@ public class ROBN {
     }
     
     @Nullable
-    public static ArrayList<Byte> parseElement(Element element) {
+    public static ByteArrayList parseElement(Element element) {
         try {
             return net.roguelogix.phosphophyllite.robn.ROBN.toROBN(parseElementInternal(element));
         } catch (IllegalArgumentException ignored) {

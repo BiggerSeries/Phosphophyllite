@@ -1,6 +1,8 @@
 package net.roguelogix.phosphophyllite.robn;
 
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -12,10 +14,10 @@ import java.util.*;
  */
 public class ROBN {
     
-    public static <T> ArrayList<Byte> toROBN(T t) {
-        ArrayList<Byte> arrayList = new ArrayList<>();
-        toROBN(t, arrayList);
-        return arrayList;
+    public static <T> ByteArrayList toROBN(T t) {
+        ByteArrayList ObjectArrayList = new ByteArrayList();
+        toROBN(t, ObjectArrayList);
+        return ObjectArrayList;
     }
     
     public static Object fromROBN(List<Byte> buf) {
@@ -190,11 +192,11 @@ public class ROBN {
         }
     }
     
-    private static void requestBytes(ArrayList<Byte> buf, int requiredBytes) {
+    private static void requestBytes(ByteArrayList buf, int requiredBytes) {
         buf.ensureCapacity(buf.size() + requiredBytes);
     }
     
-    private static <T> void toROBN(T t, ArrayList<Byte> buf) {
+    private static <T> void toROBN(T t, ByteArrayList buf) {
         if (t instanceof Boolean) {
             buf.add(Type.Bool.val);
             buf.add((byte) ((Boolean) t ? 1 : 0));
@@ -270,7 +272,7 @@ public class ROBN {
     }
     
     @SuppressWarnings("DuplicatedCode")
-    private static void numberToROBN(Number number, ArrayList<Byte> buf) {
+    private static void numberToROBN(Number number, ByteArrayList buf) {
         if (number instanceof Byte) {
             buf.add(Type.Int8.val);
             buf.add(number.byteValue());
@@ -409,7 +411,7 @@ public class ROBN {
         throw new IllegalArgumentException("Malformed Binary");
     }
     
-    private static void vectorToROBN(Collection<?> collection, ArrayList<Byte> buf) {
+    private static void vectorToROBN(Collection<?> collection, ByteArrayList buf) {
         
         requestBytes(buf, 11);
         int elementCount = collection.size();
@@ -428,7 +430,7 @@ public class ROBN {
             requestBytes(buf, Type.primitiveTypeSize(elementType) * elementCount);
         }
         
-        ArrayList<Byte> tmpBuffer = new ArrayList<>();
+        ByteArrayList tmpBuffer = new ByteArrayList();
         for (Object o : collection) {
             tmpBuffer.clear();
             toROBN(o, tmpBuffer);
@@ -451,20 +453,20 @@ public class ROBN {
             throw new IllegalArgumentException("Incompatible Binary");
         }
         
-        ArrayList<Object> arrayList = new ArrayList<>();
-        arrayList.ensureCapacity((int) vectorLength);
+        ObjectArrayList<Object> ObjectArrayList = new ObjectArrayList<>();
+        ObjectArrayList.ensureCapacity((int) vectorLength);
         if (!iterator.hasNext()) {
             throw new IllegalArgumentException("Malformed Binary");
         }
         Type elementType = Type.fromID(iterator.next());
         
         for (long i = 0; i < vectorLength; i++) {
-            arrayList.add(fromROBN(iterator, elementType));
+            ObjectArrayList.add(fromROBN(iterator, elementType));
         }
-        return arrayList;
+        return ObjectArrayList;
     }
     
-    private static void mapToROBN(Map<?, ?> map, ArrayList<Byte> buf) {
+    private static void mapToROBN(Map<?, ?> map, ByteArrayList buf) {
         // because java doesnt have native std::pair support, i get to encode them right here
         // no being lazy like in C++, *fuck*
         
@@ -504,7 +506,7 @@ public class ROBN {
         return map;
     }
     
-    private static void pairToROBN(Pair<?, ?> pair, ArrayList<Byte> buf) {
+    private static void pairToROBN(Pair<?, ?> pair, ByteArrayList buf) {
         buf.add(Type.Pair.val);
         buf.addAll(toROBN(pair.getFirst()));
         buf.addAll(toROBN(pair.getSecond()));
@@ -517,7 +519,7 @@ public class ROBN {
     }
     
     
-    private static void stringToROBN(String str, ArrayList<Byte> buf) {
+    private static void stringToROBN(String str, ByteArrayList buf) {
         buf.ensureCapacity(buf.size() + str.length() + 2);
         buf.add(Type.String.val);
         for (int i = 0; i < str.length(); i++) {

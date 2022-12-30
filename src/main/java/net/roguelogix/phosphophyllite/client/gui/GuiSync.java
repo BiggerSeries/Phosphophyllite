@@ -1,5 +1,6 @@
 package net.roguelogix.phosphophyllite.client.gui;
 
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.FriendlyByteBuf;
@@ -51,7 +52,7 @@ public class GuiSync {
                 map.put("data", requestData);
             }
             
-            ArrayList<Byte> buf = ROBN.toROBN(map);
+            final var buf = ROBN.toROBN(map);
             
             GUIPacketMessage message = new GUIPacketMessage();
             message.bytes = new byte[buf.size()];
@@ -144,7 +145,7 @@ public class GuiSync {
                             if (packetMap == null) {
                                 return;
                             }
-                            ArrayList<Byte> buf;
+                            ByteArrayList buf;
                             try {
                                 buf = ROBN.toROBN(packetMap);
                             } catch (IllegalStateException e) {
