@@ -125,12 +125,18 @@ public class RenderHelper {
         // Preserve the previously selected texture.
         ResourceLocation preservedResource = RenderHelper.getCurrentResource();
         // Bind the new texture, set the color, and draw.
-
+    
+        final var clientExtension = IClientFluidTypeExtensions.of(fluid);
+        final var stillTexture = clientExtension.getStillTexture();
+        if (stillTexture == null) {
+            return;
+        }
+    
         RenderHelper.bindTexture(InventoryMenu.BLOCK_ATLAS);
-        RenderHelper.setRenderColor(IClientFluidTypeExtensions.of(fluid).getTintColor());
+        RenderHelper.setRenderColor(clientExtension.getTintColor());
         RenderHelper.drawTexture(poseStack, x, y, blitOffset, width, height,
                 Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                        .apply(IClientFluidTypeExtensions.of(fluid).getStillTexture()));
+                        .apply(stillTexture));
         // Reset color and restore the previously bound texture.
         RenderHelper.clearRenderColor();
         RenderHelper.bindTexture(preservedResource);
