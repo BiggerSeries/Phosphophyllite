@@ -18,6 +18,10 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public interface IPhosphophylliteFluidHandler extends IFluidHandler {
+    // TODO: fix this race condition
+    //       in single player, this stack can be used by both the server and client at the same time
+    //       also cant use this in multiple threads, but lots of things in MC are like that
+    //       real solution will probably be similar to what i did for energy, *wrappers*
     
     PhosphophylliteFluidStack stack = new PhosphophylliteFluidStack();
     
