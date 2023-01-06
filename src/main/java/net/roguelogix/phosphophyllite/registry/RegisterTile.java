@@ -5,6 +5,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,6 +27,7 @@ public @interface RegisterTile {
         }
         private final Constructor<T> constructor;
     
+        @Nullable
         public final BlockEntityType<T> TYPE;
         {
             // set via reflection from registry
