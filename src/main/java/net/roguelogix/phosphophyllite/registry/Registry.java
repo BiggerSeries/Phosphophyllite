@@ -34,6 +34,7 @@ import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.annotation.ElementType;
 import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -104,18 +105,29 @@ public class Registry {
         creativeTabResourceLocation = new ResourceLocation(modNamespace, "creative_tab");
         creativeTabTitle = Component.translatable("item_group." + modNamespace);
         
-        final Map<String, AnnotationHandler> onModLoadMap = new Object2ObjectOpenHashMap<>();
-        onModLoadMap.put(OnModLoad.class.getName(), this::onModLoadAnnotation);
-        final Map<String, AnnotationHandler> registerConfigMap = new Object2ObjectOpenHashMap<>();
-        registerConfigMap.put(RegisterConfig.class.getName(), this::registerConfigAnnotation);
+        final var ignoredPackages = new ObjectArrayList<String>();
+        
+        for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
+            if (!IgnoreRegistration.class.getName().equals(annotation.annotationType().getClassName())) {
+                continue;
+            }
+            if(annotation.targetType() != ElementType.TYPE){
+                continue;
+            }
+            if(!annotation.clazz().getClassName().endsWith("package-info")){
+                continue;
+            }
+            final var className = annotation.clazz().getClassName();
+            ignoredPackages.add(className.substring(0, className.lastIndexOf('.') + 1));
+        }
         
         // these two are special cases that need to be handled first
         // in case anything needs config options during static construction
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, registerConfigMap, true);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(RegisterConfig.class.getName(), this::registerConfigAnnotation), true, ignoredPackages);
         // this is used for module registration, which need to happen before block registration
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, onModLoadMap, true);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(OnModLoad.class.getName(), this::onModLoadAnnotation), true, ignoredPackages);
         
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false, ignoredPackages);
         
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -131,7 +143,8 @@ public class Registry {
         }
     }
     
-    private void handleAnnotationTypes(ModFileScanData modFileScanData, String callerPackage, String modNamespace, Map<String, AnnotationHandler> annotations, boolean requiredCheck) {
+    private void handleAnnotationTypes(ModFileScanData modFileScanData, String callerPackage, String modNamespace, Map<String, AnnotationHandler> annotations, boolean requiredCheck, ObjectArrayList<String> ignoredPackages) {
+        annotations:
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
             final var annotationClassName = annotation.annotationType().getClassName();
             AnnotationHandler handler = annotations.get(annotationClassName);
@@ -141,6 +154,14 @@ public class Registry {
             }
             String className = annotation.clazz().getClassName();
             if (className.startsWith(callerPackage)) {
+                for (String ignoredPackage : ignoredPackages) {
+                    if (className.startsWith(ignoredPackage)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Ignoring " + annotationClassName + " in class " + className + " on member " + annotation.memberName() + " as package " + ignoredPackage + " is set to ignored");
+                        }
+                        continue annotations;
+                    }
+                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Attempting to handle " + annotationClassName + " in class " + className + " on member " + annotation.memberName());
                 }
