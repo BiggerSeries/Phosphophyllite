@@ -111,10 +111,10 @@ public class Registry {
             if (!IgnoreRegistration.class.getName().equals(annotation.annotationType().getClassName())) {
                 continue;
             }
-            if(annotation.targetType() != ElementType.TYPE){
+            if (annotation.targetType() != ElementType.TYPE) {
                 continue;
             }
-            if(!annotation.clazz().getClassName().endsWith("package-info")){
+            if (!annotation.clazz().getClassName().endsWith("package-info")) {
                 continue;
             }
             final var className = annotation.clazz().getClassName();
@@ -277,46 +277,46 @@ public class Registry {
         void run(final String modNamespace, final Class<?> clazz, final String memberName);
     }
     
-    private void registerBlockAnnotation(final String modNamespace, final Class<?> blockClazz, final String memberName) {
-        if (blockClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+    private void registerBlockAnnotation(final String modNamespace, final Class<?> declaringClass, final String memberName) {
+        if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of block at " + memberName + " in " + blockClazz.getName() + " ignored");
+                LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
             }
             return;
         }
         
         blockRegistrationQueue.enqueue(() -> {
-            final Block block;
             final RegisterBlock annotation;
+            final Object fieldObject;
             try {
-                final Field field = blockClazz.getDeclaredField(memberName);
+                final Field field = declaringClass.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Registration of block at " + memberName + " in " + blockClazz.getName() + " ignored");
+                        LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
                     }
                     return;
                 }
                 if (!Modifier.isStatic(field.getModifiers())) {
-                    LOGGER.warn("Non-static block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+                    LOGGER.warn("Non-static block instance variable " + memberName + " in " + declaringClass.getName());
                     return;
                 }
                 field.setAccessible(true);
-                block = (Block) field.get(null);
+                fieldObject = field.get(null);
                 annotation = field.getAnnotation(RegisterBlock.class);
                 
                 if (!Modifier.isFinal(field.getModifiers())) {
-                    LOGGER.warn("Non-final block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+                    LOGGER.warn("Non-final block instance variable " + memberName + " in " + declaringClass.getName());
                 }
             } catch (NoSuchFieldException e) {
-                LOGGER.error("Unable to find block field for block " + memberName + " in " + blockClazz.getSimpleName());
+                LOGGER.error("Unable to find block field for block " + memberName + " in " + declaringClass.getName());
                 return;
             } catch (IllegalAccessException e) {
-                LOGGER.error("Unable to access block field for block " + memberName + " in " + blockClazz.getSimpleName());
+                LOGGER.error("Unable to access block field for block " + memberName + " in " + declaringClass.getName());
                 return;
             }
             
-            if (block == null) {
-                LOGGER.warn("Null block instance variable " + memberName + " in " + blockClazz.getSimpleName());
+            if (fieldObject == null) {
+                LOGGER.warn("Null block instance variable " + memberName + " in " + declaringClass.getName());
                 return;
             }
             
@@ -326,15 +326,14 @@ public class Registry {
             }
             String name = annotation.name();
             if (modid.equals("")) {
-                LOGGER.error("Unable to register block without a name from class " + blockClazz.getSimpleName());
+                LOGGER.error("Unable to register block without a name from class " + declaringClass.getName());
                 return;
             }
             
-            if (!Block.class.isAssignableFrom(blockClazz)) {
-                LOGGER.error("Attempt to register block from class not extended from Block. " + blockClazz.getSimpleName());
+            if (!(fieldObject instanceof final Block block)) {
+                LOGGER.error("Attempt to register block from class not extended from Block. " + declaringClass.getName());
                 return;
             }
-            
             
             final String registryName = modid + ":" + name;
             
@@ -349,7 +348,7 @@ public class Registry {
             }
             
             if (annotation.registerItem()) {
-                boolean creativeTabBlock = blockClazz.isAnnotationPresent(CreativeTabBlock.class);
+                boolean creativeTabBlock = declaringClass.isAnnotationPresent(CreativeTabBlock.class);
                 itemRegistrationQueue.enqueue(() -> {
                     var item = new BlockItem(block, new Item.Properties());
                     if (annotation.creativeTab()) {
@@ -370,43 +369,48 @@ public class Registry {
         });
     }
     
-    private void registerItemAnnotation(String modNamespace, Class<?> itemClazz, final String memberName) {
-        if (itemClazz.isAnnotationPresent(IgnoreRegistration.class)) {
+    private void registerItemAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
+        if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of item at " + memberName + " in " + itemClazz.getName() + " ignored");
+                LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
             }
             return;
         }
         
         itemRegistrationQueue.enqueue(() -> {
             
-            final Item item;
+            final Object fieldObject;
             final RegisterItem annotation;
             try {
-                final Field field = itemClazz.getDeclaredField(memberName);
+                final Field field = declaringClass.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Registration of item at " + memberName + " in " + itemClazz.getName() + " ignored");
+                        LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
                     }
                     return;
                 }
                 field.setAccessible(true);
-                item = (Item) field.get(null);
+                fieldObject = field.get(null);
                 annotation = field.getAnnotation(RegisterItem.class);
                 
                 if (!Modifier.isFinal(field.getModifiers())) {
-                    LOGGER.warn("Non-final item instance variable " + memberName + " in " + itemClazz.getSimpleName());
+                    LOGGER.warn("Non-final item instance variable " + memberName + " in " + declaringClass.getName());
                 }
             } catch (NoSuchFieldException e) {
-                LOGGER.error("Unable to find item field for block " + memberName + " in " + itemClazz.getSimpleName());
+                LOGGER.error("Unable to find item field for block " + memberName + " in " + declaringClass.getName());
                 return;
             } catch (IllegalAccessException e) {
-                LOGGER.error("Unable to access item field for block " + memberName + " in " + itemClazz.getSimpleName());
+                LOGGER.error("Unable to access item field for block " + memberName + " in " + declaringClass.getName());
                 return;
             }
             
-            if (item == null) {
-                LOGGER.warn("Null item instance variable " + memberName + " in " + itemClazz.getSimpleName());
+            if (fieldObject == null) {
+                LOGGER.warn("Null item instance variable " + memberName + " in " + declaringClass.getName());
+                return;
+            }
+            
+            if (!(fieldObject instanceof final Item item)) {
+                LOGGER.error("Attempt to register item from class not extended from Item. " + declaringClass.getName());
                 return;
             }
             
@@ -416,7 +420,7 @@ public class Registry {
             }
             String name = annotation.name();
             if (modid.equals("")) {
-                LOGGER.error("Unable to register item " + memberName + " in " + itemClazz.getSimpleName() + " without a registry name");
+                LOGGER.error("Unable to register item " + memberName + " in " + declaringClass.getName() + " without a registry name");
                 return;
             }
             
@@ -444,9 +448,9 @@ public class Registry {
         
         fluidRegistrationQueue.enqueue(() -> {
             assert fluidClazz.isAnnotationPresent(RegisterFluid.class);
-
+            
             final RegisterFluid annotation = fluidClazz.getAnnotation(RegisterFluid.class);
-
+            
             String modid = annotation.modid().equals("") ? modNamespace : annotation.modid();
             String name = annotation.name();
             if (modid.equals("")) {
