@@ -1,5 +1,8 @@
 package net.roguelogix.phosphophyllite.data;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -29,6 +32,36 @@ public class DatapackLoader<T> {
         this.objectSupplier = objectSupplier;
     }
     
+    public Map<ResourceLocation, List<T>> loadAllMappedStack(ResourceLocation baseResourceLocation) {
+        if (Phosphophyllite.serverResourceManager == null) {
+            return new Object2ObjectOpenHashMap<>();
+        }
+        
+        final var map = new Object2ObjectOpenHashMap<ResourceLocation, List<T>>();
+        
+        final var resourceLocations = Phosphophyllite.serverResourceManager.listResourceStacks(baseResourceLocation.getPath(), s -> s.getPath().contains(".json"));
+        
+        for (final var entry : resourceLocations.entrySet()) {
+            final var resourceLocation = entry.getKey();
+            // TODO: 9/8/22 add an option for enforcing this
+            if (!resourceLocation.getNamespace().equals(baseResourceLocation.getNamespace())) {
+                continue;
+            }
+            final var list = new ObjectArrayList<T>();
+            for (Resource resource : entry.getValue()) {
+                T t = load(resourceLocation, resource);
+                if (t != null) {
+                    list.add(t);
+                }
+            }
+            if (list.isEmpty()) {
+                continue;
+            }
+            map.put(resourceLocation, list);
+        }
+        
+        return map;
+    }
     
     public List<T> loadAll(ResourceLocation baseResourceLocation) {
         if (Phosphophyllite.serverResourceManager == null) {
@@ -75,7 +108,7 @@ public class DatapackLoader<T> {
                 }
                 json = builder.toString();
             }
-        
+            
         } catch (IOException e) {
             Phosphophyllite.LOGGER.error("Error reading json at " + location.toString());
             e.printStackTrace();
@@ -83,20 +116,20 @@ public class DatapackLoader<T> {
         }
         
         final var object = objectSupplier.get();
-    
+        
         final var elements = JSON5.parseString(json);
-    
-        if(!baseSpecNode.setActiveObject(object)) {
+        
+        if (!baseSpecNode.setActiveObject(object)) {
             return null;
         }
         
-        if(elements == null) {
+        if (elements == null) {
             return object;
         }
         
         final var correctedElements = baseSpecNode.correctToValidState(elements);
         
-        if(correctedElements == null) {
+        if (correctedElements == null) {
             return object;
         }
         
