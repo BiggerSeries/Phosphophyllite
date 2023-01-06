@@ -23,7 +23,7 @@ public class SpecBoolNode extends SpecValueNode {
     
     @Override
     public String currentValueAsString() {
-        return currentValueObject().toString();
+        return String.valueOf(currentValueObject());
     }
     
     @Override

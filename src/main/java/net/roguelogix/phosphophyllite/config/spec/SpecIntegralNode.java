@@ -115,7 +115,7 @@ public class SpecIntegralNode extends SpecNumberNode {
     
     @Override
     public String currentValueAsString() {
-        return currentValueObject().toString();
+        return String.valueOf(currentValueObject());
     }
     
     @Override

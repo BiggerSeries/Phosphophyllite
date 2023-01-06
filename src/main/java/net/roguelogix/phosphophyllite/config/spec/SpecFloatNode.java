@@ -12,9 +12,7 @@ import java.util.function.BiFunction;
 @NonnullDefault
 public class SpecFloatNode extends SpecNumberNode {
     public enum FloatType {
-        FLOAT((f, o, l) -> f.setFloat(o, l.floatValue()), (val, direction) -> {
-            return Double.valueOf(Math.nextAfter(val.floatValue(), direction));
-        }),
+        FLOAT((f, o, l) -> f.setFloat(o, l.floatValue()), (val, direction) -> (double) Math.nextAfter(val.floatValue(), direction)),
         DOUBLE(Field::setDouble, Math::nextAfter),
         ;
         
@@ -111,7 +109,7 @@ public class SpecFloatNode extends SpecNumberNode {
     
     @Override
     public String currentValueAsString() {
-        return currentValueObject().toString();
+        return String.valueOf(currentValueObject());
     }
     
     @Override

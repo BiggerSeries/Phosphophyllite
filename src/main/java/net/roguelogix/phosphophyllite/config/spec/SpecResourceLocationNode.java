@@ -18,17 +18,17 @@ public class SpecResourceLocationNode extends SpecValueNode {
     
     @Override
     public String defaultValueAsString() {
-        return defaultValue.toString();
+        return String.valueOf(defaultValue);
     }
     
     @Override
     public String currentValueAsString() {
-        return currentValueObject().toString();
+        return String.valueOf(currentValueObject());
     }
     
     @Override
     public void writeFromString(String string) {
-        writeObject(new ResourceLocation(string));
+        writeObject(string.equalsIgnoreCase("null") ? null : new ResourceLocation(string));
     }
     
     @Override

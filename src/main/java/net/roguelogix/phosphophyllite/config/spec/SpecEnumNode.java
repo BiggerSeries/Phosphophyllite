@@ -24,6 +24,9 @@ public class SpecEnumNode extends SpecValueNode {
         final var annotation = field.getAnnotation(ConfigValue.class);
         final var allowedValues = new ObjectArrayList<Enum<?>>();
         for (final var value : annotation.allowedValues()) {
+            if (value.equalsIgnoreCase("null")) {
+                allowedValues.add(null);
+            }
             for (final var enumVal : enumClass.getEnumConstants()) {
                 if (enumVal.toString().equalsIgnoreCase(value)) {
                     allowedValues.add((Enum<?>) enumVal);
@@ -31,6 +34,7 @@ public class SpecEnumNode extends SpecValueNode {
             }
         }
         if (allowedValues.isEmpty()) {
+            allowedValues.add(null);
             for (final var value : enumClass.getEnumConstants()) {
                 allowedValues.add((Enum<?>) value);
             }
@@ -40,7 +44,7 @@ public class SpecEnumNode extends SpecValueNode {
     
     @Override
     public String defaultValueAsString() {
-        return defaultValue.toString();
+        return String.valueOf(defaultValue);
     }
     
     public List<String> allowedValuesAsStrings() {
@@ -60,7 +64,7 @@ public class SpecEnumNode extends SpecValueNode {
     public void writeFromString(String string) {
         var enumToWrite = currentValue();
         for (final var value : allowedValues) {
-            if (value.toString().equalsIgnoreCase(string)) {
+            if (String.valueOf(value).equalsIgnoreCase(string)) {
                 enumToWrite = value;
                 break;
             }
@@ -71,7 +75,7 @@ public class SpecEnumNode extends SpecValueNode {
     @Override
     public boolean isValueValid(String valueString) {
         for (final var value : allowedValues) {
-            if (value.toString().equalsIgnoreCase(valueString)) {
+            if (String.valueOf(value).equalsIgnoreCase(valueString)) {
                 return true;
             }
         }
@@ -85,17 +89,17 @@ public class SpecEnumNode extends SpecValueNode {
     
     @Override
     public Element generateDefaultElement() {
-        return new Element(Element.Type.String, generateComment(), name, defaultValue.toString());
+        return new Element(Element.Type.String, generateComment(), name, String.valueOf(defaultValue));
     }
     
     @Override
     public Element generateCurrentElement() {
-        return new Element(Element.Type.String, generateComment(), name, currentValueObject().toString());
+        return new Element(Element.Type.String, generateComment(), name, currentValueAsString());
     }
     
     @Override
     public Element generateSyncElement() {
-        return new Element(Element.Type.String, null, name, currentValueObject().toString());
+        return new Element(Element.Type.String, null, name, currentValueAsString());
     }
     
     @Override

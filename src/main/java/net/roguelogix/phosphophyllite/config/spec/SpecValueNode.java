@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.config.spec;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 
 @NonnullDefault
@@ -25,7 +26,7 @@ public abstract class SpecValueNode extends SpecNode {
         }
     }
     
-    protected void writeObject(Object object) {
+    protected void writeObject(@Nullable Object object) {
         try {
             field.set(parent.object(), object);
         } catch (IllegalAccessException e) {
