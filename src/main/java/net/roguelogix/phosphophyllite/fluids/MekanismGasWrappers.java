@@ -541,7 +541,7 @@ public class MekanismGasWrappers {
             if (drained == 0) {
                 return GasStack.EMPTY;
             }
-            long gasDrained = amount - drained;
+            long gasDrained = drained;
             gasDrained *= lastMapping.fluidToGasGasUnits;
             gasDrained /= lastMapping.fluidToGasFluidUnits;
             return new GasStack(lastMapping.gases.get(0), gasDrained);
