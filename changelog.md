@@ -1,3 +1,6 @@
+# 1.18.2-0.6.0-beta.1.6
+ - fix mekanism gas compatability when mekanism's pipe is pulling 
+
 # 1.18.2-0.6.0-beta.1.5
  - ensure mekanism recipes are loaded regardless of event order 
  - fix gui fluid rendering bug
