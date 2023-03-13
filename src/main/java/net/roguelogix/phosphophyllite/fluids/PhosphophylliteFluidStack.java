@@ -106,6 +106,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     public void setFluid(Fluid fluid) {
         this.fluid = fluid;
         delegateWrapper.bind(ResourceKey.create(Registry.FLUID_REGISTRY, Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid))), fluid);
+        updateEmpty();
     }
     
     public static FluidStack loadFromNBT(CompoundTag nbt) {
@@ -167,7 +168,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public boolean isEmpty() {
-        return amount == 0;
+        return amount <= 0 || fluid == Fluids.EMPTY;
     }
     
     public int getAmount() {
@@ -184,7 +185,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     
     public void setAmount(long amount) {
         this.amount = amount;
-        super.setAmount((int) amount);
+        super.setAmount(getAmount());
     }
     
     private CompoundTag tag;
