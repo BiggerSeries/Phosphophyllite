@@ -51,6 +51,10 @@ if (version.contains("alpha") || version.contains("beta")) {
     setProperty("compatibility", "[" + version + ", " + nextIncompatibleVersion + ")")
 }
 
+if (!"$preReleasePostfix".isEmpty()) {
+    version += "-${preReleasePostfix}"
+}
+
 minecraft {
     mappings channel: "${mapping_channel}", version: "${mapping_version}"
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
