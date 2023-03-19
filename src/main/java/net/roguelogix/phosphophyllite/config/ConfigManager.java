@@ -174,8 +174,10 @@ public class ConfigManager {
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerStopped);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingIn);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingOut);
+        if (FMLEnvironment.dist.isClient()) {
+            MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingIn);
+            MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingOut);
+        }
     }
     
     private static void onServerAboutToStart(ServerAboutToStartEvent event) {
