@@ -32,7 +32,7 @@ jobs:
         run: echo "::set-output name=reltype::$(cat gradle.properties | grep "postfix=" | sed -n -e 's/^.*=//p')"
 
   uploadToCurseforge:
-    if: !contains(github.ref, "pre")
+    if: ! contains(github.ref, 'pre')
     name: "Upload to Curseforge"
     runs-on: Felix
     needs: [build]
@@ -55,7 +55,7 @@ jobs:
           changelog: "https://github.com/BiggerSeries/Phosphophyllite/blob/${{ github.ref_name }}/changelog.md"
 
   addToGithubRelease:
-    if: !contains(github.ref, "pre")
+    if: ! contains(github.ref, 'pre')
     name: "Upload to Github Release"
     runs-on: Felix
     needs: [build, uploadToCurseforge]
