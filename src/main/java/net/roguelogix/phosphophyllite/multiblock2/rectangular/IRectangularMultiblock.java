@@ -92,6 +92,7 @@ public interface IRectangularMultiblock<
             
             final var allowedOrientations = new Vector3i[controller.orientationAgnostic() ? 6 : controller.xzAgnostic() ? 2 : 1];
             
+            // TODO: garbage, less of it plz
             if (controller.orientationAgnostic()) {
                 allowedOrientations[0] = new Vector3i(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
                 allowedOrientations[1] = new Vector3i(maxX - minX + 1, maxZ - minZ + 1, maxY - minY + 1);
@@ -102,6 +103,7 @@ public interface IRectangularMultiblock<
                 allowedOrientations[4] = new Vector3i(maxZ - minZ + 1, maxX - minX + 1, maxY - minY + 1);
                 allowedOrientations[5] = new Vector3i(maxZ - minZ + 1, maxY - minY + 1, maxX - minX + 1);
             } else if (controller.xzAgnostic()) {
+                // TODO: these explode
                 allowedOrientations[0] = new Vector3i(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
                 allowedOrientations[1] = new Vector3i(maxZ - minZ + 1, maxY - minY + 1, maxX - minX + 1);
             } else {
