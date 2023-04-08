@@ -1,8 +1,15 @@
 package net.roguelogix.phosphophyllite.robn;
 
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.bytes.ByteIterator;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -453,18 +460,185 @@ public class ROBN {
             throw new IllegalArgumentException("Incompatible Binary");
         }
         
-        ObjectArrayList<Object> ObjectArrayList = new ObjectArrayList<>();
-        ObjectArrayList.ensureCapacity((int) vectorLength);
         if (!iterator.hasNext()) {
             throw new IllegalArgumentException("Malformed Binary");
         }
         Type elementType = Type.fromID(iterator.next());
+        
+        if (Type.primitiveTypeSize(elementType) != 0) {
+            return switch (elementType) {
+                
+                default -> throw new IllegalArgumentException("Malformed Binary");
+                case Bool -> boolVectorFromROBN(iterator, vectorLength);
+                case Int8 -> int8VectorFromROBN(iterator, vectorLength);
+                case Int16 -> int16VectorFromROBN(iterator, vectorLength);
+                case Int32 -> int32VectorFromROBN(iterator, vectorLength);
+                case Int64 -> int64VectorFromROBN(iterator, vectorLength);
+                case uInt8 -> uInt8VectorFromROBN(iterator, vectorLength);
+                case uInt16 -> uInt16VectorFromROBN(iterator, vectorLength);
+                case uInt32 -> uInt32VectorFromROBN(iterator, vectorLength);
+                case uInt64 -> uInt64VectorFromROBN(iterator, vectorLength);
+                case Float -> floatVectorFromROBN(iterator, vectorLength);
+                case Double -> doubleVectorFromROBN(iterator, vectorLength);
+            };
+        }
+        
+        ObjectArrayList<Object> ObjectArrayList = new ObjectArrayList<>((int) vectorLength);
         
         for (long i = 0; i < vectorLength; i++) {
             ObjectArrayList.add(fromROBN(iterator, elementType));
         }
         return ObjectArrayList;
     }
+    
+    private static BooleanArrayList boolVectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new BooleanArrayList((int) length);
+        for (int i = 0; i < length; i++) {
+            if (iterator.hasNext()) {
+                list.add(iterator.next() != 0);
+            }
+        }
+        return list;
+    }
+    
+    private static ByteArrayList int8VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new ByteArrayList((int) length);
+        for (int i = 0; i < length; i++) {
+            if (iterator.hasNext()) {
+                list.add(iterator.next());
+            }
+        }
+        return list;
+    }
+    
+    private static ByteArrayList uInt8VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = int8VectorFromROBN(iterator, length);
+        for (int i = 0; i < list.size(); i++) {
+            list.set(i, (byte) (list.getByte(i) & 0x7F));
+        }
+        return list;
+    }
+    
+    private static ShortArrayList int16VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new ShortArrayList((int) length);
+        for (int j = 0; j < length; j++) {
+            short val = 0;
+            for (int i = 0; i < 2; i++) {
+                if (iterator.hasNext()) {
+                    val |= (((short) iterator.next() & 0xFF) << (8 * i));
+                } else {
+                    break;
+                }
+            }
+            if (Endianness.NATIVE.val == Endianness.BIG.val) {
+                val = Short.reverseBytes(val);
+            }
+            list.add(val);
+        }
+        return list;
+    }
+    
+    private static ShortArrayList uInt16VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = int16VectorFromROBN(iterator, length);
+        for (int i = 0; i < list.size(); i++) {
+            list.set(i, (short) (list.getShort(i) & 0x7FFF));
+        }
+        return list;
+    }
+    
+    private static IntArrayList int32VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new IntArrayList((int) length);
+        for (int j = 0; j < length; j++) {
+            int val = 0;
+            for (int i = 0; i < 4; i++) {
+                if (iterator.hasNext()) {
+                    val |= (((int) iterator.next() & 0xFF) << (8 * i));
+                } else {
+                    break;
+                }
+            }
+            if (Endianness.NATIVE.val == Endianness.BIG.val) {
+                val = Integer.reverseBytes(val);
+            }
+            list.add(val);
+        }
+        return list;
+    }
+    
+    private static IntArrayList uInt32VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = int32VectorFromROBN(iterator, length);
+        for (int i = 0; i < list.size(); i++) {
+            list.set(i, (list.getInt(i) & 0x7FFFFFFF));
+        }
+        return list;
+    }
+    
+    private static LongArrayList int64VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new LongArrayList((int) length);
+        for (int j = 0; j < length; j++) {
+            long val = 0;
+            for (int i = 0; i < 8; i++) {
+                if (iterator.hasNext()) {
+                    val |= (((long) iterator.next() & 0xFF) << (8 * i));
+                } else {
+                    break;
+                }
+            }
+            if (Endianness.NATIVE.val == Endianness.BIG.val) {
+                val = Long.reverseBytes(val);
+            }
+            list.add(val);
+        }
+        return list;
+    }
+    
+    private static LongArrayList uInt64VectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = int64VectorFromROBN(iterator, length);
+        for (int i = 0; i < list.size(); i++) {
+            list.set(i, (list.getLong(i) & 0x7FFFFFFFFFFFFFFFL));
+        }
+        return list;
+    }
+    
+    
+    private static FloatArrayList floatVectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new FloatArrayList((int) length);
+        for (int j = 0; j < length; j++) {
+            int val = 0;
+            for (int i = 0; i < 4; i++) {
+                if (iterator.hasNext()) {
+                    val |= (((int) iterator.next() & 0xFF) << (8 * i));
+                } else {
+                    break;
+                }
+            }
+            if (Endianness.NATIVE.val == Endianness.BIG.val) {
+                val = Integer.reverseBytes(val);
+            }
+            list.add(Float.intBitsToFloat(val));
+        }
+        return list;
+    }
+    
+    private static DoubleArrayList doubleVectorFromROBN(Iterator<Byte> iterator, long length) {
+        var list = new DoubleArrayList((int) length);
+        for (int j = 0; j < length; j++) {
+            long val = 0;
+            for (int i = 0; i < 8; i++) {
+                if (iterator.hasNext()) {
+                    val |= (((long) iterator.next() & 0xFF) << (8 * i));
+                } else {
+                    break;
+                }
+            }
+            if (Endianness.NATIVE.val == Endianness.BIG.val) {
+                val = Long.reverseBytes(val);
+            }
+            list.add(Double.longBitsToDouble(val));
+        }
+        return list;
+    }
+    
     
     private static void mapToROBN(Map<?, ?> map, ByteArrayList buf) {
         // because java doesnt have native std::pair support, i get to encode them right here
