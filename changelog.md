@@ -1,3 +1,6 @@
+# 1.19.2-0.6.0-beta.7.1
+ - fix NBT saving issue, save delegate could skip saving nbt
+
 # 1.19.2-0.6.0-beta.7
  - remove paused state from multiblock2 multiblocks
  - improve debug tool
