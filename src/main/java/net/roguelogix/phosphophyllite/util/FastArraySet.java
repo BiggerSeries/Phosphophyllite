@@ -1,7 +1,8 @@
 package net.roguelogix.phosphophyllite.util;
 
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.jetbrains.annotations.Contract;
 
 import java.util.Collections;
@@ -10,8 +11,8 @@ import java.util.List;
 @NonnullDefault
 
 public class FastArraySet<T> {
-    private final Object2IntOpenHashMap<T> indexMap = new Object2IntOpenHashMap<>();
-    private final ObjectArrayList<T> elementList = new ObjectArrayList<>();
+    private final Reference2IntMap<T> indexMap = new Reference2IntOpenHashMap<>();
+    private final ReferenceArrayList<T> elementList = new ReferenceArrayList<>();
     private final List<T> unmodifiableList = Collections.unmodifiableList(elementList);
     
     private int version = 0;
@@ -69,5 +70,9 @@ public class FastArraySet<T> {
     
     public int indexOf(T element) {
         return indexMap.getInt(element);
+    }
+    
+    public boolean isEmpty() {
+        return elementList.isEmpty();
     }
 }
