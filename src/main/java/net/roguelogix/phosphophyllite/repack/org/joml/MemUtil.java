@@ -34,7 +34,7 @@ import java.nio.*;
  * @author The LWJGL authors
  * @author Kai Burjack
  */
-abstract class MemUtil {
+public abstract class MemUtil {
     public static final MemUtil INSTANCE = createInstance();
     private static MemUtil createInstance() {
         MemUtil accessor;
