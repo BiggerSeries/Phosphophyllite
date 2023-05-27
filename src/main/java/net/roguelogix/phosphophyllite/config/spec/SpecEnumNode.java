@@ -48,7 +48,7 @@ public class SpecEnumNode extends SpecValueNode {
     }
     
     public List<String> allowedValuesAsStrings() {
-        return allowedValues.stream().map(Enum::toString).toList();
+        return allowedValues.stream().map(String::valueOf).toList();
     }
     
     public Enum<?> currentValue() {
