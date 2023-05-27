@@ -89,6 +89,22 @@ public class VectorUtil {
         return vector.set(ChunkPos.getX(chunkPos), ChunkPos.getZ(chunkPos));
     }
     
+    public static Vector3i fromSectionPos(SectionPos sectionPos) {
+        return fromSectionPos(sectionPos, new Vector3i());
+    }
+    
+    public static Vector3i fromSectionPos(SectionPos sectionPos, Vector3i vector) {
+        return vector.set(sectionPos.getX(), sectionPos.getY(), sectionPos.getZ());
+    }
+    
+    public static Vector3i fromSectionPos(long sectionPos) {
+        return fromSectionPos(sectionPos, new Vector3i());
+    }
+    
+    public static Vector3i fromSectionPos(long sectionPos, Vector3i vector) {
+        return vector.set(SectionPos.x(sectionPos), SectionPos.y(sectionPos), SectionPos.z(sectionPos));
+    }
+    
     public static long blockPosToChunkPosLong(Vector3ic blockpos) {
         return ChunkPos.asLong(SectionPos.blockToSectionCoord(blockpos.x()), SectionPos.blockToSectionCoord(blockpos.z()));
     }

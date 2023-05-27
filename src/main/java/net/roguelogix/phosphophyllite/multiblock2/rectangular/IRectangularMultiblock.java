@@ -69,6 +69,7 @@ public interface IRectangularMultiblock<
         
         private boolean cornerSpecificValidation;
         private boolean frameSpecificValidation;
+        private int foundMultiblockBlocks;
         
         @OnModLoad
         public static void register() {
@@ -92,6 +93,7 @@ public interface IRectangularMultiblock<
             
             final var allowedOrientations = new Vector3i[controller.orientationAgnostic() ? 6 : controller.xzAgnostic() ? 2 : 1];
             
+            // TODO: garbage, less of it plz
             if (controller.orientationAgnostic()) {
                 allowedOrientations[0] = new Vector3i(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
                 allowedOrientations[1] = new Vector3i(maxX - minX + 1, maxZ - minZ + 1, maxY - minY + 1);
@@ -102,6 +104,7 @@ public interface IRectangularMultiblock<
                 allowedOrientations[4] = new Vector3i(maxZ - minZ + 1, maxX - minX + 1, maxY - minY + 1);
                 allowedOrientations[5] = new Vector3i(maxZ - minZ + 1, maxY - minY + 1, maxX - minX + 1);
             } else if (controller.xzAgnostic()) {
+                // TODO: these explode
                 allowedOrientations[0] = new Vector3i(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1);
                 allowedOrientations[1] = new Vector3i(maxZ - minZ + 1, maxY - minY + 1, maxX - minX + 1);
             } else {
@@ -151,7 +154,11 @@ public interface IRectangularMultiblock<
             controller.rectangularValidationStarted();
             cornerSpecificValidation = controller.cornerSpecificValidation();
             frameSpecificValidation = controller.frameSpecificValidation();
+            foundMultiblockBlocks = 0;
             Util.chunkCachedBlockStateIteration(controller.min(), controller.max(), controller.level, this::blockValidation);
+            if (foundMultiblockBlocks != controller.blocks.size()) {
+                throw new ValidationException(Component.translatable("multiblock.error.phosphophyllite.mismatched_block_count", foundMultiblockBlocks, controller.blocks.size()));
+            }
         }
         
         private void blockValidation(BlockState blockState, Vector3ic pos) throws ValidationException {
@@ -175,13 +182,13 @@ public interface IRectangularMultiblock<
             if (pos.z() == minZ || pos.z() == maxZ) {
                 extremes++;
             }
+            // use of old switch for case to case rolling is intentional
             switch (extremes) {
                 case 3: {
                     if (cornerSpecificValidation) {
                         if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
-                            if (!((IRectangularMultiblockBlock) block).isGoodForCorner()) {
-                                throw new InvalidBlock(block, pos, "corner");
-                            } else {
+                            if (((IRectangularMultiblockBlock) block).isGoodForCorner()) {
+                                foundMultiblockBlocks++;
                                 break;
                             }
                         }
@@ -191,9 +198,8 @@ public interface IRectangularMultiblock<
                 case 2: {
                     if (frameSpecificValidation) {
                         if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
-                            if (!((IRectangularMultiblockBlock) block).isGoodForFrame()) {
-                                throw new InvalidBlock(block, pos, "frame");
-                            } else {
+                            if (((IRectangularMultiblockBlock) block).isGoodForFrame()) {
+                                foundMultiblockBlocks++;
                                 break;
                             }
                         }
@@ -202,9 +208,8 @@ public interface IRectangularMultiblock<
                 }
                 case 1: {
                     if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
-                        if (!((IRectangularMultiblockBlock) block).isGoodForExterior()) {
-                            throw new InvalidBlock(block, pos, "exterior");
-                        } else {
+                        if (((IRectangularMultiblockBlock) block).isGoodForExterior()) {
+                            foundMultiblockBlocks++;
                             break;
                         }
                     }
@@ -212,11 +217,11 @@ public interface IRectangularMultiblock<
                 }
                 default: {
                     if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.test(block)) {
-                        if (!((IRectangularMultiblockBlock) block).isGoodForInterior()) {
-                            throw new InvalidBlock(block, pos, "interior");
-                        } else {
+                        if (((IRectangularMultiblockBlock) block).isGoodForInterior()) {
+                            foundMultiblockBlocks++;
                             break;
                         }
+                        throw new InvalidBlock(block, pos, "interior");
                     }
                     
                     if (!controller.allowedInteriorBlock(block)) {

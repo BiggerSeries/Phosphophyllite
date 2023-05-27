@@ -42,6 +42,8 @@ public class RectangularMultiblockController<
     protected Consumer<Block> blockValidatedCallback = null;
     protected Runnable validationStartedCallback = null;
     
+    private int foundMultiblockBlocks;
+    
     private final Validator<ControllerType> mainValidator = controller -> {
         int minX = controller.minCoord().x();
         int minY = controller.minCoord().y();
@@ -108,6 +110,7 @@ public class RectangularMultiblockController<
         if (validationStartedCallback != null) {
             validationStartedCallback.run();
         }
+        foundMultiblockBlocks = 0;
         Util.chunkCachedBlockStateIteration(controller.minCoord(), controller.maxCoord(), controller.world, (blockState, pos) -> {
             Block block = blockState.getBlock();
             int extremes = 0;
@@ -123,6 +126,7 @@ public class RectangularMultiblockController<
             switch (extremes) {
                 case 3: {
                     if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                        foundMultiblockBlocks++;
                         if (!((IRectangularMultiblockBlock) block).isGoodForCorner()) {
                             throw new InvalidBlock(block, pos, "corner");
                         } else {
@@ -139,6 +143,7 @@ public class RectangularMultiblockController<
                 }
                 case 2: {
                     if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                        foundMultiblockBlocks++;
                         if (!((IRectangularMultiblockBlock) block).isGoodForFrame()) {
                             throw new InvalidBlock(block, pos, "frame");
                         } else {
@@ -155,6 +160,7 @@ public class RectangularMultiblockController<
                 }
                 case 1: {
                     if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                        foundMultiblockBlocks++;
                         if (!((IRectangularMultiblockBlock) block).isGoodForExterior()) {
                             throw new InvalidBlock(block, pos, "exterior");
                         } else {
@@ -172,6 +178,7 @@ public class RectangularMultiblockController<
                 default: {
                     if (extremes == 0) {
                         if (block instanceof IRectangularMultiblockBlock && controller.blockTypeValidator.validate(block)) {
+                            foundMultiblockBlocks++;
                             if (!((IRectangularMultiblockBlock) block).isGoodForInterior()) {
                                 throw new InvalidBlock(block, pos, "interior");
                             } else {
@@ -201,6 +208,9 @@ public class RectangularMultiblockController<
                 blockValidatedCallback.accept(block);
             }
         });
+        if (foundMultiblockBlocks != controller.blocks.size()) {
+            throw new ValidationError(Component.translatable("multiblock.error.phosphophyllite.mismatched_block_count", foundMultiblockBlocks, controller.blocks.size()));
+        }
         return true;
     };
     
