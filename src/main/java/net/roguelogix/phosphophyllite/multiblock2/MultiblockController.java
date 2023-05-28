@@ -1,8 +1,6 @@
 package net.roguelogix.phosphophyllite.multiblock2;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -113,7 +111,7 @@ public class MultiblockController<
         return maxCoord;
     }
     
-    private final Object2ObjectOpenHashMap<Class<?>, MultiblockControllerModule<TileType, BlockType, ControllerType>> modules = new Object2ObjectOpenHashMap<>();
+    private final Reference2ReferenceArrayMap<Class<?>, MultiblockControllerModule<TileType, BlockType, ControllerType>> modules = new Reference2ReferenceArrayMap<>();
     private final List<MultiblockControllerModule<TileType, BlockType, ControllerType>> moduleListRO;
     
     @Override
