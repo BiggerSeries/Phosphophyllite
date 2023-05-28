@@ -2,8 +2,10 @@ package net.roguelogix.phosphophyllite.registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
@@ -15,6 +17,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.CreativeModeTabEvent;
@@ -43,6 +46,20 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Registry {
+    
+    private static final boolean IS_DEV_ENVIRONMENT;
+    
+    static {
+        boolean isInDev = false;
+        try {
+            // dev environment will be deobfuscated, so this will succeed
+            MinecraftServer.class.getDeclaredField("LOGGER");
+            isInDev = true;
+        } catch (NoSuchFieldException ignored) {
+            // this however, will not
+        }
+        IS_DEV_ENVIRONMENT = isInDev;
+    }
     
     private final Logger LOGGER;
     
@@ -115,6 +132,9 @@ public class Registry {
                 continue;
             }
             if (!annotation.clazz().getClassName().endsWith("package-info")) {
+                continue;
+            }
+            if (IS_DEV_ENVIRONMENT && !(Boolean) annotation.annotationData().get("ignoreInDev")) {
                 continue;
             }
             final var className = annotation.clazz().getClassName();
@@ -279,10 +299,12 @@ public class Registry {
     
     private void registerBlockAnnotation(final String modNamespace, final Class<?> declaringClass, final String memberName) {
         if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
+            if (!IS_DEV_ENVIRONMENT || declaringClass.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
+                }
+                return;
             }
-            return;
         }
         
         blockRegistrationQueue.enqueue(() -> {
@@ -291,10 +313,12 @@ public class Registry {
             try {
                 final Field field = declaringClass.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
+                    if (!IS_DEV_ENVIRONMENT || field.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Registration of block at " + memberName + " in " + declaringClass.getName() + " ignored");
+                        }
+                        return;
                     }
-                    return;
                 }
                 if (!Modifier.isStatic(field.getModifiers())) {
                     LOGGER.warn("Non-static block instance variable " + memberName + " in " + declaringClass.getName());
@@ -371,10 +395,12 @@ public class Registry {
     
     private void registerItemAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
         if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
+            if (!IS_DEV_ENVIRONMENT || declaringClass.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
+                }
+                return;
             }
-            return;
         }
         
         itemRegistrationQueue.enqueue(() -> {
@@ -384,10 +410,12 @@ public class Registry {
             try {
                 final Field field = declaringClass.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
+                    if (!IS_DEV_ENVIRONMENT || field.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Registration of item at " + memberName + " in " + declaringClass.getName() + " ignored");
+                        }
+                        return;
                     }
-                    return;
                 }
                 field.setAccessible(true);
                 fieldObject = field.get(null);
@@ -440,10 +468,12 @@ public class Registry {
     
     private void registerFluidAnnotation(String modNamespace, Class<?> fluidClazz, final String memberName) {
         if (fluidClazz.isAnnotationPresent(IgnoreRegistration.class)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of fluid at " + memberName + " in " + fluidClazz.getName() + " ignored");
+            if (!IS_DEV_ENVIRONMENT || fluidClazz.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of fluid at " + memberName + " in " + fluidClazz.getName() + " ignored");
+                }
+                return;
             }
-            return;
         }
         
         fluidRegistrationQueue.enqueue(() -> {
@@ -598,10 +628,12 @@ public class Registry {
     // TODO: move this to solution similar to what is used for tile entities
     private void registerContainerAnnotation(String modNamespace, Class<?> containerClazz, final String memberName) {
         if (containerClazz.isAnnotationPresent(IgnoreRegistration.class)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of container at " + memberName + " in " + containerClazz.getName() + " ignored");
+            if (!IS_DEV_ENVIRONMENT || containerClazz.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of container at " + memberName + " in " + containerClazz.getName() + " ignored");
+                }
+                return;
             }
-            return;
         }
         
         assert containerClazz.isAnnotationPresent(RegisterContainer.class);
@@ -711,10 +743,12 @@ public class Registry {
     
     private void registerTileAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
         if (declaringClass.isAnnotationPresent(IgnoreRegistration.class)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+            if (!IS_DEV_ENVIRONMENT || declaringClass.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+                }
+                return;
             }
-            return;
         }
         
         tileRegistrationQueue.enqueue(() -> {
@@ -731,10 +765,12 @@ public class Registry {
                 }
                 annotation = field.getAnnotation(RegisterTile.class);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+                    if (!IS_DEV_ENVIRONMENT || field.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Registration of tile at " + memberName + " in " + declaringClass.getName() + " ignored");
+                        }
+                        return;
                     }
-                    return;
                 }
                 field.setAccessible(true);
                 var producerObject = field.get(null);
@@ -902,10 +938,12 @@ public class Registry {
         try {
             Field field = configClazz.getDeclaredField(memberName);
             if (field.isAnnotationPresent(IgnoreRegistration.class)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Registration of config at " + memberName + " in " + configClazz.getName() + " ignored");
+                if (!IS_DEV_ENVIRONMENT || field.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Registration of config at " + memberName + " in " + configClazz.getName() + " ignored");
+                    }
+                    return;
                 }
-                return;
             }
             var configObject = field.get(null);
             var annotation = field.getAnnotation(RegisterConfig.class);
@@ -922,10 +960,12 @@ public class Registry {
         try {
             Method method = modLoadClazz.getDeclaredMethod(memberName.substring(0, memberName.indexOf('(')));
             if (method.isAnnotationPresent(IgnoreRegistration.class)) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Running of @OnModLoad for " + memberName + " in " + modLoadClazz.getName() + " ignored");
+                if (!IS_DEV_ENVIRONMENT || method.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Running of @OnModLoad for " + memberName + " in " + modLoadClazz.getName() + " ignored");
+                    }
+                    return;
                 }
-                return;
             }
             if (!Modifier.isStatic(method.getModifiers())) {
                 LOGGER.error("Cannot call non-static @OnModLoad method " + method.getName() + " in " + modLoadClazz.getSimpleName());
