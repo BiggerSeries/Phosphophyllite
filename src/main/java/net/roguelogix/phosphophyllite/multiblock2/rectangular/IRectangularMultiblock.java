@@ -44,7 +44,7 @@ public interface IRectangularMultiblock<
     }
     
     default boolean cornerSpecificValidation() {
-        return true;
+        return false;
     }
     
     default boolean frameSpecificValidation() {
