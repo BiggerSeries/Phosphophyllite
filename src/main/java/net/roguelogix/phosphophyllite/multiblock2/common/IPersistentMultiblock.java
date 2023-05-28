@@ -81,8 +81,8 @@ public interface IPersistentMultiblock<
                 lastAssemblyState = persistentModule.lastAssemblyState;
             }
             
-            final var newNBT = persistentModule.nbt;
-            persistentModule.nbt = null;
+            final var newNBT = persistentModule.controllerNBT;
+            persistentModule.controllerNBT = null;
             if (newNBT == null) {
                 return;
             }
@@ -106,6 +106,25 @@ public interface IPersistentMultiblock<
             if (oldPart == saveDelegate) {
                 saveDelegate = null;
                 saveDelegateModule = null;
+            }
+        }
+        
+        @Override
+        public void merge(ControllerType other) {
+            final var otherPersistentModule = other.module(IPersistentMultiblock.class, Module.class);
+            assert otherPersistentModule != null;
+            if (otherPersistentModule.nbt != null) {
+                if (controller.assemblyState() != AssemblyState.DISASSEMBLED) {
+                    // we are currently assembled, this will probably change, but this is on the implementation to handle
+                    return;
+                }
+                if (nbt == null) {
+                    nbt = otherPersistentModule.nbt;
+                    shouldReadNBT = true;
+                    return;
+                }
+                nbt = controller.mergeNBTs(nbt, otherPersistentModule.nbt);
+                shouldReadNBT = true;
             }
         }
         
@@ -146,7 +165,7 @@ public interface IPersistentMultiblock<
             //noinspection unchecked
             saveDelegateModule = saveDelegate.module(IPersistentMultiblockTile.class, IPersistentMultiblockTile.Module.class);
             if (saveDelegateModule != null) {
-                saveDelegateModule.nbt = null;
+                saveDelegateModule.controllerNBT = null;
             }
             hasSaveDelegate = true;
         }
@@ -175,7 +194,7 @@ public interface IPersistentMultiblock<
             pickDelegate();
             nbt = null;
             if (saveDelegateModule != null) {
-                saveDelegateModule.nbt = null;
+                saveDelegateModule.controllerNBT = null;
             }
             Util.markRangeDirty(controller.level, controller.min(), controller.max());
         }

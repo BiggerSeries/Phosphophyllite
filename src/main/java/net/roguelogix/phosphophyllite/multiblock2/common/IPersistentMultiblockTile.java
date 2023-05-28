@@ -31,7 +31,7 @@ public interface IPersistentMultiblockTile<
             > extends TileModule<TileType> implements ICoreMultiblockTileModule<TileType, BlockType, ControllerType> {
         
         @Nullable
-        CompoundTag nbt;
+        CompoundTag controllerNBT;
         IValidatedMultiblock.AssemblyState lastAssemblyState = IValidatedMultiblock.AssemblyState.DISASSEMBLED;
         int expectedBlocks = 0;
         
@@ -71,28 +71,28 @@ public interface IPersistentMultiblockTile<
                 expectedBlocks = nbt.getInt("expected_blocks");
             }
             if (nbt.contains("controller_data")) {
-                this.nbt = nbt.getCompound("controller_data");
+                this.controllerNBT = nbt.getCompound("controller_data");
                 return;
             }
-            this.nbt = nbt;
+            this.controllerNBT = null;
         }
         
         @Override
         public CompoundTag writeNBT() {
-            if (controllerPersistentModule != null && controllerPersistentModule.isSaveDelegate(iface) && nbt == null) {
-                nbt = controllerPersistentModule.getNBT();
+            if (controllerPersistentModule != null && controllerPersistentModule.isSaveDelegate(iface) && controllerNBT == null) {
+                controllerNBT = controllerPersistentModule.getNBT();
             }
             final var toReturn = new CompoundTag();
             toReturn.putString("last_assembly_state", lastAssemblyState.toString());
-            if (nbt != null) {
-                toReturn.put("controller_data", nbt);
+            if (controllerNBT != null) {
+                toReturn.put("controller_data", controllerNBT);
             }
             return toReturn;
         }
         
         @Override
         public void aboutToUnloadDetach() {
-            nbt = null;
+            controllerNBT = null;
             writeNBT();
         }
         
