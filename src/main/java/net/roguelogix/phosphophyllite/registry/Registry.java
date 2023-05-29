@@ -516,9 +516,9 @@ public class Registry {
                 @Override
                 public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                     consumer.accept(new IClientFluidTypeExtensions() {
-                        final ResourceLocation stillTexture = new ResourceLocation(modid, "fluid/" + name + "_still");
-                        final ResourceLocation flowingTexture = new ResourceLocation(modid, "fluid/" + name + "_flowing");
-                        final ResourceLocation overlayTexture = new ResourceLocation(modid, "fluid/" + name + "_overlay");
+                        final ResourceLocation stillTexture = new ResourceLocation(modid, "block/fluid/" + name + "_still");
+                        final ResourceLocation flowingTexture = new ResourceLocation(modid, "block/fluid/" + name + "_flowing");
+                        final ResourceLocation overlayTexture = new ResourceLocation(modid, "block/fluid/" + name + "_overlay");
                         
                         @Override
                         public ResourceLocation getStillTexture() {
