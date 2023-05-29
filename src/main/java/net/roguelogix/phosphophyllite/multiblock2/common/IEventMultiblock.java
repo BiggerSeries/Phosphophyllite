@@ -38,6 +38,17 @@ public interface IEventMultiblock<
             
             void onAssembly();
         }
+        
+        interface OnDisassembly extends AssemblyStateTransition {
+            @Override
+            default void onAssemblyStateTransition(IValidatedMultiblock.AssemblyState oldState, IValidatedMultiblock.AssemblyState newState) {
+                if (newState == IValidatedMultiblock.AssemblyState.DISASSEMBLED) {
+                    onDisassembly();
+                }
+            }
+            
+            void onDisassembly();
+        }
     }
     
     final class Module<
