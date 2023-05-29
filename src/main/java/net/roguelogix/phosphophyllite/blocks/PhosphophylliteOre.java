@@ -13,11 +13,11 @@ import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-@CreativeTabBlock
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class PhosphophylliteOre extends Block implements EntityBlock {
     
+    @CreativeTabBlock
     @RegisterBlock(name = "phosphophyllite_ore",  tileEntityClass = PhosphophylliteOreTile.class)
     public static final PhosphophylliteOre INSTANCE = new PhosphophylliteOre();
     

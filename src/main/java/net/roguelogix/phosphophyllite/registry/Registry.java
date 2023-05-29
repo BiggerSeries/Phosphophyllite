@@ -310,8 +310,9 @@ public class Registry {
         blockRegistrationQueue.enqueue(() -> {
             final RegisterBlock annotation;
             final Object fieldObject;
+            final Field field;
             try {
-                final Field field = declaringClass.getDeclaredField(memberName);
+                field = declaringClass.getDeclaredField(memberName);
                 if (field.isAnnotationPresent(IgnoreRegistration.class)) {
                     if (!IS_DEV_ENVIRONMENT || field.getAnnotation(IgnoreRegistration.class).ignoreInDev()) {
                         if (LOGGER.isDebugEnabled()) {
@@ -372,7 +373,7 @@ public class Registry {
             }
             
             if (annotation.registerItem()) {
-                boolean creativeTabBlock = declaringClass.isAnnotationPresent(CreativeTabBlock.class);
+                boolean creativeTabBlock = field.isAnnotationPresent(CreativeTabBlock.class);
                 itemRegistrationQueue.enqueue(() -> {
                     var item = new BlockItem(block, new Item.Properties());
                     if (annotation.creativeTab()) {
