@@ -1,5 +1,5 @@
 {
-    "itemGroup.phosphophyllite": "Phosphophyllite",
+    "item_group.phosphophyllite": "Phosphophyllite",
     "multiblock.error.phosphophyllite.invalid_block.frame": "Invalid block (%s) for frame at %s",
     "multiblock.error.phosphophyllite.invalid_block.exterior": "Invalid block (%s) for exterior at %s",
     "multiblock.error.phosphophyllite.invalid_block.interior": "Invalid block (%s) for interior at %s",
