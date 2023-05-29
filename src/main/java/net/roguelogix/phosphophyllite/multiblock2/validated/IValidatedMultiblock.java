@@ -83,9 +83,6 @@ public interface IValidatedMultiblock<
         }
     }
     
-    default void undefinedStateTransition(AssemblyState oldAssemblyState, AssemblyState newAssemblyState) {
-    }
-    
     default void onAssembled() {
     }
     
