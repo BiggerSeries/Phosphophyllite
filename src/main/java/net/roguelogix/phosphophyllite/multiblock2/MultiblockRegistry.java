@@ -9,6 +9,7 @@ import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.roguelogix.phosphophyllite.multiblock2.validated.IValidatedMultiblock;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.Util;
 
@@ -86,5 +87,13 @@ public final class MultiblockRegistry {
                 }
             }
         }
+    }
+    
+    public static void revalidateAll() {
+        controllersToTick.forEach((serverLevel, multiblockControllers) -> multiblockControllers.forEach(controller -> {
+            if (controller instanceof IValidatedMultiblock<?, ?, ?> validatedMultiblock) {
+                validatedMultiblock.requestValidation();
+            }
+        }));
     }
 }

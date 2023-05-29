@@ -16,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.event.ReloadDataEvent;
-import net.roguelogix.phosphophyllite.multiblock.MultiblockController;
+import net.roguelogix.phosphophyllite.multiblock2.MultiblockRegistry;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.threading.Queues;
@@ -97,53 +97,11 @@ public class Phosphophyllite {
         }
         serverResourceManager = server.getResourceManager();
         MinecraftForge.EVENT_BUS.post(new ReloadDataEvent());
-        controllersToTick.forEach((serverLevel, multiblockControllers) -> multiblockControllers.forEach(MultiblockController::revalidate));
+        MultiblockRegistry.revalidateAll();
     }
     
     public static long tickNumber() {
         return tick;
-    }
-    
-    @Deprecated(forRemoval = true)
-    private static final HashMap<ServerLevel, ArrayList<MultiblockController<?, ?>>> controllersToTick = new HashMap<>();
-    @Deprecated(forRemoval = true)
-    private static final ArrayList<MultiblockController<?, ?>> newControllers = new ArrayList<>();
-    @Deprecated(forRemoval = true)
-    private static final ArrayList<MultiblockController<?, ?>> oldControllers = new ArrayList<>();
-    
-    @Deprecated(forRemoval = true)
-    public static void addController(MultiblockController<?, ?> controller) {
-        newControllers.add(controller);
-    }
-    
-    @Deprecated(forRemoval = true)
-    public static void removeController(MultiblockController<?, ?> controller) {
-        oldControllers.add(controller);
-    }
-    
-    @Deprecated(forRemoval = true)
-    @SubscribeEvent
-    void onWorldUnload(final LevelEvent.Unload worldUnloadEvent) {
-        if (!worldUnloadEvent.getLevel().isClientSide()) {
-            //noinspection SuspiciousMethodCalls
-            ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.remove(worldUnloadEvent.getLevel());
-            if (controllersToTick != null) {
-                for (MultiblockController<?, ?> multiblockController : controllersToTick) {
-                    multiblockController.suicide();
-                }
-            }
-            // apparently, stragglers can exist
-            newControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getLevel());
-            oldControllers.removeIf(multiblockController -> multiblockController.getWorld() == worldUnloadEvent.getLevel());
-        }
-    }
-    
-    @Deprecated(forRemoval = true)
-    @SubscribeEvent
-    void onServerStop(final ServerStoppedEvent serverStoppedEvent) {
-        controllersToTick.clear();
-        newControllers.clear();
-        oldControllers.clear();
     }
     
     @SubscribeEvent
@@ -162,17 +120,6 @@ public class Phosphophyllite {
         while (run[0]) {
             Queues.serverThread.runOne();
         }
-        
-        for (MultiblockController<?, ?> newController : newControllers) {
-            controllersToTick.computeIfAbsent((ServerLevel) newController.getWorld(), k -> new ArrayList<>()).add(newController);
-        }
-        newControllers.clear();
-        for (MultiblockController<?, ?> oldController : oldControllers) {
-            //noinspection SuspiciousMethodCalls
-            ArrayList<MultiblockController<?, ?>> controllers = controllersToTick.get(oldController.getWorld());
-            controllers.remove(oldController);
-        }
-        oldControllers.clear();
         
         Util.serverTick();
     }
@@ -199,19 +146,5 @@ public class Phosphophyllite {
             return;
         }
         Util.updateBlockStates(e.level);
-        if (e.phase != TickEvent.Phase.END) {
-            return;
-        }
-        
-        ArrayList<MultiblockController<?, ?>> controllersToTick = Phosphophyllite.controllersToTick.get(e.level);
-        if (controllersToTick != null) {
-            for (MultiblockController<?, ?> controller : controllersToTick) {
-                if (controller != null) {
-                    controller.update();
-                }
-            }
-        }
-        
-        Util.worldTickEndEvent(e.level);
     }
 }
