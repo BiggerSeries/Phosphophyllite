@@ -105,7 +105,7 @@ public class MekanismGasWrappers {
     private static final Map<Gas, Mapping> gasToFluidMap = new HashMap<>();
     private static final Map<Fluid, Mapping> fluidToGasMap = new HashMap<>();
     
-    @OnModLoad
+    @OnModLoad(required = false)
     private static void onModLoad() {
         MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::addReloadEventListener);
         MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::serverAboutToStart);

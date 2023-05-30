@@ -200,10 +200,13 @@ public class Registry {
                     handler.run(modNamespace, clazz, annotation.memberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError e) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Failed to handle required annotation " + annotation.annotationType().getClassName() + " in class " + className + " on member " + annotation.memberName() + " with error " + e);
+                        LOGGER.debug("Failed to handle annotation " + annotation.annotationType().getClassName() + " in class " + className + " on member " + annotation.memberName() + " with error " + e);
                     }
                     if (requiredCheck) {
                         var isRequired = annotation.annotationData().get("required");
+                        if (isRequired == null) {
+                            isRequired = Boolean.TRUE;
+                        }
                         if (isRequired instanceof Boolean && (Boolean) isRequired) {
                             e.printStackTrace();
                             throw new IllegalStateException("Failed to handle required annotation " + annotation.annotationType().getClassName() + " in class " + className);

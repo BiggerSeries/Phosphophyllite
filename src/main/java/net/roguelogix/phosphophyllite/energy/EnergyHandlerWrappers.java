@@ -202,7 +202,7 @@ public class EnergyHandlerWrappers {
         public static final Capability<IStrictEnergyHandler> STRICT_ENERGY = CapabilityManager.get(new CapabilityToken<>() {
         });
         
-        @OnModLoad
+        @OnModLoad(required = false)
         public static void onModLoad() {
             registerWrapper(STRICT_ENERGY, ToWrapper::new, FromWrapper::new, -1);
         }
