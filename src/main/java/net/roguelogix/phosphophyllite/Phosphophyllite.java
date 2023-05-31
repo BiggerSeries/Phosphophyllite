@@ -146,5 +146,6 @@ public class Phosphophyllite {
             return;
         }
         Util.updateBlockStates(e.level);
+        Util.worldTickEndEvent(e.level);
     }
 }
