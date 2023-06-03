@@ -156,6 +156,10 @@ public interface IRectangularMultiblock<
             frameSpecificValidation = controller.frameSpecificValidation();
             foundMultiblockBlocks = 0;
             Util.chunkCachedBlockStateIteration(controller.min(), controller.max(), controller.level, this::blockValidation);
+        }
+        
+        @Override
+        public void validateStage3() throws ValidationException {
             if (foundMultiblockBlocks != controller.blocks.size()) {
                 throw new ValidationException(Component.translatable("multiblock.error.phosphophyllite.mismatched_block_count", foundMultiblockBlocks, controller.blocks.size()));
             }
