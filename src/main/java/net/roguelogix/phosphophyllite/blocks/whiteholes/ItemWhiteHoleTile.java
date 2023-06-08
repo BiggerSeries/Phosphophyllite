@@ -11,8 +11,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
@@ -37,7 +37,7 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
     @Nonnull
     @Override
     public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
-        if (cap == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return LazyOptional.of(() -> this).cast();
         }
         return super.capability(cap, side);
@@ -73,7 +73,7 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
             for (Direction direction : Direction.values()) {
                 BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
                 if (te != null) {
-                    te.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, direction.getOpposite()).ifPresent(c -> {
+                    te.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(c -> {
                         for (int i = 0; i < c.getSlots(); i++) {
                             //noinspection deprecation
                             c.insertItem(i, new ItemStack(item, item.getMaxStackSize()), false);

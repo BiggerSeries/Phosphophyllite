@@ -50,7 +50,7 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
     private LazyOptional<IPhosphophylliteEnergyHandler> energyHandler = LazyOptional.empty();
     
     private long sentLastTick = 0;
-    private boolean doPush;
+    private boolean doPush = true;
     private boolean allowPull;
     
     @Override
@@ -76,7 +76,7 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
     }
     
     public void rotateCapability(@Nullable Player player) {
-        energyHandler.invalidate();
+        final var oldHandler = energyHandler;
         energyHandler = LazyOptional.of(() -> new IPhosphophylliteEnergyHandler() {
             
             private void ensureValid() {
@@ -137,6 +137,7 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
                 return Long.MAX_VALUE;
             }
         });
+        oldHandler.invalidate();
         if (player != null) {
             player.sendSystemMessage(Component.literal("Capability invalidated"));
         }

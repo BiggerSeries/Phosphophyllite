@@ -446,7 +446,7 @@ public class Util {
                         shortSet.fadd((short) i);
                     }
                 }
-                var packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, shortSet, levelSection, true);
+                var packet = new ClientboundSectionBlocksUpdatePacket(sectionPos, shortSet, levelSection);
                 ((ServerChunkCache) level.getChunkSource()).chunkMap.getPlayers(sectionPos.chunk(), false).forEach(serverPlayer -> {
                     serverPlayer.connection.send(packet);
                 });

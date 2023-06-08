@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -16,7 +17,7 @@ public interface ScreenCallbacks {
      * Callback for custom rendering.
      */
     interface OnRender {
-        void trigger(@Nonnull PoseStack poseStack, int mouseX, int mouseY);
+        void trigger(@Nonnull GuiGraphics graphics, int mouseX, int mouseY);
     }
 
     /**

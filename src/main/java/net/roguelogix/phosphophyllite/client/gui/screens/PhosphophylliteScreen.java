@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.client.gui.screens;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.renderer.texture.Tickable;
@@ -115,20 +116,20 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
      * @param partialTicks Partial ticks.
      */
     @Override
-    public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(poseStack);
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(guiGraphics);
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
 
         // Draw tooltips for all the elements that belong to this screen.
-        this.renderTooltip(poseStack, mouseX, mouseY);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and render.
             if (element instanceof ITooltip) {
-                ((ITooltip) element).renderTooltip(poseStack, mouseX, mouseY);
+                ((ITooltip) element).renderTooltip(guiGraphics, mouseX, mouseY);
             }
         }
     }
-
+    
     /**
      * Draw the foreground.
      *
@@ -137,7 +138,7 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
      * @param mouseY    The y position of the mouse.
      */
     @Override
-    protected void renderLabels(@Nonnull PoseStack poseStack, int mouseX, int mouseY) {
+    public void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -146,12 +147,12 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and render.
             if (element instanceof IRender) {
-                ((IRender) element).render(poseStack, mouseX, mouseY);
+                ((IRender) element).render(guiGraphics, mouseX, mouseY);
             }
         }
 
         // Draw title.
-        this.font.draw(poseStack, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
+        guiGraphics.drawString(this.font, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
     }
 
     /**
@@ -163,13 +164,13 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
      * @param mouseY       The y position of the mouse.
      */
     @Override
-    protected void renderBg(@Nonnull PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
         // Bind to the correct texture & reset render color.
         RenderHelper.bindTexture(this.textureAtlas);
         RenderHelper.setRenderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         // Draw background.
-        this.blit(poseStack, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.getXSize(), this.getYSize());
+        guiGraphics.blit(this.textureAtlas, this.getGuiLeft(), this.getGuiTop(), 0, 0, this.getXSize(), this.getYSize());
     }
 
     /**
@@ -220,7 +221,6 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
             }
         }
     }
-
     /**
      * Triggered when the mouse is clicked.
      * For most purposes, it is recommended to tie logic to #mouseReleased.

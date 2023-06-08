@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.client.gui.api;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -20,5 +21,5 @@ public interface ITooltip {
      * @param mouseX    The x position of the mouse.
      * @param mouseY    The y position of the mouse.
      */
-    void renderTooltip(@Nonnull PoseStack poseStack, int mouseX, int mouseY);
+    void renderTooltip(@Nonnull GuiGraphics graphics, int mouseX, int mouseY);
 }

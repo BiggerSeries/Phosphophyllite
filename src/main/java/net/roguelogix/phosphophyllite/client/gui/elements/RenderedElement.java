@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.client.gui.elements;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -57,14 +57,14 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
         this.v = v;
     }
 
-    /**
-     * Gets the parent screen's blit offset.
-     *
-     * @return The blit offset.
-     */
-    public int getBlitOffset() {
-        return this.parent.getBlitOffset();
-    }
+//    /**
+//     * Gets the parent screen's blit offset.
+//     *
+//     * @return The blit offset.
+//     */
+//    public int getBlitOffset() {
+//        return this.parent.getBlitOffset();
+//    }
 
     /**
      * Render the element.
@@ -74,70 +74,70 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
      * @param mouseY    The y position of the mouse.
      */
     @Override
-    public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY) {
+    public void render(@Nonnull GuiGraphics graphics, int mouseX, int mouseY) {
         // Check conditions, and render.
         if (this.renderEnable) {
             if (this.onRender != null) {
-                this.onRender.trigger(poseStack, mouseX, mouseY);
+                this.onRender.trigger(graphics, mouseX, mouseY);
             } else {
-                this.blit(poseStack);
+//                this.blit(graphics);
             }
         }
         // Reset for next call.
         RenderHelper.clearRenderColor();
     }
 
-    /**
-     * Blit/draw a part of this element.
-     *
-     * @param poseStack The current pose stack.
-     * @see GuiComponent#blit(PoseStack, int, int, int, int, int, int) GuiComponent.blit(PoseStack, int, int, int, int, int, int)
-     */
-    public void blit(@Nonnull PoseStack poseStack) {
-        GuiComponent.blit(poseStack, this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
-    }
-
-    /**
-     * Blit/draw a part of this element.
-     *
-     * @param poseStack The current pose stack.
-     * @param u         The u offset in the current texture to draw.
-     * @param v         The v offset in the current texture to draw.
-     * @see GuiComponent#blit(PoseStack, int, int, float, float, int, int, int, int) GuiComponent.blit(PoseStack, int, int, float, float, int, int, int, int)
-     */
-    public void blit(@Nonnull PoseStack poseStack, int u, int v) {
-        GuiComponent.blit(poseStack, this.x, this.y, u, v, this.width, this.height, 256, 256);
-    }
-
-    /**
-     * Blit/draw a part of this element.
-     *
-     * @param poseStack The current pose stack.
-     * @param width     How wide to draw the element.
-     * @param height    How tall to draw the element.
-     * @param u         The u offset in the current texture to draw.
-     * @param v         The v offset in the current texture to draw.
-     * @see GuiComponent#blit(PoseStack, int, int, float, float, int, int, int, int) GuiComponent.blit(PoseStack, int, int, float, float, int, int, int, int)
-     */
-    public void blit(@Nonnull PoseStack poseStack, int width, int height, int u, int v) {
-        GuiComponent.blit(poseStack, this.x, this.y, u, v, width, height, 256, 256);
-    }
-
-    /**
-     * Blit/draw a part of this element.
-     *
-     * @param poseStack The current pose stack.
-     * @param x         The x position to draw at.
-     * @param y         The y position to draw at.
-     * @param u         The u offset in the current texture to draw.
-     * @param v         The v offset in the current texture to draw.
-     * @param width     How wide to draw the element.
-     * @param height    How tall to draw the element.
-     * @see GuiComponent#blit(PoseStack, int, int, float, float, int, int, int, int) GuiComponent.blit(PoseStack, int, int, float, float, int, int, int, int)
-     */
-    public void blit(@Nonnull PoseStack poseStack, int x, int y, int u, int v, int width, int height) {
-        GuiComponent.blit(poseStack, x, y, u, v, width, height, 256, 256);
-    }
+//    /**
+//     * Blit/draw a part of this element.
+//     *
+//     * @param graphics The current pose stack.
+//     * @see GuiGraphics#blit(PoseStack, int, int, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, int, int, int, int)
+//     */
+//    public void blit(@Nonnull GuiGraphics graphics) {
+//        graphics.blit(this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
+//    }
+//
+//    /**
+//     * Blit/draw a part of this element.
+//     *
+//     * @param poseStack The current pose stack.
+//     * @param u         The u offset in the current texture to draw.
+//     * @param v         The v offset in the current texture to draw.
+//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+//     */
+//    public void blit(@Nonnull PoseStack poseStack, int u, int v) {
+//        GuiGraphics.blit(poseStack, this.x, this.y, u, v, this.width, this.height, 256, 256);
+//    }
+//
+//    /**
+//     * Blit/draw a part of this element.
+//     *
+//     * @param poseStack The current pose stack.
+//     * @param width     How wide to draw the element.
+//     * @param height    How tall to draw the element.
+//     * @param u         The u offset in the current texture to draw.
+//     * @param v         The v offset in the current texture to draw.
+//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+//     */
+//    public void blit(@Nonnull PoseStack poseStack, int width, int height, int u, int v) {
+//        GuiGraphics.blit(poseStack, this.x, this.y, u, v, width, height, 256, 256);
+//    }
+//
+//    /**
+//     * Blit/draw a part of this element.
+//     *
+//     * @param poseStack The current pose stack.
+//     * @param x         The x position to draw at.
+//     * @param y         The y position to draw at.
+//     * @param u         The u offset in the current texture to draw.
+//     * @param v         The v offset in the current texture to draw.
+//     * @param width     How wide to draw the element.
+//     * @param height    How tall to draw the element.
+//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+//     */
+//    public void blit(@Nonnull PoseStack poseStack, int x, int y, int u, int v, int width, int height) {
+//        GuiGraphics.blit(poseStack, x, y, u, v, width, height, 256, 256);
+//    }
 
     /**
      * Enable rendering of the element, as well as any associated tooltips.
@@ -155,5 +155,17 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
     public void disable() {
         super.disable();
         this.renderEnable = false;
+    }
+    
+    boolean focused = false;
+    
+    @Override
+    public void setFocused(boolean shouldFocus) {
+        this.focused = shouldFocus;
+    }
+    
+    @Override
+    public boolean isFocused() {
+        return focused;
     }
 }

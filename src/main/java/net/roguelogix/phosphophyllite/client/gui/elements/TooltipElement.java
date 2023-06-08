@@ -1,7 +1,11 @@
 package net.roguelogix.phosphophyllite.client.gui.elements;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -11,6 +15,7 @@ import net.roguelogix.phosphophyllite.client.gui.api.ITooltip;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -56,10 +61,11 @@ public class TooltipElement<T extends AbstractContainerMenu> extends AbstractEle
      * @param mouseY    The y position of the mouse.
      */
     @Override
-    public void renderTooltip(@Nonnull PoseStack poseStack, int mouseX, int mouseY) {
+    public void renderTooltip(@Nonnull GuiGraphics graphics, int mouseX, int mouseY) {
         // Check conditions, and render tooltip.
         if (this.tooltipEnable && this.tooltip != null && this.isMouseOver(mouseX, mouseY)) {
-            this.parent.renderComponentTooltip(poseStack, Arrays.stream(tooltip.getString().split("\\n")).map(Component::literal).collect(Collectors.toList()), mouseX, mouseY);
+            final List<FormattedCharSequence> list = Arrays.stream(tooltip.getString().split("\\n")).map(Component::literal).map(MutableComponent::getVisualOrderText).collect(Collectors.toList());
+            graphics.renderTooltip(this.parent.getFont(), list, mouseX, mouseY);
         }
     }
 
@@ -77,5 +83,17 @@ public class TooltipElement<T extends AbstractContainerMenu> extends AbstractEle
     @Override
     public void disable() {
         this.tooltipEnable = false;
+    }
+    
+    boolean focused = false;
+    
+    @Override
+    public void setFocused(boolean shouldFocus) {
+        this.focused = shouldFocus;
+    }
+    
+    @Override
+    public boolean isFocused() {
+        return focused;
     }
 }

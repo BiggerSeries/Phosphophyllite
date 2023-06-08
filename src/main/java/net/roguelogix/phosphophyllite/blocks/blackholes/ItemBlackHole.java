@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 
 import javax.annotation.Nullable;
@@ -24,7 +23,7 @@ public class ItemBlackHole extends Block implements EntityBlock {
     public static final ItemBlackHole INSTANCE = new ItemBlackHole();
     
     public ItemBlackHole() {
-        super(Properties.of(Material.METAL));
+        super(Properties.of());
     }
     
     @Nullable

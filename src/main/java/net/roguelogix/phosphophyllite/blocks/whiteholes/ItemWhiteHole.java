@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 
@@ -32,7 +31,7 @@ public class ItemWhiteHole extends Block implements EntityBlock {
     public static final ItemWhiteHole INSTANCE = new ItemWhiteHole();
     
     public ItemWhiteHole() {
-        super(Properties.of(Material.METAL));
+        super(Properties.of());
     }
     
     @Nullable

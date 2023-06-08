@@ -2,25 +2,24 @@ package net.roguelogix.phosphophyllite.registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Material;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
@@ -156,7 +155,7 @@ public class Registry {
 
 //        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
-        ModBus.addListener(this::creativeTabEvent);
+//        ModBus.addListener(this::creativeTabEvent);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModBus.addListener(this::clientSetupEventHandler);
@@ -217,21 +216,21 @@ public class Registry {
         }
     }
     
-    private void creativeTabEvent(CreativeModeTabEvent.Register event) {
-        if (creativeTabItems.isEmpty()) {
-            return;
-        }
-        event.registerCreativeModeTab(creativeTabResourceLocation, builder -> {
-            builder.title(creativeTabTitle);
-            builder.icon(() -> new ItemStack(itemGroupItem));
-            builder.displayItems((enabledFlags, populator, hasPermissions) -> {
-                final var creativeTabItemStacks = new ObjectArrayList<ItemStack>(creativeTabItems.size());
-                creativeTabItems.forEach(item -> creativeTabItemStacks.add(new ItemStack(item)));
-                creativeTabItemStacks.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
-                creativeTabItemStacks.forEach(populator::accept);
-            });
-        });
-    }
+//    private void creativeTabEvent(CreativeModeTabEvent.Register event) {
+//        if (creativeTabItems.isEmpty()) {
+//            return;
+//        }
+//        event.registerCreativeModeTab(creativeTabResourceLocation, builder -> {
+//            builder.title(creativeTabTitle);
+//            builder.icon(() -> new ItemStack(itemGroupItem));
+//            builder.displayItems((enabledFlags, populator, hasPermissions) -> {
+//                final var creativeTabItemStacks = new ObjectArrayList<ItemStack>(creativeTabItems.size());
+//                creativeTabItems.forEach(item -> creativeTabItemStacks.add(new ItemStack(item)));
+//                creativeTabItemStacks.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
+//                creativeTabItemStacks.forEach(populator::accept);
+//            });
+//        });
+//    }
     
     private void registerEvent(RegisterEvent registerEvent) {
         registerEvent.register(ForgeRegistries.Keys.BLOCKS, this::blockRegistration);
@@ -568,7 +567,7 @@ public class Registry {
             
             fluids[0] = stillInstance;
             fluids[1] = flowingInstance;
-            blockArray[0] = new LiquidBlock(stillSupplier, Block.Properties.of(Material.WATER).noCollission().explosionResistance(100.0F).noLootTable());
+            blockArray[0] = new LiquidBlock(stillSupplier, Block.Properties.of().noCollission().explosionResistance(100.0F).noLootTable());
             
             for (Field declaredField : fluidClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterFluid.Instance.class)) {
