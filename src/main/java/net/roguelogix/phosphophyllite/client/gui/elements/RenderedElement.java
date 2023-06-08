@@ -57,14 +57,16 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
         this.v = v;
     }
 
-//    /**
-//     * Gets the parent screen's blit offset.
-//     *
-//     * @return The blit offset.
-//     */
-//    public int getBlitOffset() {
+    /**
+     * Gets the parent screen's blit offset.
+     *
+     * @return The blit offset.
+     */
+    public int getBlitOffset() {
+        // TODO: figure out a proper replacement
 //        return this.parent.getBlitOffset();
-//    }
+        return 0;
+    }
 
     /**
      * Render the element.
@@ -87,57 +89,57 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
         RenderHelper.clearRenderColor();
     }
 
-//    /**
-//     * Blit/draw a part of this element.
-//     *
-//     * @param graphics The current pose stack.
-//     * @see GuiGraphics#blit(PoseStack, int, int, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, int, int, int, int)
-//     */
-//    public void blit(@Nonnull GuiGraphics graphics) {
-//        graphics.blit(this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
-//    }
-//
-//    /**
-//     * Blit/draw a part of this element.
-//     *
-//     * @param poseStack The current pose stack.
-//     * @param u         The u offset in the current texture to draw.
-//     * @param v         The v offset in the current texture to draw.
-//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
-//     */
-//    public void blit(@Nonnull PoseStack poseStack, int u, int v) {
-//        GuiGraphics.blit(poseStack, this.x, this.y, u, v, this.width, this.height, 256, 256);
-//    }
-//
-//    /**
-//     * Blit/draw a part of this element.
-//     *
-//     * @param poseStack The current pose stack.
-//     * @param width     How wide to draw the element.
-//     * @param height    How tall to draw the element.
-//     * @param u         The u offset in the current texture to draw.
-//     * @param v         The v offset in the current texture to draw.
-//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
-//     */
-//    public void blit(@Nonnull PoseStack poseStack, int width, int height, int u, int v) {
-//        GuiGraphics.blit(poseStack, this.x, this.y, u, v, width, height, 256, 256);
-//    }
-//
-//    /**
-//     * Blit/draw a part of this element.
-//     *
-//     * @param poseStack The current pose stack.
-//     * @param x         The x position to draw at.
-//     * @param y         The y position to draw at.
-//     * @param u         The u offset in the current texture to draw.
-//     * @param v         The v offset in the current texture to draw.
-//     * @param width     How wide to draw the element.
-//     * @param height    How tall to draw the element.
-//     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
-//     */
-//    public void blit(@Nonnull PoseStack poseStack, int x, int y, int u, int v, int width, int height) {
-//        GuiGraphics.blit(poseStack, x, y, u, v, width, height, 256, 256);
-//    }
+    /**
+     * Blit/draw a part of this element.
+     *
+     * @param graphics The current pose stack.
+     * @see GuiGraphics#blit(PoseStack, int, int, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, int, int, int, int)
+     */
+    public void blit(@Nonnull GuiGraphics graphics) {
+        graphics.blit(RenderHelper.getCurrentResource(), this.x, this.y, this.u, this.v, this.width, this.height, 256, 256);
+    }
+
+    /**
+     * Blit/draw a part of this element.
+     *
+     * @param poseStack The current pose stack.
+     * @param u         The u offset in the current texture to draw.
+     * @param v         The v offset in the current texture to draw.
+     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+     */
+    public void blit(@Nonnull GuiGraphics graphics, int u, int v) {
+        graphics.blit(RenderHelper.getCurrentResource(), this.x, this.y, u, v, this.width, this.height, 256, 256);
+    }
+
+    /**
+     * Blit/draw a part of this element.
+     *
+     * @param poseStack The current pose stack.
+     * @param width     How wide to draw the element.
+     * @param height    How tall to draw the element.
+     * @param u         The u offset in the current texture to draw.
+     * @param v         The v offset in the current texture to draw.
+     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+     */
+    public void blit(@Nonnull GuiGraphics graphics, int width, int height, int u, int v) {
+        graphics.blit(RenderHelper.getCurrentResource(), this.x, this.y, u, v, width, height, 256, 256);
+    }
+
+    /**
+     * Blit/draw a part of this element.
+     *
+     * @param poseStack The current pose stack.
+     * @param x         The x position to draw at.
+     * @param y         The y position to draw at.
+     * @param u         The u offset in the current texture to draw.
+     * @param v         The v offset in the current texture to draw.
+     * @param width     How wide to draw the element.
+     * @param height    How tall to draw the element.
+     * @see GuiGraphics#blit(PoseStack, int, int, float, float, int, int, int, int) GuiGraphics.blit(PoseStack, int, int, float, float, int, int, int, int)
+     */
+    public void blit(@Nonnull GuiGraphics graphics, int x, int y, int u, int v, int width, int height) {
+        graphics.blit(RenderHelper.getCurrentResource(), x, y, u, v, width, height, 256, 256);
+    }
 
     /**
      * Enable rendering of the element, as well as any associated tooltips.
