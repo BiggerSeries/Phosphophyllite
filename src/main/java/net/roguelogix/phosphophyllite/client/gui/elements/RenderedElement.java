@@ -58,17 +58,6 @@ public class RenderedElement<T extends AbstractContainerMenu> extends TooltipEle
     }
 
     /**
-     * Gets the parent screen's blit offset.
-     *
-     * @return The blit offset.
-     */
-    public int getBlitOffset() {
-        // TODO: figure out a proper replacement
-//        return this.parent.getBlitOffset();
-        return 0;
-    }
-
-    /**
      * Render the element.
      *
      * @param poseStack The current pose stack.

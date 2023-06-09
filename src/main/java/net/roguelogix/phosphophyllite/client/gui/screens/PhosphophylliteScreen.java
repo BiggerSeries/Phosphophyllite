@@ -152,7 +152,7 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
         }
 
         // Draw title.
-        guiGraphics.drawString(this.font, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752);
+        guiGraphics.drawString(this.font, this.title.getString(), this.titleLabelX, this.titleLabelY, 4210752, false);
     }
 
     /**
