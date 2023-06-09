@@ -2,15 +2,15 @@ package net.roguelogix.phosphophyllite.registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -18,8 +18,10 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.common.CreativeModeTabRegistry;
 import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.ForgeFlowingFluid;
@@ -36,10 +38,12 @@ import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.lang.annotation.ElementType;
 import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -72,6 +76,8 @@ public class Registry {
     private final ResourceLocation creativeTabResourceLocation;
     private final Component creativeTabTitle;
     private Item itemGroupItem = Items.STONE;
+    private List<ResourceLocation> tabsBefore;
+    private List<ResourceLocation> tabsAfter;
     private final ObjectArrayList<Item> creativeTabItems = new ObjectArrayList<>();
     
     private final WorkQueue fluidRegistrationQueue = new WorkQueue();
@@ -110,7 +116,7 @@ public class Registry {
 //        annotationMap.put(RegisterOre.class.getName(), this::registerWorldGenAnnotation);
     }
     
-    public Registry() {
+    public Registry(@Nonnull List<ResourceLocation> tabsBefore, @Nonnull List<ResourceLocation> tabsAfter) {
         String callerClass = new Exception().getStackTrace()[1].getClassName();
         String callerPackage = callerClass.substring(0, callerClass.lastIndexOf("."));
         String modNamespace = callerPackage.substring(callerPackage.lastIndexOf(".") + 1);
@@ -120,6 +126,9 @@ public class Registry {
         
         creativeTabResourceLocation = new ResourceLocation(modNamespace, "creative_tab");
         creativeTabTitle = Component.translatable("item_group." + modNamespace);
+        tabsBefore.add(CreativeModeTabs.SPAWN_EGGS.location());
+        this.tabsBefore = tabsBefore;
+        this.tabsAfter = tabsAfter;
         
         final var ignoredPackages = new ObjectArrayList<String>();
         
@@ -155,7 +164,6 @@ public class Registry {
 
 //        MinecraftForge.EVENT_BUS.addListener(EventPriority.HIGH, this::biomeLoadingEventHandler);
         ModBus.addListener(this::commonSetupEventHandler);
-//        ModBus.addListener(this::creativeTabEvent);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModBus.addListener(this::clientSetupEventHandler);
@@ -216,21 +224,21 @@ public class Registry {
         }
     }
     
-//    private void creativeTabEvent(CreativeModeTabEvent.Register event) {
-//        if (creativeTabItems.isEmpty()) {
-//            return;
-//        }
-//        event.registerCreativeModeTab(creativeTabResourceLocation, builder -> {
-//            builder.title(creativeTabTitle);
-//            builder.icon(() -> new ItemStack(itemGroupItem));
-//            builder.displayItems((enabledFlags, populator, hasPermissions) -> {
-//                final var creativeTabItemStacks = new ObjectArrayList<ItemStack>(creativeTabItems.size());
-//                creativeTabItems.forEach(item -> creativeTabItemStacks.add(new ItemStack(item)));
-//                creativeTabItemStacks.sort((o1, o2) -> o1.getDisplayName().getString().compareToIgnoreCase(o2.getDisplayName().getString()));
-//                creativeTabItemStacks.forEach(populator::accept);
-//            });
-//        });
-//    }
+    private void creativeTabEvent(RegisterEvent.RegisterHelper<CreativeModeTab> event) {
+        if (creativeTabItems.isEmpty()) {
+            return;
+        }
+        final var tabBuilder = CreativeModeTab.builder();
+        tabsBefore.forEach(tabBuilder::withTabsBefore);
+        tabsAfter.forEach(tabBuilder::withTabsAfter);
+        tabBuilder.title(creativeTabTitle);
+        tabBuilder.icon(() -> new ItemStack(itemGroupItem));
+        tabBuilder.displayItems((CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) -> {
+            creativeTabItems.forEach(output::accept);
+        });
+        final var tab = tabBuilder.build();
+        event.register(creativeTabResourceLocation, tab);
+    }
     
     private void registerEvent(RegisterEvent registerEvent) {
         registerEvent.register(ForgeRegistries.Keys.BLOCKS, this::blockRegistration);
@@ -239,6 +247,7 @@ public class Registry {
         registerEvent.register(ForgeRegistries.Keys.FLUID_TYPES, this::fluidTypeRegistration);
         registerEvent.register(ForgeRegistries.Keys.MENU_TYPES, this::containerRegistration);
         registerEvent.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, this::tileEntityRegistration);
+        registerEvent.register(Registries.CREATIVE_MODE_TAB, this::creativeTabEvent);
     }
     
     private void blockRegistration(RegisterEvent.RegisterHelper<Block> event) {

@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -44,7 +45,7 @@ public class Phosphophyllite {
     public static final PhosphophylliteConfig CONFIG = new PhosphophylliteConfig();
     
     public Phosphophyllite() {
-        new Registry();
+        new Registry(new ReferenceArrayList<>(), new ReferenceArrayList<>());
         MinecraftForge.EVENT_BUS.register(this);
         
         if (CONFIG.bypassPerformantCheck) {
