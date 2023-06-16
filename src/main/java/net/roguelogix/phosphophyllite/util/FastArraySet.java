@@ -75,4 +75,10 @@ public class FastArraySet<T> {
     public boolean isEmpty() {
         return elementList.isEmpty();
     }
+    
+    public void clear() {
+        version++;
+        indexMap.clear();
+        elementList.clear();
+    }
 }
