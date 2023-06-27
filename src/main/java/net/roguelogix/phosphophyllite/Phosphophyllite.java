@@ -9,7 +9,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.event.ReloadDataEvent;
-import net.roguelogix.phosphophyllite.multiblock2.MultiblockRegistry;
+import net.roguelogix.phosphophyllite.multiblock.MultiblockRegistry;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.threading.Queues;
@@ -26,8 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
