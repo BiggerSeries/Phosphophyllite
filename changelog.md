@@ -1,3 +1,13 @@
+# 1.20.1-0.7.0-alpha
+ - remove old multiblock system
+   - new system moved to multiblock package from multiblock2
+ - default @OnModLoad requirement to true
+ - add ability for @IgnoreRegistration at runtime only, enables dev-mode-only registration
+ - @CreativeTabBlock targets fields instead of a class
+ - missing multiblock parts check moved to 3rd stage, allows for better errors in some cases
+ - remove JOML repack, mojang ships it now
+ - add network helper
+
 # 1.19.2-0.6.0-beta.7.1
  - fix NBT saving issue, save delegate could skip saving nbt
 
