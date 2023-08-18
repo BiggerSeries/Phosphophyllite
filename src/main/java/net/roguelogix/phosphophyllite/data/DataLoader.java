@@ -10,9 +10,7 @@ import net.roguelogix.phosphophyllite.repack.tnjson.TnJson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
@@ -25,44 +23,44 @@ import java.util.*;
  */
 @Deprecated(forRemoval = true)
 public class DataLoader<T> {
-    
+
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Range {
         String value();
     }
-    
+
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Values {
         String[] value();
     }
-    
+
     private enum ElementType {
         String,
         ResourceLocation,
         LONG,
         Double
     }
-    
+
     private static class DataElement {
         Field field;
         ElementType type;
     }
-    
+
     private static class NumberDataElement extends DataElement {
         double lowerBound = Double.MIN_VALUE;
         boolean lowerInclusive = true;
         double upperBound = Double.MAX_VALUE;
         boolean upperInclusive = true;
     }
-    
+
     private static class StringDataElement extends DataElement {
         String[] allowedValues;
     }
-    
+
     private final Map<String, DataElement> dataMap = new HashMap<>();
     private final Constructor<T> constructor;
-    
-    
+
+
     public DataLoader(@Nonnull Class<T> clazz) {
         try {
             constructor = clazz.getDeclaredConstructor();
@@ -74,25 +72,25 @@ public class DataLoader<T> {
             declaredField.setAccessible(true);
             String name = declaredField.getName();
             DataElement element;
-            
+
             Class<?> fieldType = declaredField.getType();
             if (fieldType == long.class || fieldType == double.class) {
                 NumberDataElement numberElement = new NumberDataElement();
-                
+
                 if (declaredField.isAnnotationPresent(Range.class)) {
                     Range rangeAnnotation = declaredField.getAnnotation(Range.class);
                     String range = rangeAnnotation.value();
-                    
+
                     range = range.trim();
                     if (range.length() < 3) {
                         throw new IllegalArgumentException("Incomplete range given");
                     }
-                    
+
                     char lowerInclusiveChar = range.charAt(0);
                     char higherInclusiveChar = range.charAt(range.length() - 1);
                     boolean lowerInclusive;
                     boolean higherInclusive;
-                    
+
                     switch (lowerInclusiveChar) {
                         case '(': {
                             lowerInclusive = false;
@@ -119,7 +117,7 @@ public class DataLoader<T> {
                             throw new IllegalArgumentException("Unknown higher bound inclusivity");
                         }
                     }
-                    
+
                     range = range.substring(1, range.length() - 1).trim();
                     String[] bounds = range.split(",");
                     if (bounds.length > 2) {
@@ -160,56 +158,75 @@ public class DataLoader<T> {
                     if (lowerBound > higherBound) {
                         throw new IllegalArgumentException("Higher bound must be greater or equal to lower bound");
                     }
-                    
-                    
+
+
                     numberElement.lowerInclusive = lowerInclusive;
                     numberElement.upperInclusive = higherInclusive;
                     numberElement.lowerBound = lowerBound;
                     numberElement.upperBound = higherBound;
-                    
+
                 }
-                
+
                 if (fieldType == long.class) {
                     numberElement.type = ElementType.LONG;
                 } else {
                     numberElement.type = ElementType.Double;
                 }
-                
+
                 element = numberElement;
-                
+
             } else if (fieldType == String.class || fieldType == ResourceLocation.class) {
                 StringDataElement stringElement = new StringDataElement();
-                
+
                 if (declaredField.isAnnotationPresent(Values.class)) {
                     stringElement.allowedValues = declaredField.getAnnotation(Values.class).value();
                 }
-                
+
                 if (fieldType == ResourceLocation.class) {
                     stringElement.type = ElementType.ResourceLocation;
                 } else {
                     stringElement.type = ElementType.String;
                 }
-                
+
                 element = stringElement;
             } else {
                 throw new IllegalArgumentException("Invalid type used");
             }
-            
+
             element.field = declaredField;
             dataMap.put(name, element);
         }
     }
-    
+
+    @Nullable
+    private String loadJson(String location, BufferedReader reader) {
+        try {
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+                builder.append("\n");
+            }
+
+            return builder.toString();
+
+        } catch (IOException e) {
+            Phosphophyllite.LOGGER.error("Error reading json at " + location);
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @Nonnull
     public List<T> loadAll(ResourceLocation location) {
         if (Phosphophyllite.serverResourceManager == null) {
             return new ArrayList<>();
         }
-        
+
         ArrayList<T> elements = new ArrayList<>();
-        
+
         Map<ResourceLocation, Resource> resourceLocations = Phosphophyllite.serverResourceManager.listResources(location.getPath(), s -> s.getPath().contains(".json"));
-        
+
         for (Map.Entry<ResourceLocation, Resource> entry : resourceLocations.entrySet()) {
             final var resourceLocation = entry.getKey();
             if (!resourceLocation.getNamespace().equals(location.getNamespace())) {
@@ -220,10 +237,32 @@ public class DataLoader<T> {
                 elements.add(t);
             }
         }
-        
+
         return elements;
     }
-    
+
+    @Nonnull
+    public List<T> loadAll(File folder) {
+        ArrayList<T> elements = new ArrayList<>();
+
+        for (File fileEntry : folder.listFiles()) {
+            if (fileEntry != null && fileEntry.isFile()) {
+                String filename = fileEntry.getAbsolutePath();
+                try {
+                    T t = load(new FileReader(filename));
+                    if (t != null) {
+                        elements.add(t);
+                    }
+                } catch (FileNotFoundException e) {
+                    Phosphophyllite.LOGGER.error("File reading error, path: " + filename);
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return elements;
+    }
+
     @Nullable
     public T load(ResourceLocation location) {
         if (Phosphophyllite.serverResourceManager == null) {
@@ -231,36 +270,44 @@ public class DataLoader<T> {
         }
         return load(location, Phosphophyllite.serverResourceManager.getResource(location).get());
     }
-    
+
+    @Nullable
+    public T load(FileReader fileReader) {
+        String location = fileReader.toString();
+        String json = loadJson(location, new BufferedReader(fileReader));
+        if (json != null) {
+            return load(json, location);
+        }
+
+        return null;
+    }
+
     @Nullable
     private T load(ResourceLocation location, Resource resource) {
-        String json;
-        try {
-            try (BufferedReader reader = resource.openAsReader()) {
-                StringBuilder builder = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    builder.append(line);
-                    builder.append("\n");
-                }
-                json = builder.toString();
+        try (BufferedReader reader = resource.openAsReader()) {
+            String json = loadJson(location.toString(), reader);
+            if (json != null) {
+                return load(json, location.toString());
             }
-            
         } catch (IOException e) {
             Phosphophyllite.LOGGER.error("Error reading json at " + location.toString());
             e.printStackTrace();
-            return null;
         }
-        
+
+        return null;
+    }
+
+    @Nullable
+    private T load(String json, String location) {
         Map<String, Object> map;
         try {
             map = TnJson.parse(json);
         } catch (ParseException e) {
-            Phosphophyllite.LOGGER.error("Error parsing json at " + location.toString());
+            Phosphophyllite.LOGGER.error("Error parsing json at " + location);
             e.printStackTrace();
             return null;
         }
-        
+
         T newT;
         try {
             newT = constructor.newInstance();
@@ -274,14 +321,14 @@ public class DataLoader<T> {
             DataElement dataElement = dataElementEntry.getValue();
             Object object = map.get(name);
             if (object == null) {
-                Phosphophyllite.LOGGER.error("Data member \"" + name + "\" not found in json at " + location.toString());
+                Phosphophyllite.LOGGER.error("Data member \"" + name + "\" not found in json at " + location);
                 return null;
             }
             if (dataElement.type == ElementType.LONG || dataElement.type == ElementType.Double) {
                 NumberDataElement numberDataElement = (NumberDataElement) dataElement;
-                
+
                 if (!(object instanceof Number)) {
-                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a number given as " + object.getClass().getSimpleName() + " in json at " + location.toString());
+                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a number given as " + object.getClass().getSimpleName() + " in json at " + location);
                     return null;
                 }
                 double val = ((Number) object).doubleValue();
@@ -290,7 +337,7 @@ public class DataLoader<T> {
                     if (realVal < numberDataElement.lowerBound || realVal > numberDataElement.upperBound ||
                             (realVal <= numberDataElement.lowerBound && !(numberDataElement.lowerInclusive)) ||
                             (realVal >= numberDataElement.upperBound && !numberDataElement.upperInclusive)) {
-                        Phosphophyllite.LOGGER.error("Data member \"" + name + "\" given out of range value " + val + " in json at " + location.toString() + ". Valid range is " +
+                        Phosphophyllite.LOGGER.error("Data member \"" + name + "\" given out of range value " + val + " in json at " + location + ". Valid range is " +
                                 ((numberDataElement.lowerInclusive ? "[" : "(" + ((numberDataElement.lowerBound == Double.MIN_VALUE) ? "" : numberDataElement.lowerBound))) +
                                 "," +
                                 (((numberDataElement.upperBound == Double.MAX_VALUE) ? "" : numberDataElement.upperBound) + (numberDataElement.upperInclusive ? "]" : ")")) +
@@ -318,7 +365,7 @@ public class DataLoader<T> {
                     if (val < numberDataElement.lowerBound || val > numberDataElement.upperBound ||
                             (val <= numberDataElement.lowerBound && !(numberDataElement.lowerInclusive)) ||
                             (val >= numberDataElement.upperBound && !numberDataElement.upperInclusive)) {
-                        Phosphophyllite.LOGGER.error("Data member \"" + name + "\" given out of range value " + val + " in json at " + location.toString() + ". Valid range is " +
+                        Phosphophyllite.LOGGER.error("Data member \"" + name + "\" given out of range value " + val + " in json at " + location + ". Valid range is " +
                                 ((numberDataElement.lowerInclusive ? "[" : "(" + ((numberDataElement.lowerBound == Double.MIN_VALUE) ? "" : numberDataElement.lowerBound))) +
                                 "," +
                                 (((numberDataElement.upperBound == Double.MAX_VALUE) ? "" : numberDataElement.upperBound) + (numberDataElement.upperInclusive ? "]" : ")")) +
@@ -343,17 +390,17 @@ public class DataLoader<T> {
                         return null;
                     }
                 }
-                
+
             } else if (dataElement.type == ElementType.String) {
                 StringDataElement stringDataElement = (StringDataElement) dataElement;
-                
+
                 if (!(object instanceof String)) {
-                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a string given as " + object.getClass().getSimpleName() + " in json at " + location.toString());
+                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a string given as " + object.getClass().getSimpleName() + " in json at " + location);
                     return null;
                 }
-                
+
                 String data = (String) object;
-                
+
                 try {
                     stringDataElement.field.set(newT, data);
                 } catch (IllegalAccessException e) {
@@ -361,7 +408,7 @@ public class DataLoader<T> {
                     e.printStackTrace();
                     return null;
                 }
-                
+
                 if (stringDataElement.allowedValues != null) {
                     boolean allowed = false;
                     for (String allowedValue : stringDataElement.allowedValues) {
@@ -371,24 +418,24 @@ public class DataLoader<T> {
                         }
                     }
                     if (!allowed) {
-                        Phosphophyllite.LOGGER.error("Invalid value for member \"" + name + "\" given in json at " + location.toString());
+                        Phosphophyllite.LOGGER.error("Invalid value for member \"" + name + "\" given in json at " + location);
                         return null;
                     }
                 }
             } else if (dataElement.type == ElementType.ResourceLocation) {
                 StringDataElement stringDataElement = (StringDataElement) dataElement;
-                
+
                 if (!(object instanceof String)) {
-                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a resource location string given as " + object.getClass().getSimpleName() + " in json at " + location.toString());
+                    Phosphophyllite.LOGGER.error("Data member \"" + name + "\" required to be a resource location string given as " + object.getClass().getSimpleName() + " in json at " + location);
                     return null;
                 }
-                
+
                 String data = (String) object;
-                
+
                 try {
                     stringDataElement.field.set(newT, new ResourceLocation(data));
                 } catch (ResourceLocationException e) {
-                    Phosphophyllite.LOGGER.error("Invalid resource location given for \"" + name + "\" in json at " + location.toString());
+                    Phosphophyllite.LOGGER.error("Invalid resource location given for \"" + name + "\" in json at " + location);
                     Phosphophyllite.LOGGER.error(e.getMessage());
                     return null;
                 } catch (IllegalAccessException e) {
@@ -401,7 +448,7 @@ public class DataLoader<T> {
                 return null;
             }
         }
-        
+
         return newT;
     }
 }
