@@ -1,3 +1,7 @@
+# 1.19.2-0.6.0-beta.8
+ - add network channel helper
+ - use fastutil types in ROBN
+
 # 1.19.2-0.6.0-beta.7.1
  - fix NBT saving issue, save delegate could skip saving nbt
 
