@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[${fmlVersion},)"
+loaderVersion="[${loader_version},)"
 license="LGPL v2.1"
 issueTrackerURL="https://github.com/BiggerSeries/Phosphophyllite/issues/"
 
@@ -18,12 +18,12 @@ Library for the BiggerSeries mods
 [[dependencies.phosphophyllite]] 
     modId="forge"
     mandatory=true
-    versionRange="[${forgeVersion},)"
+    versionRange="[${neo_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.phosphophyllite]]
     modId="minecraft"
     mandatory=true
-    versionRange="[${mcVersion}]"
+    versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"
