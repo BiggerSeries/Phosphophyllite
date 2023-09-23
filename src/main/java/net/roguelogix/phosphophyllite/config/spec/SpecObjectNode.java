@@ -322,7 +322,12 @@ public class SpecObjectNode extends SpecNode {
                         break nextEntry;
                     }
                 }
-                final var newElement = node.generateDefaultElement();
+                final Element newElement;
+                if (node instanceof SpecObjectNode objectNode) {
+                    newElement = objectNode.generateDefaultElement(enableAdvanced);
+                } else {
+                    newElement = node.generateDefaultElement();
+                }
                 if (newElement == null) {
                     break nextEntry;
                 }
