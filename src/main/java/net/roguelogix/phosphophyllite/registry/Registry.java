@@ -884,6 +884,10 @@ public class Registry {
                     return;
                 }
             }
+            
+            var annotation = method.getAnnotation(OnModLoad.class);
+            var required = annotation.required();
+            
             if (!Modifier.isStatic(method.getModifiers())) {
                 LOGGER.error("Cannot call non-static @OnModLoad method " + method.getName() + " in " + modLoadClazz.getSimpleName());
                 return;
@@ -903,7 +907,7 @@ public class Registry {
             
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
-        } catch (RuntimeException e) {
+        } catch (ExceptionInInitializerError | RuntimeException e) {
             LOGGER.warn(modLoadClazz.getName());
             e.printStackTrace();
         }
