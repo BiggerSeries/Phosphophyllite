@@ -13,8 +13,7 @@ jobs:
       release_type: ${{ steps.relinfo.outputs.reltype }}
     steps:
       - uses: actions/checkout@v2
-      - run: ./gradlew build
-      - run: ./gradlew publish
+      - run: ./gradlew :publish
         env:
           RESOURCEFUL_MAVEN_USER: ${{ secrets.RESOURCEFUL_MAVEN_USER }}
           RESOURCEFUL_MAVEN_PASS: ${{ secrets.RESOURCEFUL_MAVEN_PASS }}
