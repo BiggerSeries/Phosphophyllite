@@ -387,7 +387,7 @@ class JsonSerializer {
     Field[] fields = cls.getDeclaredFields();
     for (Field field : fields) {
       int modifiers = field.getModifiers();
-      boolean allow = !field.isSynthetic() && !Modifier.isPrivate(modifiers) && !Modifier.isTransient(modifiers);
+      boolean allow = !field.isSynthetic() && !Modifier.isPrivate(modifiers) && !Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers);
       if (! allow) {
         continue;
       }
