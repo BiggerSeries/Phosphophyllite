@@ -25,6 +25,16 @@ public class SpecObjectNode extends SpecNode {
     public final Map<String, SpecNode> subNodes;
     public final List<SpecNode> subNodeList;
     
+    private static final Class<ResourceLocation> RESOURCE_LOCATION_CLASS;
+    static {
+        Class<ResourceLocation> foundClass = null;
+        try {
+            foundClass = ResourceLocation.class;
+        } catch (NoClassDefFoundError ignored){
+        }
+        RESOURCE_LOCATION_CLASS = foundClass;
+    }
+    
     protected static class EnableAdvancedNode extends SpecNode {
         
         private boolean advancedEnabled;
@@ -162,7 +172,7 @@ public class SpecObjectNode extends SpecNode {
             
             if (fieldClazz == String.class) {
                 subNode = new SpecStringNode(this, objectField, defaults);
-            } else if (fieldClazz == ResourceLocation.class) {
+            } else if (fieldClazz == RESOURCE_LOCATION_CLASS) {
                 subNode = new SpecResourceLocationNode(this, objectField, defaults);
             } else if (fieldClazz.isPrimitive() || Boolean.class.isAssignableFrom(fieldClazz) || Number.class.isAssignableFrom(fieldClazz)) {
                 if (fieldClazz == boolean.class || fieldClazz == Boolean.class) {

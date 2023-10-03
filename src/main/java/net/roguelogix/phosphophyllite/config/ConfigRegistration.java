@@ -1,10 +1,10 @@
 package net.roguelogix.phosphophyllite.config;
 
-import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.roguelogix.phosphophyllite.config.spec.ConfigOptionsDefaults;
 import net.roguelogix.phosphophyllite.config.spec.SpecObjectNode;
 import net.roguelogix.phosphophyllite.parsers.Element;
+import net.roguelogix.phosphophyllite.util.Pair;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -62,9 +62,9 @@ public class ConfigRegistration {
             return;
         }
         
-        final var fileElement = readFile(foundFile.getFirst(), foundFile.getSecond());
-        if (!foundFile.getFirst().equals(writeFile)) {
-            writeFile(null, foundFile.getFirst(), foundFile.getSecond());
+        final var fileElement = readFile(foundFile.first, foundFile.second);
+        if (!foundFile.first.equals(writeFile)) {
+            writeFile(null, foundFile.first, foundFile.second);
         }
         if (fileElement == null) {
             generateFile(reload);

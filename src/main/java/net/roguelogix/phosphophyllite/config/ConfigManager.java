@@ -46,12 +46,14 @@ import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
 public class ConfigManager {
     static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Config");
     private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel NETWORK_CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(modid, "phosphophyllite/configsync"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
+    private static class ClassLoadingHelper {
+        public static final SimpleChannel NETWORK_CHANNEL = NetworkRegistry.newSimpleChannel(
+                new ResourceLocation(modid, "phosphophyllite/configsync"),
+                () -> PROTOCOL_VERSION,
+                PROTOCOL_VERSION::equals,
+                PROTOCOL_VERSION::equals
+        );
+    }
     
     private static final Object2ObjectOpenHashMap<String, ConfigRegistration> clientConfigs = new Object2ObjectOpenHashMap<>();
     private static final Object2ObjectOpenHashMap<String, ConfigRegistration> commonConfigs = new Object2ObjectOpenHashMap<>();
@@ -170,7 +172,7 @@ public class ConfigManager {
     
     @OnModLoad
     private static void onModLoad() {
-        NETWORK_CHANNEL.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
+        ClassLoadingHelper.NETWORK_CHANNEL.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogin);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
         MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
@@ -233,7 +235,7 @@ public class ConfigManager {
         for (int i = 0; i < robn.size(); i++) {
             bytes[i] = robn.get(i);
         }
-        NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+        ClassLoadingHelper.NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
     
     private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
