@@ -1,3 +1,9 @@
+# 1.20.1-0.7.0-alpha.1
+ - migrate to Neo
+ - better error handling of @OnModLoad functions
+ - TnJSON bugfix
+ - config system can be loaded without Neo present in classpath
+
 # 1.20.1-0.7.0-alpha
  - remove old multiblock system
    - new system moved to multiblock package from multiblock2
