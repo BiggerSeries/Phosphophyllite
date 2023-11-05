@@ -14,21 +14,21 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.forgespi.language.ModFileScanData;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforgespi.language.ModFileScanData;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
@@ -486,7 +486,7 @@ public class Registry {
             }
             
             
-            if (!ForgeFlowingFluid.class.isAssignableFrom(fluidClazz)) {
+            if (!BaseFlowingFluid.class.isAssignableFrom(fluidClazz)) {
                 LOGGER.error("Attempt to register fluid from class not extended from PhosphophylliteFluid");
                 return;
             }
@@ -500,7 +500,7 @@ public class Registry {
             
             Constructor<?> constructor;
             try {
-                constructor = fluidClazz.getDeclaredConstructor(ForgeFlowingFluid.Properties.class);
+                constructor = fluidClazz.getDeclaredConstructor(BaseFlowingFluid.Properties.class);
             } catch (NoSuchMethodException e) {
                 LOGGER.error("Failed to find constructor to create instance of " + fluidClazz.getSimpleName());
                 return;
@@ -539,7 +539,7 @@ public class Registry {
                 }
             };
             
-            ForgeFlowingFluid.Properties properties = new ForgeFlowingFluid.Properties(() -> fluidType, stillSupplier, flowingSupplier);
+            BaseFlowingFluid.Properties properties = new BaseFlowingFluid.Properties(() -> fluidType, stillSupplier, flowingSupplier);
             if (annotation.registerBucket()) {
                 properties.bucket(() -> bucketArray[0]);
             }
@@ -695,7 +695,7 @@ public class Registry {
             }
             
             ContainerSupplier finalSupplier = supplier;
-            containerTypeArray[0] = IForgeMenuType.create((windowId, playerInventory, data) -> finalSupplier.create(windowId, data.readBlockPos(), playerInventory.player));
+            containerTypeArray[0] = IMenuTypeExtension.create((windowId, playerInventory, data) -> finalSupplier.create(windowId, data.readBlockPos(), playerInventory.player));
             
             for (Field declaredField : containerClazz.getDeclaredFields()) {
                 if (declaredField.isAnnotationPresent(RegisterContainer.Type.class)) {

@@ -9,17 +9,17 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkRegistry;
+import net.neoforged.neoforge.network.PlayNetworkDirection;
+import net.neoforged.neoforge.network.simple.SimpleChannel;
 import net.roguelogix.phosphophyllite.parsers.ROBN;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
@@ -173,13 +173,13 @@ public class ConfigManager {
     @OnModLoad
     private static void onModLoad() {
         ClassLoadingHelper.NETWORK_CHANNEL.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogin);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
-        MinecraftForge.EVENT_BUS.addListener(ConfigManager::onServerStopped);
+        NeoForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogin);
+        NeoForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
+        NeoForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
+        NeoForge.EVENT_BUS.addListener(ConfigManager::onServerStopped);
         if (FMLEnvironment.dist.isClient()) {
-            MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingIn);
-            MinecraftForge.EVENT_BUS.addListener(ConfigManager::onLoggingOut);
+            NeoForge.EVENT_BUS.addListener(ConfigManager::onLoggingIn);
+            NeoForge.EVENT_BUS.addListener(ConfigManager::onLoggingOut);
         }
     }
     
@@ -206,7 +206,7 @@ public class ConfigManager {
         assert server != null;
         if (!server.isDedicatedServer()) {
             var serverUUID = e.getEntity().getUUID();
-            var localUUID = Minecraft.getInstance().getUser().getUuid();
+            var localUUID = Minecraft.getInstance().getUser().getXuid();
             if (serverUUID.toString().equals(localUUID)) {
                 // ignore local player on integrated server
                 // do have the configs reload the saved tree though
@@ -235,7 +235,7 @@ public class ConfigManager {
         for (int i = 0; i < robn.size(); i++) {
             bytes[i] = robn.get(i);
         }
-        ClassLoadingHelper.NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+        ClassLoadingHelper.NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, PlayNetworkDirection.PLAY_TO_CLIENT);
     }
     
     private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
@@ -243,12 +243,12 @@ public class ConfigManager {
         players.remove(player);
     }
     
-    private static void packetHandler(@Nonnull ByteArrayPacketMessage packet, @Nonnull Supplier<NetworkEvent.Context> ctx) {
-        if (ctx.get().getDirection() != NetworkDirection.PLAY_TO_CLIENT) {
-            ctx.get().setPacketHandled(true);
+    private static void packetHandler(@Nonnull ByteArrayPacketMessage packet, @Nonnull NetworkEvent.Context ctx) {
+        if (ctx.getDirection() != PlayNetworkDirection.PLAY_TO_CLIENT) {
+            ctx.setPacketHandled(true);
             return;
         }
-        ctx.get().enqueueWork(() -> {
+        ctx.enqueueWork(() -> {
             try {
                 ArrayList<Byte> buf = new ArrayList<>();
                 for (byte aByte : packet.bytes) {
@@ -273,7 +273,7 @@ public class ConfigManager {
             } catch (ClassCastException ignored) {
             }
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
     
     private static class ByteArrayPacketMessage {

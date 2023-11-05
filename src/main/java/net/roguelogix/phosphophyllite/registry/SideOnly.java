@@ -1,6 +1,6 @@
 package net.roguelogix.phosphophyllite.registry;
 
-import net.minecraftforge.api.distmarker.Dist;
+import net.neoforged.api.distmarker.Dist;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

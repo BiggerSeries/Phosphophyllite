@@ -3,10 +3,11 @@ package net.roguelogix.phosphophyllite.networking;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.PlayNetworkDirection;
+import net.neoforged.neoforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkRegistry;
+import net.neoforged.neoforge.network.simple.MessageFunctions;
+import net.neoforged.neoforge.network.simple.SimpleChannel;
 import net.roguelogix.phosphophyllite.serialization.PhosphophylliteCompound;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
@@ -37,8 +38,7 @@ public class SimplePhosChannel {
         return new PhosphophylliteCompound(buf.readByteArray());
     }
     
-    private void handler(PhosphophylliteCompound compound, @Nonnull Supplier<NetworkEvent.Context> ctxs) {
-        final var ctx = ctxs.get();
+    private void handler(PhosphophylliteCompound compound, @Nonnull NetworkEvent.Context ctx) {
         ctx.enqueueWork(() -> {
             callbackFunction.accept(compound);
         });
@@ -50,6 +50,6 @@ public class SimplePhosChannel {
     }
     
     public void sendToPlayer(ServerPlayer serverPlayer, PhosphophylliteCompound compound) {
-        simpleChannel.sendTo(compound, serverPlayer.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+        simpleChannel.sendTo(compound, serverPlayer.connection.connection, PlayNetworkDirection.PLAY_TO_CLIENT);
     }
 }

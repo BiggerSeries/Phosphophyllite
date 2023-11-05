@@ -8,9 +8,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.ChunkTicketLevelUpdatedEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.ChunkEvent;
+import net.neoforged.neoforge.event.level.ChunkTicketLevelUpdatedEvent;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.ModuleRegistry;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
@@ -56,7 +56,7 @@ public interface IIsTickingTracker {
         @OnModLoad
         private static void onModLoad() {
             ModuleRegistry.registerTileModule(Tile.class, Module::new);
-            MinecraftForge.EVENT_BUS.addListener(Module::ticketEventListener);
+            NeoForge.EVENT_BUS.addListener(Module::ticketEventListener);
         }
         
         public Module(IModularTile iface) {

@@ -11,8 +11,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.roguelogix.phosphophyllite.client.gui.RenderHelper;
 import net.roguelogix.phosphophyllite.client.gui.api.IRender;
 import net.roguelogix.phosphophyllite.client.gui.api.ITooltip;
@@ -117,7 +117,7 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
      */
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
 
         // Draw tooltips for all the elements that belong to this screen.
@@ -296,16 +296,16 @@ public class PhosphophylliteScreen<T extends AbstractContainerMenu> extends Abst
      * @return Whether the event was consumed.
      */
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta, double idfk) {
         // Iterate through this screen's elements.
         boolean handled = false;
         for (AbstractElement element : this.screenElements) {
             // Check conditions, and trigger.
             if (element != null) {
-                handled = (handled || element.mouseScrolled(mouseX, mouseY, delta));
+                handled = (handled || element.mouseScrolled(mouseX, mouseY, delta, idfk));
             }
         }
-        return (handled || super.mouseScrolled(mouseX, mouseY, delta));
+        return (handled || super.mouseScrolled(mouseX, mouseY, delta, idfk));
     }
 
     /**

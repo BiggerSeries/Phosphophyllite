@@ -12,11 +12,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.capabilities.Capability;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
@@ -79,8 +79,8 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     private int index = 0;
     
     static {
-        MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::serverStopEvent);
-        MinecraftForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
+        NeoForge.EVENT_BUS.addListener(PhosphophylliteTile::serverStopEvent);
+        NeoForge.EVENT_BUS.addListener(PhosphophylliteTile::worldUnloadEvent);
     }
     
     private static void worldUnloadEvent(LevelEvent.Unload unload) {

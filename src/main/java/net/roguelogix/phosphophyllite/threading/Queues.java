@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.threading;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 
 public class Queues {

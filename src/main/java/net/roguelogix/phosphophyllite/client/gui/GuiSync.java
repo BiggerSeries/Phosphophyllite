@@ -8,16 +8,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerContainerEvent;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkRegistry;
+import net.neoforged.neoforge.network.PlayNetworkDirection;
+import net.neoforged.neoforge.network.simple.SimpleChannel;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.robn.ROBN;
@@ -126,10 +126,10 @@ public class GuiSync {
     @OnModLoad
     public static void onModLoad() {
         INSTANCE.registerMessage(1, GUIPacketMessage.class, GuiSync::encodePacket, GuiSync::decodePacket, GuiSync::handler);
-        MinecraftForge.EVENT_BUS.addListener(GuiSync::onContainerClose);
-        MinecraftForge.EVENT_BUS.addListener(GuiSync::onContainerOpen);
+        NeoForge.EVENT_BUS.addListener(GuiSync::onContainerClose);
+        NeoForge.EVENT_BUS.addListener(GuiSync::onContainerOpen);
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            MinecraftForge.EVENT_BUS.addListener(GuiSync::GuiOpenEvent);
+            NeoForge.EVENT_BUS.addListener(GuiSync::GuiOpenEvent);
         }
         Thread updateThread = new Thread(() -> {
             while (true) {
@@ -157,7 +157,7 @@ public class GuiSync {
                             for (int i = 0; i < buf.size(); i++) {
                                 message.bytes[i] = buf.get(i);
                             }
-                            INSTANCE.sendTo(message, ((ServerPlayer) player).connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+                            INSTANCE.sendTo(message, ((ServerPlayer) player).connection.connection, PlayNetworkDirection.PLAY_TO_CLIENT);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -186,9 +186,9 @@ public class GuiSync {
         return new GUIPacketMessage(byteBuf);
     }
     
-    private static void handler(@Nonnull GUIPacketMessage packet, @Nonnull Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            NetworkDirection direction = ctx.get().getDirection();
+    private static void handler(@Nonnull GUIPacketMessage packet, @Nonnull NetworkEvent.Context ctx) {
+        ctx.enqueueWork(() -> {
+            var direction = ctx.getDirection();
             IGUIPacketProvider currentGUI;
             ArrayList<Byte> buf = new ArrayList<>();
             for (byte aByte : packet.bytes) {
@@ -196,7 +196,7 @@ public class GuiSync {
             }
             Map<?, ?> map = (Map<?, ?>) ROBN.fromROBN(buf);
             
-            if (direction == NetworkDirection.PLAY_TO_CLIENT) {
+            if (direction == PlayNetworkDirection.PLAY_TO_CLIENT) {
                 currentGUI = GuiSync.currentGUI;
                 if (currentGUI != null) {
                     IGUIPacket guiPacket = currentGUI.getGuiPacket();
@@ -205,12 +205,12 @@ public class GuiSync {
                     }
                 }
             } else {
-                currentGUI = playerGUIs.get(ctx.get().getSender());
+                currentGUI = playerGUIs.get(ctx.getSender());
                 if (currentGUI != null) {
                     currentGUI.executeRequest((String) map.get("request"), map.get("data"));
                 }
             }
         });
-        ctx.get().setPacketHandled(true);
+        ctx.setPacketHandled(true);
     }
 }

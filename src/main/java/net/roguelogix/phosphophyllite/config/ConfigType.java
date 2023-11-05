@@ -1,6 +1,7 @@
 package net.roguelogix.phosphophyllite.config;
 
-import net.minecraftforge.fml.loading.FMLEnvironment;
+
+import net.neoforged.fml.loading.FMLEnvironment;
 
 public enum ConfigType {
     NULL(false),

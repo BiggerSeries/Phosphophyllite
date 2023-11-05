@@ -3,11 +3,11 @@ package net.roguelogix.phosphophyllite.registry;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 import javax.annotation.Nonnull;
 
-public class PhosphophylliteFluid extends ForgeFlowingFluid {
+public class PhosphophylliteFluid extends BaseFlowingFluid {
     
     protected PhosphophylliteFluid(Properties properties) {
         super(properties);

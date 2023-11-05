@@ -1,7 +1,7 @@
 package net.roguelogix.phosphophyllite.mixin.mixins;
 
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.common.util.NonNullConsumer;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.common.util.NonNullConsumer;
 import net.roguelogix.phosphophyllite.mixin.helpers.IPhosphophylliteLazyOptional;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

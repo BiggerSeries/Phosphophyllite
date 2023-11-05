@@ -3,8 +3,8 @@ package net.roguelogix.phosphophyllite.client.gui.elements;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.roguelogix.phosphophyllite.client.gui.screens.PhosphophylliteScreen;
 import net.roguelogix.phosphophyllite.client.gui.ScreenCallbacks;
 

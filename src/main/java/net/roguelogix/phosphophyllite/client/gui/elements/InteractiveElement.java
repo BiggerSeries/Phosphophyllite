@@ -6,8 +6,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.roguelogix.phosphophyllite.client.gui.screens.PhosphophylliteScreen;
 import net.roguelogix.phosphophyllite.client.gui.ScreenCallbacks;
 
@@ -191,7 +191,7 @@ public class InteractiveElement<T extends AbstractContainerMenu> extends Rendere
      * @return Whether the event was consumed.
      */
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta, double idfk) {
         // Check conditions, and trigger.
         if (this.actionEnable && this.onMouseScrolled != null) {
             return this.onMouseScrolled.trigger(mouseX, mouseY, delta);

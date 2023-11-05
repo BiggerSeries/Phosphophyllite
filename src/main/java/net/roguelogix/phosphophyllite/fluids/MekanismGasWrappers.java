@@ -17,12 +17,12 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.server.ServerAboutToStartEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
@@ -107,9 +107,9 @@ public class MekanismGasWrappers {
     
     @OnModLoad(required = false)
     private static void onModLoad() {
-        MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::addReloadEventListener);
-        MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::serverAboutToStart);
-        MinecraftForge.EVENT_BUS.addListener(MekanismGasWrappers::serverStopped);
+        NeoForge.EVENT_BUS.addListener(MekanismGasWrappers::addReloadEventListener);
+        NeoForge.EVENT_BUS.addListener(MekanismGasWrappers::serverAboutToStart);
+        NeoForge.EVENT_BUS.addListener(MekanismGasWrappers::serverStopped);
     }
     
     private static void addReloadEventListener(AddReloadListenerEvent event) {
@@ -171,9 +171,10 @@ public class MekanismGasWrappers {
         if (type == null || server == null) {
             return;
         }
-        List<RotaryRecipe> recipes = server.getRecipeManager().getAllRecipesFor(type);
+        var recipes = server.getRecipeManager().getAllRecipesFor(type);
         
-        for (RotaryRecipe recipe : recipes) {
+        for (var recipeHolder : recipes) {
+            var recipe = recipeHolder.value();
             Mapping mapping = new Mapping();
             if (recipe.hasGasToFluid()) {
                 
@@ -182,7 +183,7 @@ public class MekanismGasWrappers {
                     Gas gas = input.getType();
                     long amount = input.getAmount();
                     if (mapping.gasToFluidGasUnits != -1 && mapping.gasToFluidGasUnits != amount) {
-                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipe.getId() + " with gas " + gas.getName() + " wanting " + amount + " input while a different gas wants " + mapping.gasToFluidGasUnits);
+                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipeHolder.id() + " with gas " + gas.getName() + " wanting " + amount + " input while a different gas wants " + mapping.gasToFluidGasUnits);
                         continue;
                     }
                     if (!mapping.gases.contains(gas)) {
@@ -191,7 +192,9 @@ public class MekanismGasWrappers {
                     mapping.gasToFluidGasUnits = amount;
                 }
                 
-                FluidStack output = recipe.getFluidOutputDefinition().get(0);
+                // TODO: this is broken, need to update to the 1.20.2 API
+                //       this bullshittery gets it to compile though
+                FluidStack output = ((List<FluidStack>)((Object)recipe.getFluidOutputDefinition())).get(0);
                 if (!mapping.fluids.contains(output.getRawFluid())) {
                     mapping.fluids.add(output.getRawFluid());
                 }
@@ -208,12 +211,14 @@ public class MekanismGasWrappers {
             }
             if (recipe.hasFluidToGas()) {
                 
-                List<FluidStack> inputs = recipe.getFluidInput().getRepresentations();
+                // TODO: this is broken, need to update to the 1.20.2 API
+                //       this bullshittery gets it to compile though
+                List<FluidStack> inputs = null;
                 for (FluidStack input : inputs) {
                     Fluid fluid = input.getRawFluid();
                     long amount = input.getAmount();
                     if (mapping.gasToFluidGasUnits != -1 && mapping.gasToFluidGasUnits != amount) {
-                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipe.getId() + " with fluid " + ForgeRegistries.FLUIDS.getKey(fluid) + " wanting " + amount + " input while a different gas wants " + mapping.fluidToGasFluidUnits);
+                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipeHolder.id() + " with fluid " + ForgeRegistries.FLUIDS.getKey(fluid) + " wanting " + amount + " input while a different gas wants " + mapping.fluidToGasFluidUnits);
                         continue;
                     }
                     if (!mapping.fluids.contains(fluid)) {

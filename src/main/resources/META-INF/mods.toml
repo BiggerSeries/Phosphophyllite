@@ -16,7 +16,7 @@ Library for the BiggerSeries mods
 '''
 
 [[dependencies.phosphophyllite]] 
-    modId="forge"
+    modId="neoforge"
     mandatory=true
     versionRange="[${neo_version},)"
     ordering="NONE"

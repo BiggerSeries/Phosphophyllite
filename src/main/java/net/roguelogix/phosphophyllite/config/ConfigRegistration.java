@@ -62,9 +62,9 @@ public class ConfigRegistration {
             return;
         }
         
-        final var fileElement = readFile(foundFile.first, foundFile.second);
-        if (!foundFile.first.equals(writeFile)) {
-            writeFile(null, foundFile.first, foundFile.second);
+        final var fileElement = readFile(foundFile.first(), foundFile.second());
+        if (!foundFile.first().equals(writeFile)) {
+            writeFile(null, foundFile.first(), foundFile.second());
         }
         if (fileElement == null) {
             generateFile(reload);

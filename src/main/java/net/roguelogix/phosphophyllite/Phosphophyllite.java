@@ -6,14 +6,14 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TagsUpdatedEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
-import net.minecraftforge.event.server.ServerStoppedEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
+import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.event.ReloadDataEvent;
 import net.roguelogix.phosphophyllite.multiblock.MultiblockRegistry;
@@ -43,7 +43,7 @@ public class Phosphophyllite {
     
     public Phosphophyllite() {
         new Registry(new ReferenceArrayList<>(), new ReferenceArrayList<>());
-        MinecraftForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(this);
         
         if (CONFIG.bypassPerformantCheck) {
             LOGGER.warn("Performant check bypassed");
@@ -94,7 +94,7 @@ public class Phosphophyllite {
             }
         }
         serverResourceManager = server.getResourceManager();
-        MinecraftForge.EVENT_BUS.post(new ReloadDataEvent());
+        NeoForge.EVENT_BUS.post(new ReloadDataEvent());
         MultiblockRegistry.revalidateAll();
     }
     

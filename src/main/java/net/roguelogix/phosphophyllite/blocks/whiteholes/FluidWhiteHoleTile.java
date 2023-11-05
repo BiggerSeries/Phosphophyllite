@@ -8,11 +8,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.common.capabilities.Capabilities;
+import net.neoforged.neoforge.common.capabilities.Capability;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
 
@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static net.minecraftforge.fluids.FluidStack.loadFluidStackFromNBT;
+import static net.neoforged.neoforge.fluids.FluidStack.loadFluidStackFromNBT;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -36,7 +36,7 @@ public class FluidWhiteHoleTile extends PhosphophylliteTile implements IFluidHan
     @Nonnull
     @Override
     public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+        if (cap == Capabilities.FLUID_HANDLER) {
             return LazyOptional.of(() -> this).cast();
         }
         return super.capability(cap, side);
@@ -107,7 +107,7 @@ public class FluidWhiteHoleTile extends PhosphophylliteTile implements IFluidHan
         for (Direction direction : Direction.values()) {
             BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
             if (te != null) {
-                te.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite()).ifPresent(c -> c.fill(fluidStack.copy(), FluidAction.EXECUTE));
+                te.getCapability(Capabilities.FLUID_HANDLER, direction.getOpposite()).ifPresent(c -> c.fill(fluidStack.copy(), FluidAction.EXECUTE));
             }
         }
     }
