@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerChunkCache;
@@ -29,7 +30,6 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.neoforged.neoforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Contract;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
@@ -480,8 +480,8 @@ public class Util {
     }
     
     
-    private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(ForgeRegistries.Keys.ITEMS, new ResourceLocation("forge:tools/wrench"));
-    private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(ForgeRegistries.Keys.ITEMS, new ResourceLocation("forge:wrenches"));
+    private static final TagKey<Item> WRENCH_TAG_0 = TagKey.create(Registries.ITEM, new ResourceLocation("forge:tools/wrench"));
+    private static final TagKey<Item> WRENCH_TAG_1 = TagKey.create(Registries.ITEM, new ResourceLocation("forge:wrenches"));
     
     public static boolean isWrench(Item item) {
         return item.builtInRegistryHolder().is(WRENCH_TAG_0) || item.builtInRegistryHolder().is(WRENCH_TAG_1);

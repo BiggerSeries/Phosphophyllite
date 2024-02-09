@@ -2,19 +2,17 @@ package net.roguelogix.phosphophyllite.blocks.blackholes;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.capabilities.Capabilities;
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
+import net.roguelogix.phosphophyllite.registry.CapabilityRegistration;
+import net.roguelogix.phosphophyllite.registry.RegisterCapability;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
@@ -24,17 +22,11 @@ public class FluidBlackHoleTile extends PhosphophylliteTile implements IFluidHan
     @RegisterTile("fluid_black_hole")
     public static final BlockEntityType.BlockEntitySupplier<FluidBlackHoleTile> SUPPLIER = new RegisterTile.Producer<>(FluidBlackHoleTile::new);
     
+    @RegisterCapability
+    private static final CapabilityRegistration FLUID_HANDLER_CAP_REGISTRATION = CapabilityRegistration.tileCap(Capabilities.FluidHandler.BLOCK, FluidBlackHoleTile.class);
+    
     public FluidBlackHoleTile(BlockEntityType<?> TYPE, BlockPos pos, BlockState state) {
         super(TYPE, pos, state);
-    }
-    
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
-        if (cap == Capabilities.FLUID_HANDLER) {
-            return LazyOptional.of(() -> this).cast();
-        }
-        return super.capability(cap, side);
     }
     
     @Override

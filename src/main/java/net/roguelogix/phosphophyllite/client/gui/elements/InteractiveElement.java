@@ -91,7 +91,7 @@ public class InteractiveElement<T extends AbstractContainerMenu> extends Rendere
      * @param sound The sound to play.
      */
     public void playSound(Holder.Reference<SoundEvent> sound) {
-        playSound(sound.get());
+        playSound(sound.value);
     }
     
     /**

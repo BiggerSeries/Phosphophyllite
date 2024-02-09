@@ -22,7 +22,6 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import org.apache.logging.log4j.LogManager;
@@ -167,7 +166,7 @@ public class MekanismGasWrappers {
         fluidToGasMap.clear();
         
         @SuppressWarnings("unchecked")
-        RecipeType<RotaryRecipe> type = (RecipeType<RotaryRecipe>) ForgeRegistries.RECIPE_TYPES.getValue(new ResourceLocation("mekanism:rotary"));
+        RecipeType<RotaryRecipe> type = (RecipeType<RotaryRecipe>) BuiltInRegistries.RECIPE_TYPE.get(new ResourceLocation("mekanism:rotary"));
         if (type == null || server == null) {
             return;
         }
@@ -218,7 +217,7 @@ public class MekanismGasWrappers {
                     Fluid fluid = input.getRawFluid();
                     long amount = input.getAmount();
                     if (mapping.gasToFluidGasUnits != -1 && mapping.gasToFluidGasUnits != amount) {
-                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipeHolder.id() + " with fluid " + ForgeRegistries.FLUIDS.getKey(fluid) + " wanting " + amount + " input while a different gas wants " + mapping.fluidToGasFluidUnits);
+                        LOGGER.warn("Input amount discrepancy in rotary recipe " + recipeHolder.id() + " with fluid " + BuiltInRegistries.FLUID.getKey(fluid) + " wanting " + amount + " input while a different gas wants " + mapping.fluidToGasFluidUnits);
                         continue;
                     }
                     if (!mapping.fluids.contains(fluid)) {
@@ -253,7 +252,7 @@ public class MekanismGasWrappers {
             for (Fluid fluid : mapping.fluids) {
                 Mapping oldMapping = fluidToGasMap.put(fluid, mapping);
                 if (oldMapping != null) {
-                    LOGGER.warn("Duplicate fluid entry for fluid " + ForgeRegistries.FLUIDS.getKey(fluid));
+                    LOGGER.warn("Duplicate fluid entry for fluid " + BuiltInRegistries.FLUID.getKey(fluid));
                 }
                 mapping.fluidStacks.add(new FluidStack(fluid, 0));
             }
@@ -346,7 +345,7 @@ public class MekanismGasWrappers {
                 lastMapping = map;
             }
             if (lastMapping.gases.isEmpty()) {
-                LOGGER.error("Fluid mapping for " + ForgeRegistries.FLUIDS.getKey(fluid) + " has zero gas elements, removing");
+                LOGGER.error("Fluid mapping for " + BuiltInRegistries.FLUID.getKey(fluid) + " has zero gas elements, removing");
                 removeMapping(lastMapping);
                 lastMapping = null;
                 return false;
@@ -368,7 +367,7 @@ public class MekanismGasWrappers {
                 lastMapping = map;
             }
             if (lastMapping.gases.isEmpty()) {
-                LOGGER.error("Fluid mapping for " + ForgeRegistries.FLUIDS.getKey(fluid) + " has zero gas elements, removing");
+                LOGGER.error("Fluid mapping for " + BuiltInRegistries.FLUID.getKey(fluid) + " has zero gas elements, removing");
                 removeMapping(lastMapping);
                 lastMapping = null;
                 return 0;
@@ -401,7 +400,7 @@ public class MekanismGasWrappers {
                 lastMapping = map;
             }
             if (lastMapping.gases.isEmpty()) {
-                LOGGER.error("Fluid mapping for " + ForgeRegistries.FLUIDS.getKey(fluid) + " has zero gas elements, removing");
+                LOGGER.error("Fluid mapping for " + BuiltInRegistries.FLUID.getKey(fluid) + " has zero gas elements, removing");
                 removeMapping(lastMapping);
                 lastMapping = null;
                 return 0;
@@ -448,7 +447,7 @@ public class MekanismGasWrappers {
                 lastMapping = map;
             }
             if (lastMapping.gases.isEmpty()) {
-                LOGGER.error("Fluid mapping for " + ForgeRegistries.FLUIDS.getKey(fluid) + " has zero gas elements, removing");
+                LOGGER.error("Fluid mapping for " + BuiltInRegistries.FLUID.getKey(fluid) + " has zero gas elements, removing");
                 removeMapping(lastMapping);
                 lastMapping = null;
                 return GasStack.EMPTY;

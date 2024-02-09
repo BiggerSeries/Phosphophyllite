@@ -9,6 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.packs.resources.Resource;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -16,13 +17,13 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.network.NetworkEvent;
-import net.neoforged.neoforge.network.NetworkRegistry;
-import net.neoforged.neoforge.network.PlayNetworkDirection;
-import net.neoforged.neoforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.roguelogix.phosphophyllite.networking.SimplePhosChannel;
 import net.roguelogix.phosphophyllite.parsers.ROBN;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
+import net.roguelogix.phosphophyllite.serialization.PhosphophylliteCompound;
+import net.roguelogix.phosphophyllite.util.API;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.ReflectionUtil;
 import net.roguelogix.phosphophyllite.util.TriConsumer;
@@ -45,13 +46,11 @@ import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
 @NonnullDefault
 public class ConfigManager {
     static final Logger LOGGER = LogManager.getLogger("Phosphophyllite/Config");
-    private static final String PROTOCOL_VERSION = "1";
     private static class ClassLoadingHelper {
-        public static final SimpleChannel NETWORK_CHANNEL = NetworkRegistry.newSimpleChannel(
+        public static final SimplePhosChannel NETWORK_CHANNEL = new SimplePhosChannel(
                 new ResourceLocation(modid, "phosphophyllite/configsync"),
-                () -> PROTOCOL_VERSION,
-                PROTOCOL_VERSION::equals,
-                PROTOCOL_VERSION::equals
+                ConfigManager::clientPacketHandler,
+                ConfigManager::serverPacketHandler
         );
     }
     
@@ -172,7 +171,7 @@ public class ConfigManager {
     
     @OnModLoad
     private static void onModLoad() {
-        ClassLoadingHelper.NETWORK_CHANNEL.registerMessage(1, ByteArrayPacketMessage.class, ByteArrayPacketMessage::encodePacket, ByteArrayPacketMessage::decodePacket, ConfigManager::packetHandler);
+        ClassLoadingHelper.NETWORK_CHANNEL.forceClassLoad();
         NeoForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(ConfigManager::onPlayerLogout);
         NeoForge.EVENT_BUS.addListener(ConfigManager::onServerAboutToStart);
@@ -230,12 +229,10 @@ public class ConfigManager {
                 configs.put(modConfig.baseFile.toString(), configROBN);
             }
         }
-        var robn = net.roguelogix.phosphophyllite.robn.ROBN.toROBN(new Pair<>(initialLogin, configs));
-        var bytes = new byte[robn.size()];
-        for (int i = 0; i < robn.size(); i++) {
-            bytes[i] = robn.get(i);
-        }
-        ClassLoadingHelper.NETWORK_CHANNEL.sendTo(new ByteArrayPacketMessage(bytes), player.connection.connection, PlayNetworkDirection.PLAY_TO_CLIENT);
+        PhosphophylliteCompound compound = new PhosphophylliteCompound();
+        compound.put("initialLogin", initialLogin);
+        compound.put("configs", configs);
+        ClassLoadingHelper.NETWORK_CHANNEL.sendToPlayer(player, compound);
     }
     
     private static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent e) {
@@ -243,37 +240,24 @@ public class ConfigManager {
         players.remove(player);
     }
     
-    private static void packetHandler(@Nonnull ByteArrayPacketMessage packet, @Nonnull NetworkEvent.Context ctx) {
-        if (ctx.getDirection() != PlayNetworkDirection.PLAY_TO_CLIENT) {
-            ctx.setPacketHandled(true);
-            return;
-        }
-        ctx.enqueueWork(() -> {
-            try {
-                ArrayList<Byte> buf = new ArrayList<>();
-                for (byte aByte : packet.bytes) {
-                    buf.add(aByte);
-                }
-                //noinspection unchecked
-                final var pair = (Pair<Boolean, Map<String, List<Byte>>>) net.roguelogix.phosphophyllite.robn.ROBN.fromROBN(buf);
-                boolean initialLogin = pair.getFirst();
-                final var configs = pair.getSecond();
-                for (final var entry : configs.entrySet()) {
-                    final var configName = entry.getKey();
-                    final var config = commonConfigs.get(configName);
-                    if (config == null) {
-                        return;
-                    }
-                    try {
-                        final var elementTree = ROBN.parseROBN(entry.getValue());
-                        config.loadRemoteConfig(elementTree, !initialLogin);
-                    } catch (IllegalArgumentException ignored) {
-                    }
-                }
-            } catch (ClassCastException ignored) {
+    private static void clientPacketHandler(PhosphophylliteCompound compound, IPayloadContext context) {
+        boolean initialLogin = compound.getBoolean("initialLogin");
+        final var configs = compound.getMap("configs");
+        for (final var entry : configs.entrySet()) {
+            final var configName = entry.getKey();
+            final var config = commonConfigs.get(configName);
+            if (config == null) {
+                return;
             }
-        });
-        ctx.setPacketHandled(true);
+            try {
+                final var elementTree = ROBN.parseROBN((List<Byte>) entry.getValue());
+                config.loadRemoteConfig(elementTree, !initialLogin);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+    }
+    
+    private static void serverPacketHandler(PhosphophylliteCompound compound, IPayloadContext context) {
     }
     
     private static class ByteArrayPacketMessage {

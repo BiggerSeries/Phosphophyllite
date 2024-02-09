@@ -2,6 +2,9 @@ package net.roguelogix.phosphophyllite.registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -9,24 +12,27 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.neoforged.neoforge.common.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.fluids.FluidType;
-import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.fluids.BaseFlowingFluid;
+import net.neoforged.neoforge.fluids.FluidType;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import net.neoforged.neoforgespi.language.ModFileScanData;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
@@ -44,6 +50,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+@SuppressWarnings("StringConcatenationArgumentToLogCall")
 public class Registry {
     
     private static final boolean IS_DEV_ENVIRONMENT;
@@ -105,7 +112,6 @@ public class Registry {
         annotationMap.put(RegisterFluid.class.getName(), this::registerFluidAnnotation);
         annotationMap.put(RegisterContainer.class.getName(), this::registerContainerAnnotation);
         annotationMap.put(RegisterTile.class.getName(), this::registerTileAnnotation);
-        annotationMap.put(RegisterCapability.class.getName(), this::registerCapabilityAnnotation);
     }
     
     public Registry(@Nonnull List<ResourceLocation> tabsBefore, @Nonnull List<ResourceLocation> tabsAfter) {
@@ -150,11 +156,12 @@ public class Registry {
         handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false, ignoredPackages);
         
         
-        IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
+        IEventBus ModBus = ModLoadingContext.get().getActiveContainer().getEventBus();
         
         ModBus.addListener(this::registerEvent);
 
         ModBus.addListener(this::commonSetupEventHandler);
+        ModBus.addListener(this::registerCapabilitiesEventHandler);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ModBus.addListener(this::clientSetupEventHandler);
@@ -232,12 +239,12 @@ public class Registry {
     }
     
     private void registerEvent(RegisterEvent registerEvent) {
-        registerEvent.register(ForgeRegistries.Keys.BLOCKS, this::blockRegistration);
-        registerEvent.register(ForgeRegistries.Keys.ITEMS, this::itemRegistration);
-        registerEvent.register(ForgeRegistries.Keys.FLUIDS, this::fluidRegistration);
-        registerEvent.register(ForgeRegistries.Keys.FLUID_TYPES, this::fluidTypeRegistration);
-        registerEvent.register(ForgeRegistries.Keys.MENU_TYPES, this::containerRegistration);
-        registerEvent.register(ForgeRegistries.Keys.BLOCK_ENTITY_TYPES, this::tileEntityRegistration);
+        registerEvent.register(Registries.BLOCK, this::blockRegistration);
+        registerEvent.register(Registries.ITEM, this::itemRegistration);
+        registerEvent.register(Registries.FLUID, this::fluidRegistration);
+        registerEvent.register(NeoForgeRegistries.Keys.FLUID_TYPES, this::fluidTypeRegistration);
+        registerEvent.register(Registries.MENU, this::containerRegistration);
+        registerEvent.register(Registries.BLOCK_ENTITY_TYPE, this::tileEntityRegistration);
         registerEvent.register(Registries.CREATIVE_MODE_TAB, this::creativeTabEvent);
     }
     
@@ -287,6 +294,12 @@ public class Registry {
         commonSetupEvent = event;
         commonSetupQueue.runAll();
         commonSetupEvent = null;
+    }
+    
+    private void registerCapabilitiesEventHandler(RegisterCapabilitiesEvent event) {
+        registerCapabilitiesEvent = event;
+        registerCapabilityQueue.runAll();
+        registerCapabilitiesEvent = null;
     }
     
     private interface AnnotationHandler {
@@ -828,27 +841,83 @@ public class Registry {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("TileEntity registered: " + registryName);
             }
-        });
-    }
-    
-    private void registerCapabilityAnnotation(String modNamespace, Class<?> declaringClass, final String memberName) {
-        // TODO: ignore registration
-        try {
-            final var field = declaringClass.getDeclaredField(memberName);
             
-            // this is literally how the capability token type is defined, so, yes, this is safe
-            final var capabilityClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
+            // capability registration time!
             
-            registerCapabilityQueue.enqueueUntracked(() -> {
-                registerCapabilitiesEvent.register(capabilityClass);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Capability registered: " + capabilityClass.getName());
+            List<CapabilityRegistration.TileCapRegistration<BlockEntity, Object, Object>> capRegistrations = new ReferenceArrayList<>();
+            
+            List<Class<?>> classesToCheck = new ReferenceArrayList<>();
+            classesToCheck.add(tileClass);
+            while (!classesToCheck.isEmpty()) {
+                var clazz = classesToCheck.remove(classesToCheck.size() - 1);
+                var superClazz = clazz.getSuperclass();
+                // stop at blockEntity, guaranteed to not have any registrations at that levels
+                if (superClazz != null && superClazz != BlockEntity.class) {
+                    classesToCheck.add(superClazz);
                 }
-            });
+                classesToCheck.addAll(List.of(clazz.getInterfaces()));
+                
+                var fields = clazz.getDeclaredFields();
+                for (var capField : fields) {
+                    if (capField.getType() != CapabilityRegistration.class) {
+                        continue;
+                    }
+                    try {
+                        final var modifiers = capField.getModifiers();
+                        if (!Modifier.isStatic(modifiers) || !Modifier.isFinal(modifiers)) {
+                            LOGGER.error("Capability registration fields must be static final. Skipping " + capField);
+                            continue;
+                        }
+                        
+                        capField.setAccessible(true);
+                        var capFieldObject = capField.get(null);
+                        List<?> potentialRegistrations;
+                        if (capFieldObject instanceof CapabilityRegistration.TileCapRegistration.Lazy<?> lazyRegistration) {
+                            potentialRegistrations = lazyRegistration.registrations();
+                        } else {
+                            potentialRegistrations = List.of(capFieldObject);
+                        }
+                        for (var potentialRegistration : potentialRegistrations) {
+                            if (potentialRegistration instanceof CapabilityRegistration.TileCapRegistration<?, ?, ?> tileCapRegistration) {
+                                if (!tileCapRegistration.tileClass.isAssignableFrom(tileClass)) {
+                                    LOGGER.error("Skipping attempt to register tile capability for tile that doesnt extend from provided class " + tileClass + " " + tileCapRegistration.tileClass);
+                                    continue;
+                                }
+                                //noinspection unchecked
+                                capRegistrations.add((CapabilityRegistration.TileCapRegistration<BlockEntity, Object, Object>) tileCapRegistration);
+                            } else {
+                                LOGGER.warn("Skipping non-TileEntity capability registration from " + capField + " for " + registryName);
+                            }
+                        }
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
             
-        } catch (NoSuchFieldException e) {
-            LOGGER.error("Failed to register capability field " + memberName + " in " + declaringClass.getSimpleName());
-        }
+            if (!capRegistrations.isEmpty()) {
+                registerCapabilityQueue.enqueue(() -> {
+                    var validBlocks = type.getValidBlocks();
+                    for (var capRegistration : capRegistrations) {
+                        var capability = (BlockCapability<Object, Object>) capRegistration.capability;
+                        var provider = capRegistration.capabilityProvider;
+                        for (var validBlock : validBlocks) {
+                            if (LOGGER.isDebugEnabled()) {
+                                var blockID = BuiltInRegistries.BLOCK.getKey(validBlock);
+                                LOGGER.debug("Capability " + capability.name() + " registered for block " + blockID + " with tile " + registryName);
+                            }
+                            registerCapabilitiesEvent.registerBlock(capability, (Level level, BlockPos pos, BlockState state, BlockEntity blockEntity, Object context) -> {
+                                if (blockEntity == null || blockEntity.getType() != type) {
+                                    return null;
+                                }
+                                return provider.getCapability(blockEntity, context);
+                            }, validBlock);
+                        }
+                    }
+                    
+                });
+            }
+        });
     }
     
     private void registerConfigAnnotation(String modNamespace, Class<?> configClazz, final String memberName) {

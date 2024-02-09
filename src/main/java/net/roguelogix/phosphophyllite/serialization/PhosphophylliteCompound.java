@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.roguelogix.phosphophyllite.robn.ROBNObject;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,10 @@ public class PhosphophylliteCompound implements ROBNObject {
     public PhosphophylliteCompound() {
     }
     
+    public PhosphophylliteCompound(Map<String, Object> ROBNMap) {
+        fromROBNMap(ROBNMap);
+    }
+    
     public PhosphophylliteCompound(byte[] ROBNbuffer) {
         this(ByteArrayList.wrap(ROBNbuffer));
     }
@@ -28,6 +33,13 @@ public class PhosphophylliteCompound implements ROBNObject {
             return;
         }
         fromROBN(ROBNbuffer);
+    }
+    
+    public void put(String key, @Nullable Object value){
+        if (value == null) {
+            return;
+        }
+        data.put(key, value);
     }
     
     public void put(String key, @Nullable PhosphophylliteCompound compound) {

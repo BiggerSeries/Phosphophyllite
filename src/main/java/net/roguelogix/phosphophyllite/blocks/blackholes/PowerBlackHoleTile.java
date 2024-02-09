@@ -1,18 +1,15 @@
 package net.roguelogix.phosphophyllite.blocks.blackholes;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.LazyOptional;
-import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.capability.CachedWrappedBlockCapability;
 import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.energy.IEnergyTile;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyHandler;
@@ -22,7 +19,6 @@ import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 @NonnullDefault
 public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTile {
@@ -31,19 +27,11 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
     public static final BlockEntityType.BlockEntitySupplier<PowerBlackHoleTile> SUPPLIER = new RegisterTile.Producer<>(PowerBlackHoleTile::new);
     
     private static final Direction[] directions = Direction.values();
-    private final ObjectArrayList<LazyOptional<IPhosphophylliteEnergyHandler>> handlers = new ObjectArrayList<>();
+    private final ObjectArrayList<CachedWrappedBlockCapability<IPhosphophylliteEnergyHandler, Direction>> handlers = new ObjectArrayList<>();
     
-    {
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-    }
+    private IPhosphophylliteEnergyHandler energyHandler;
     
-    private LazyOptional<IPhosphophylliteEnergyHandler> energyHandler = LazyOptional.empty();
-    
+    private long receivedLastLastTick = 0;
     private long receivedLastTick = 0;
     private boolean doPull = false;
     private boolean allowPush = true;
@@ -51,23 +39,33 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
     
     public PowerBlackHoleTile(BlockEntityType<?> TYPE, BlockPos pos, BlockState state) {
         super(TYPE, pos, state);
-        rotateCapability(null);
+        energyHandler = createNewEnergyHandler();
     }
     
     @Override
-    public LazyOptional<IPhosphophylliteEnergyHandler> energyHandler() {
+    public IPhosphophylliteEnergyHandler energyHandler(Direction direction) {
         return energyHandler;
     }
     
     public void tick() {
         assert level != null;
+        if(level.isClientSide){
+            return;
+        }
+        receivedLastLastTick = receivedLastTick;
         receivedLastTick = 0;
         if (doPull) {
-            handlers.forEach(cap -> cap.ifPresent(this::sendEnergy));
+            handlers.forEach(capCache -> {
+                @Nullable
+                var cap = capCache.getCapability();
+                if (cap != null) {
+                    pullEnergy(cap);
+                }
+            });
         }
     }
     
-    private void sendEnergy(IPhosphophylliteEnergyHandler handler) {
+    private void pullEnergy(IPhosphophylliteEnergyHandler handler) {
         final var received = handler.extractEnergy(Long.MAX_VALUE, false);
         if (receivedLastTick + received < receivedLastTick) {
             receivedLastTick = Long.MAX_VALUE;
@@ -76,18 +74,20 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
         receivedLastTick += received;
     }
     
-    public void rotateCapability(@Nullable Player player) {
-        energyHandler.invalidate();
-        energyHandler = LazyOptional.of(() -> new IPhosphophylliteEnergyHandler() {
-            
+    public void rotateCapability(Player player) {
+        if (!player.isLocalPlayer()) {
+            energyHandler = createNewEnergyHandler();
+            player.sendSystemMessage(Component.literal("Capability invalidated"));
+        }
+    }
+    
+    private IPhosphophylliteEnergyHandler createNewEnergyHandler() {
+        return new IPhosphophylliteEnergyHandler() {
             private void ensureValid() {
                 if (!Phosphophyllite.CONFIG.debugMode) {
                     return;
                 }
-                if (!energyHandler.isPresent()) {
-                    throw new IllegalStateException("Attempt to use capability when not present");
-                }
-                if (energyHandler.orElse(this) != this) {
+                if (energyHandler != this) {
                     throw new IllegalStateException("Attempt to use capability after invalidate");
                 }
             }
@@ -134,10 +134,7 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
                 ensureValid();
                 return Long.MAX_VALUE;
             }
-        });
-        if (player != null) {
-            player.sendSystemMessage(Component.literal("Capability invalidated"));
-        }
+        };
     }
     
     public void nextOption(Player player) {
@@ -152,21 +149,20 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
             doPull = true;
             allowPush = true;
         }
-        if (player.isLocalPlayer()) {
+        if (!player.isLocalPlayer()) {
             player.sendSystemMessage(Component.literal("doPull: " + doPull + ", allowPush: " + allowPush));
         }
     }
     
     @Override
     public void onAdded() {
-        for (Direction direction : directions) {
-            updateCapability(direction, null, getBlockPos());
+        assert level != null;
+        if(level.isClientSide){
+            return;
         }
-    }
-    
-    @Override
-    public void onRemoved(boolean chunkUnload) {
-        energyHandler.invalidate();
+        for (var value : directions) {
+            handlers.add(this.findEnergyCapability(value));
+        }
     }
     
     @Override
@@ -187,25 +183,25 @@ public class PowerBlackHoleTile extends PhosphophylliteTile implements IEnergyTi
     @Override
     public DebugInfo getDebugInfo() {
         return super.getDebugInfo()
-                .add("ReceivedLastTick: " + receivedLastTick)
+                .add("ReceivedLastTick: " + receivedLastLastTick)
                 .add("DoPull " + doPull)
                 .add("AllowPush " + allowPush)
                 ;
     }
-    
-    public void updateCapability(Direction updateDirection, @Nullable Block oldBlock, BlockPos updatePos) {
-        final var index = updateDirection.ordinal();
-        final var capability = handlers.get(index);
-        if (Phosphophyllite.CONFIG.debugMode && capability.isPresent() && oldBlock != null) {
-            assert level != null;
-            var currentBlockState = level.getBlockState(updatePos);
-            if (currentBlockState.getBlock() != oldBlock) {
-                Phosphophyllite.LOGGER.warn("Block updated from " + ForgeRegistries.BLOCKS.getKey(oldBlock) + " without invalidating capability");
-                handlers.set(index, LazyOptional.empty());
-            }
-        }
-        if (!capability.isPresent()) {
-            handlers.set(index, findEnergyCapability(updateDirection));
-        }
-    }
+
+//    public void updateCapability(Direction updateDirection, @Nullable Block oldBlock, BlockPos updatePos) {
+//        final var index = updateDirection.ordinal();
+//        final var capability = handlers.get(index);
+//        if (Phosphophyllite.CONFIG.debugMode && capability != null && oldBlock != null) {
+//            assert level != null;
+//            var currentBlockState = level.getBlockState(updatePos);
+//            if (currentBlockState.getBlock() != oldBlock) {
+//                Phosphophyllite.LOGGER.warn("Block updated from " + BuiltInRegistries.BLOCK.getKey(oldBlock) + " without invalidating capability");
+//                handlers.set(index, null);
+//            }
+//        }
+//        if (capability == null) {
+//            handlers.set(index, findEnergyCapability(updateDirection));
+//        }
+//    }
 }

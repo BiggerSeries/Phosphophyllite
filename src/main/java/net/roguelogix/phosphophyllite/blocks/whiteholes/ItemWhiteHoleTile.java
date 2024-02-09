@@ -3,23 +3,19 @@ package net.roguelogix.phosphophyllite.blocks.whiteholes;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.capabilities.Capabilities;
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
@@ -34,15 +30,6 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
         super(TYPE, pos, state);
     }
     
-    @Nonnull
-    @Override
-    public <T> LazyOptional<T> capability(@Nonnull Capability<T> cap, final @Nullable Direction side) {
-        if (cap == Capabilities.ITEM_HANDLER) {
-            return LazyOptional.of(() -> this).cast();
-        }
-        return super.capability(cap, side);
-    }
-    
     Item item = null;
     
     public void setItem(Item item) {
@@ -54,7 +41,7 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
     public CompoundTag writeNBT() {
         var compound = super.writeNBT();
         if (item != null) {
-            compound.putString("item", Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(item)).toString());
+            compound.putString("item", Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(item)).toString());
         }
         return compound;
     }
@@ -63,7 +50,7 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
     public void readNBT(@Nonnull CompoundTag compound) {
         super.readNBT(compound);
         if (compound.contains("item")) {
-            item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(compound.getString("item")));
+            item = BuiltInRegistries.ITEM.get(new ResourceLocation(compound.getString("item")));
         }
     }
     
@@ -71,14 +58,13 @@ public class ItemWhiteHoleTile extends PhosphophylliteTile implements IItemHandl
         if (item != null) {
             assert level != null;
             for (Direction direction : Direction.values()) {
-                BlockEntity te = level.getBlockEntity(worldPosition.relative(direction));
-                if (te != null) {
-                    te.getCapability(Capabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(c -> {
-                        for (int i = 0; i < c.getSlots(); i++) {
-                            //noinspection deprecation
-                            c.insertItem(i, new ItemStack(item, item.getMaxStackSize()), false);
-                        }
-                    });
+                var cap = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(direction), direction.getOpposite());
+                if (cap == null) {
+                    continue;
+                }
+                for (int i = 0; i < cap.getSlots(); i++) {
+                    //noinspection deprecation
+                    cap.insertItem(i, new ItemStack(item, item.getMaxStackSize()), false);
                 }
             }
         }

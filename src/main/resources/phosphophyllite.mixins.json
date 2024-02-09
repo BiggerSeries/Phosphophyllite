@@ -5,8 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "phosphophyllite.refmap.json",
   "mixins": [
-    "ChunkMapMixin",
-    "LazyOptionalMixin"
+    "ChunkMapMixin"
   ],
   "injectors": {
     "defaultRequire": 1

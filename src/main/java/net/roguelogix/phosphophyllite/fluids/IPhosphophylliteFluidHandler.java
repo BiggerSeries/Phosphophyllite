@@ -4,7 +4,6 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.common.util.LazyOptional;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -25,8 +24,8 @@ public interface IPhosphophylliteFluidHandler extends IFluidHandler {
     
     PhosphophylliteFluidStack stack = new PhosphophylliteFluidStack();
     
-    default LazyOptional<IFluidHandler> fluidHandlerCapability() {
-        return LazyOptional.of(() -> this);
+    default IFluidHandler fluidHandlerCapability() {
+        return this;
     }
     
     @Override

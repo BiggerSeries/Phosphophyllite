@@ -1,14 +1,15 @@
 package net.roguelogix.phosphophyllite.energy;
 
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.capabilities.CapabilityManager;
-import net.neoforged.neoforge.common.capabilities.CapabilityToken;
-import net.roguelogix.phosphophyllite.registry.RegisterCapability;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.util.API;
 
+@API
 public interface IPhosphophylliteEnergyHandler {
     
-    @RegisterCapability
-    Capability<IPhosphophylliteEnergyHandler> CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
+    BlockCapability<IPhosphophylliteEnergyHandler, Direction> CAPABILITY = BlockCapability.createSided(new ResourceLocation(Phosphophyllite.modid, "energy"), IPhosphophylliteEnergyHandler.class);
     
     long insertEnergy(long maxInsert, boolean simulate);
     

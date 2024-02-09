@@ -1,6 +1,5 @@
 package net.roguelogix.phosphophyllite.client.gui;
 
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,27 +9,25 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.network.NetworkEvent;
-import net.neoforged.neoforge.network.NetworkRegistry;
-import net.neoforged.neoforge.network.PlayNetworkDirection;
-import net.neoforged.neoforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.networking.SimplePhosChannel;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
-import net.roguelogix.phosphophyllite.robn.ROBN;
+import net.roguelogix.phosphophyllite.serialization.PhosphophylliteCompound;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static net.roguelogix.phosphophyllite.Phosphophyllite.modid;
 
+
+@Deprecated
 public class GuiSync {
     
     public interface IGUIPacketProvider {
@@ -45,22 +42,14 @@ public class GuiSync {
          * @param requestData The payload to send.
          */
         default void runRequest(@Nonnull String requestName, @Nullable Object requestData) {
-            HashMap<String, Object> map = new HashMap<>();
+            var compound = new PhosphophylliteCompound();
             
-            map.put("request", requestName);
+            compound.put("request", requestName);
             if (requestData != null) {
-                map.put("data", requestData);
+                compound.put("data", requestData);
             }
             
-            final var buf = ROBN.toROBN(map);
-            
-            GUIPacketMessage message = new GUIPacketMessage();
-            message.bytes = new byte[buf.size()];
-            for (int i = 0; i < buf.size(); i++) {
-                message.bytes[i] = buf.get(i);
-            }
-            
-            INSTANCE.sendToServer(message);
+            INSTANCE.sendToServer(compound);
         }
         
         default void executeRequest(String requestName, Object requestData) {
@@ -73,19 +62,6 @@ public class GuiSync {
         @Nullable
         Map<?, ?> write();
     }
-    
-    private static class GUIPacketMessage {
-        public byte[] bytes;
-        
-        public GUIPacketMessage() {
-        
-        }
-        
-        public GUIPacketMessage(@Nonnull byte[] readByteArray) {
-            bytes = readByteArray;
-        }
-    }
-    
     private static final HashMap<Player, IGUIPacketProvider> playerGUIs = new HashMap<>();
     
     public static synchronized void onContainerOpen(@Nonnull PlayerContainerEvent.Open e) {
@@ -115,17 +91,13 @@ public class GuiSync {
         }
     }
     
-    private static final String PROTOCOL_VERSION = "0";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
+    public static final SimplePhosChannel INSTANCE = new SimplePhosChannel(
             new ResourceLocation(modid, "multiblock/guisync"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
+            GuiSync::clientHandler, GuiSync::serverHandler
     );
     
     @OnModLoad
     public static void onModLoad() {
-        INSTANCE.registerMessage(1, GUIPacketMessage.class, GuiSync::encodePacket, GuiSync::decodePacket, GuiSync::handler);
         NeoForge.EVENT_BUS.addListener(GuiSync::onContainerClose);
         NeoForge.EVENT_BUS.addListener(GuiSync::onContainerOpen);
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -145,19 +117,11 @@ public class GuiSync {
                             if (packetMap == null) {
                                 return;
                             }
-                            ByteArrayList buf;
-                            try {
-                                buf = ROBN.toROBN(packetMap);
-                            } catch (IllegalStateException e) {
-                                e.printStackTrace();
-                                return;
-                            }
-                            GUIPacketMessage message = new GUIPacketMessage();
-                            message.bytes = new byte[buf.size()];
-                            for (int i = 0; i < buf.size(); i++) {
-                                message.bytes[i] = buf.get(i);
-                            }
-                            INSTANCE.sendTo(message, ((ServerPlayer) player).connection.connection, PlayNetworkDirection.PLAY_TO_CLIENT);
+                            
+                            var compound = new PhosphophylliteCompound((Map<String, Object>) packetMap);
+                            
+                            INSTANCE.sendToPlayer(((ServerPlayer) player), compound);
+                            
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -176,41 +140,19 @@ public class GuiSync {
         updateThread.start();
     }
     
-    private static void encodePacket(@Nonnull GUIPacketMessage packet, @Nonnull FriendlyByteBuf buf) {
-        buf.writeBytes(packet.bytes);
+    private static void clientHandler(PhosphophylliteCompound compound, IPayloadContext ctx) {
+        if (currentGUI != null) {
+            IGUIPacket guiPacket = currentGUI.getGuiPacket();
+            if (guiPacket != null) {
+                guiPacket.read(compound.toROBNMap());
+            }
+        }
     }
     
-    private static GUIPacketMessage decodePacket(@Nonnull FriendlyByteBuf buf) {
-        byte[] byteBuf = new byte[buf.readableBytes()];
-        buf.readBytes(byteBuf);
-        return new GUIPacketMessage(byteBuf);
-    }
-    
-    private static void handler(@Nonnull GUIPacketMessage packet, @Nonnull NetworkEvent.Context ctx) {
-        ctx.enqueueWork(() -> {
-            var direction = ctx.getDirection();
-            IGUIPacketProvider currentGUI;
-            ArrayList<Byte> buf = new ArrayList<>();
-            for (byte aByte : packet.bytes) {
-                buf.add(aByte);
-            }
-            Map<?, ?> map = (Map<?, ?>) ROBN.fromROBN(buf);
-            
-            if (direction == PlayNetworkDirection.PLAY_TO_CLIENT) {
-                currentGUI = GuiSync.currentGUI;
-                if (currentGUI != null) {
-                    IGUIPacket guiPacket = currentGUI.getGuiPacket();
-                    if (guiPacket != null) {
-                        guiPacket.read(map);
-                    }
-                }
-            } else {
-                currentGUI = playerGUIs.get(ctx.getSender());
-                if (currentGUI != null) {
-                    currentGUI.executeRequest((String) map.get("request"), map.get("data"));
-                }
-            }
-        });
-        ctx.setPacketHandled(true);
+    private static void serverHandler(PhosphophylliteCompound compound, IPayloadContext ctx) {
+        currentGUI = playerGUIs.get(ctx.player().orElse(null));
+        if (currentGUI != null) {
+            currentGUI.executeRequest((String) compound.get("request"), compound.get("data"));
+        }
     }
 }

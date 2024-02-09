@@ -7,12 +7,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.LazyOptional;
-import net.neoforged.neoforge.registries.ForgeRegistries;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.capability.CachedWrappedBlockCapability;
 import net.roguelogix.phosphophyllite.debug.DebugInfo;
 import net.roguelogix.phosphophyllite.energy.IEnergyTile;
 import net.roguelogix.phosphophyllite.energy.IPhosphophylliteEnergyHandler;
@@ -36,37 +34,37 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
     }
     
     private static final Direction[] directions = Direction.values();
-    private final ObjectArrayList<LazyOptional<IPhosphophylliteEnergyHandler>> handlers = new ObjectArrayList<>();
+    private final ObjectArrayList<CachedWrappedBlockCapability<IPhosphophylliteEnergyHandler, Direction>> handlers = new ObjectArrayList<>();
     
-    {
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-        handlers.add(LazyOptional.empty());
-    }
-    
-    private LazyOptional<IPhosphophylliteEnergyHandler> energyHandler = LazyOptional.empty();
+    private IPhosphophylliteEnergyHandler energyHandler = null;
     
     private long sentLastTick = 0;
     private boolean doPush = true;
     private boolean allowPull;
     
     @Override
-    public LazyOptional<IPhosphophylliteEnergyHandler> energyHandler() {
+    public IPhosphophylliteEnergyHandler energyHandler(Direction direction) {
         return energyHandler;
     }
     
     public void tick() {
         assert level != null;
+        if(level.isClientSide){
+            return;
+        }
         sentLastTick = 0;
         if (doPush) {
-            handlers.forEach(cap -> cap.ifPresent(this::sendEnergy));
+            handlers.forEach(capCache -> {
+                @Nullable
+                var cap = capCache.getCapability();
+                if (cap != null) {
+                    pushEnergy(cap);
+                }
+            });
         }
     }
     
-    private void sendEnergy(IPhosphophylliteEnergyHandler handler) {
+    private void pushEnergy(IPhosphophylliteEnergyHandler handler) {
         final var sent = handler.insertEnergy(Long.MAX_VALUE, false);
         if (sentLastTick + sent < sentLastTick) {
             sentLastTick = Long.MAX_VALUE;
@@ -76,17 +74,16 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
     }
     
     public void rotateCapability(@Nullable Player player) {
-        final var oldHandler = energyHandler;
-        energyHandler = LazyOptional.of(() -> new IPhosphophylliteEnergyHandler() {
+        energyHandler = new IPhosphophylliteEnergyHandler() {
             
             private void ensureValid() {
                 if (!Phosphophyllite.CONFIG.debugMode) {
                     return;
                 }
-                if (!energyHandler.isPresent()) {
+                if (energyHandler == null) {
                     throw new IllegalStateException("Attempt to use capability when not present");
                 }
-                if (energyHandler.orElse(this) != this) {
+                if (energyHandler != this) {
                     throw new IllegalStateException("Attempt to use capability after invalidate");
                 }
             }
@@ -136,9 +133,9 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
                 ensureValid();
                 return Long.MAX_VALUE;
             }
-        });
-        oldHandler.invalidate();
-        if (player != null) {
+        };
+        invalidateCapabilities();
+        if (player != null && !player.isLocalPlayer()) {
             player.sendSystemMessage(Component.literal("Capability invalidated"));
         }
     }
@@ -155,21 +152,20 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
             doPush = true;
             allowPull = true;
         }
-        if (player.isLocalPlayer()) {
+        if (!player.isLocalPlayer()) {
             player.sendSystemMessage(Component.literal("doPush: " + doPush + ", allowPull: " + allowPull));
         }
     }
     
     @Override
     public void onAdded() {
-        for (Direction direction : directions) {
-            updateCapability(direction, null, getBlockPos());
+        assert level != null;
+        if(level.isClientSide){
+            return;
         }
-    }
-    
-    @Override
-    public void onRemoved(boolean chunkUnload) {
-        energyHandler.invalidate();
+        for (var value : directions) {
+            handlers.add(this.findEnergyCapability(value));
+        }
     }
     
     @Override
@@ -194,21 +190,5 @@ public class PowerWhiteHoleTile extends PhosphophylliteTile implements IEnergyTi
                 .add("DoPush " + doPush)
                 .add("AllowPull " + allowPull)
                 ;
-    }
-    
-    public void updateCapability(Direction updateDirection, @Nullable Block oldBlock, BlockPos updatePos) {
-        final var index = updateDirection.ordinal();
-        final var capability = handlers.get(index);
-        if (Phosphophyllite.CONFIG.debugMode && capability.isPresent() && oldBlock != null) {
-            assert level != null;
-            var currentBlockState = level.getBlockState(updatePos);
-            if (currentBlockState.getBlock() != oldBlock) {
-                Phosphophyllite.LOGGER.warn("Block updated from " + ForgeRegistries.BLOCKS.getKey(oldBlock) + " without invalidating capability");
-                handlers.set(index, LazyOptional.empty());
-            }
-        }
-        if (!capability.isPresent()) {
-            handlers.set(index, findEnergyCapability(updateDirection));
-        }
     }
 }

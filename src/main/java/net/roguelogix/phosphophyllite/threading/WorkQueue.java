@@ -59,7 +59,7 @@ public class WorkQueue {
                 } catch (Throwable e) {
                     // this should be impossible, but just in case
                     e.printStackTrace();
-                    Minecraft.crash(new CrashReport("Exception rolled back to Phosphophyllite WorkQueue", e));
+                    Minecraft.getInstance().emergencySaveAndCrash(new CrashReport("Exception rolled back to Phosphophyllite WorkQueue", e));
                 }
             }
             

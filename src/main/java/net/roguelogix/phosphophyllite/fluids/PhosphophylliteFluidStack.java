@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.fluids;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -11,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
@@ -112,7 +113,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     
     public void setFluid(Fluid fluid) {
         this.fluid = fluid;
-        delegateWrapper.bindKey(ResourceKey.create(ForgeRegistries.Keys.FLUIDS, Objects.requireNonNull(ForgeRegistries.FLUIDS.getKey(fluid))));
+        delegateWrapper.bindKey(ResourceKey.create(Registries.FLUID, Objects.requireNonNull(BuiltInRegistries.FLUID.getKey(fluid))));
         delegateWrapper.bindValue(fluid);
         updateEmpty();
     }
@@ -126,7 +127,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
         }
         
         ResourceLocation fluidName = new ResourceLocation(nbt.getString("FluidName"));
-        Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidName);
+        Fluid fluid = BuiltInRegistries.FLUID.get(fluidName);
         if (fluid == null) {
             return EMPTY;
         }
@@ -143,7 +144,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public CompoundTag writeToNBT(CompoundTag nbt) {
-        nbt.putString("FluidName", ForgeRegistries.FLUIDS.getKey(getFluid()).toString());
+        nbt.putString("FluidName", BuiltInRegistries.FLUID.getKey(getFluid()).toString());
         nbt.putInt("Amount", (int) Math.min(amount, Integer.MAX_VALUE));
         nbt.putLong("LongAmount", amount);
         
@@ -154,19 +155,19 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public void writeToPacket(FriendlyByteBuf buf) {
-        buf.writeRegistryId(ForgeRegistries.FLUIDS, getFluid());
+        buf.writeResourceLocation(BuiltInRegistries.FLUID.getKey(getFluid()));
         buf.writeVarInt(getAmount());
         buf.writeNbt(getTag());
     }
     
     public void writeToLongPacket(FriendlyByteBuf buf) {
-        buf.writeRegistryId(ForgeRegistries.FLUIDS, getFluid());
+        buf.writeResourceLocation(BuiltInRegistries.FLUID.getKey(getFluid()));
         buf.writeVarLong(getAmount());
         buf.writeNbt(getTag());
     }
     
     public static FluidStack readFromLongPacket(FriendlyByteBuf buf) {
-        Fluid fluid = buf.readRegistryId();
+        var fluid = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
         long amount = buf.readVarLong();
         CompoundTag tag = buf.readNbt();
         if (fluid == Fluids.EMPTY) {

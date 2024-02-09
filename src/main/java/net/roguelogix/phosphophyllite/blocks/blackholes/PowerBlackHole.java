@@ -3,6 +3,7 @@ package net.roguelogix.phosphophyllite.blocks.blackholes;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -14,12 +15,15 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.roguelogix.phosphophyllite.blocks.whiteholes.PowerWhiteHoleTile;
+import net.roguelogix.phosphophyllite.debug.IDebuggable;
 import net.roguelogix.phosphophyllite.modular.block.PhosphophylliteBlock;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 import net.roguelogix.phosphophyllite.util.Util;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 @ParametersAreNonnullByDefault
@@ -49,14 +53,6 @@ public class PowerBlackHole extends PhosphophylliteBlock implements EntityBlock 
     }
     
     @Override
-    public void onNeighborChange(BlockState state, Level level, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
-        var tile = level.getBlockEntity(pos);
-        if (tile instanceof PowerBlackHoleTile whiteHoleTile) {
-            whiteHoleTile.updateCapability(Util.directionFromPositions(pos, fromPos), blockIn, fromPos);
-        }
-    }
-    
-    @Override
     public InteractionResult onUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (hand == InteractionHand.MAIN_HAND) {
             if (Util.isWrench(player.getMainHandItem().getItem())) {
@@ -68,6 +64,10 @@ public class PowerBlackHole extends PhosphophylliteBlock implements EntityBlock 
                     }
                 }
                 return InteractionResult.SUCCESS;
+            } else if (player.getMainHandItem().isEmpty() && !player.isLocalPlayer()) {
+                if (level.getBlockEntity(pos) instanceof IDebuggable debuggable) {
+                    player.sendSystemMessage(Component.literal(Objects.requireNonNull(debuggable.getDebugInfo()).toString()));
+                }
             }
         }
         return InteractionResult.PASS;

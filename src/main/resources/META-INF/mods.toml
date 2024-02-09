@@ -17,13 +17,13 @@ Library for the BiggerSeries mods
 
 [[dependencies.phosphophyllite]] 
     modId="neoforge"
-    mandatory=true
+    required=true
     versionRange="[${neo_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.phosphophyllite]]
     modId="minecraft"
-    mandatory=true
+    required=true
     versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"

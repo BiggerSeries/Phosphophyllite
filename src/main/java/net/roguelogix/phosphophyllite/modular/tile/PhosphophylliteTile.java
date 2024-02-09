@@ -2,9 +2,7 @@ package net.roguelogix.phosphophyllite.modular.tile;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -13,8 +11,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.util.LazyOptional;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.roguelogix.phosphophyllite.debug.DebugInfo;
@@ -28,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -310,45 +305,6 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     }
     
     @Nonnull
-    public final <T> LazyOptional<T> getCapability(final Capability<T> cap, final @Nullable Direction side) {
-        var optional = capability(cap, side);
-        for (var module : moduleList) {
-            var moduleOptional = module.capability(cap, side);
-            if (moduleOptional.isPresent()) {
-                if (optional.isPresent()) {
-                    MODULE_LOGGER.warn("Multiple implementations of same capability \"" + cap.getName() + "\" on " + side + " side for tile type \"" + getClass().getSimpleName() + "\" at " + getBlockPos());
-                    continue;
-                }
-                optional = moduleOptional;
-            }
-        }
-        return optional;
-    }
-    
-    @Nonnull
-    @Override
-    public final <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap) {
-        return getCapability(cap, null);
-    }
-    
-    /**
-     * coped from ICapabilityProvider
-     * <p>
-     * Retrieves the Optional handler for the capability requested on the specific side.
-     * The return value <strong>CAN</strong> be the same for multiple faces.
-     * Modders are encouraged to cache this value, using the listener capabilities of the Optional to
-     * be notified if the requested capability get lost.
-     *
-     * @param cap  The capability to check
-     * @param side The Side to check from,
-     *             <strong>CAN BE NULL</strong>. Null is defined to represent 'internal' or 'self'
-     * @return The requested an optional holding the requested capability.
-     */
-    protected <T> LazyOptional<T> capability(final Capability<T> cap, final @Nullable Direction side) {
-        return LazyOptional.empty();
-    }
-    
-    @Nonnull
     @Override
     public DebugInfo getDebugInfo() {
         final var moduleInfo = new DebugInfo("Module Debug Info");
@@ -364,7 +320,9 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         }
     
         final var debugInfo = new DebugInfo(this.getClass().getSimpleName());
-        debugInfo.add(moduleInfo);
+        if (!modules.isEmpty()) {
+            debugInfo.add(moduleInfo);
+        }
         return debugInfo;
     }
 }
