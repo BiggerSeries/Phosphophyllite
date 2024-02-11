@@ -8,7 +8,7 @@ modId="phosphophyllite"
 version="${version}"
 displayName="Phosphophyllite"
 displayURL="https://biggerseries.net/"
-logoFile="Phosphophyllite.png"
+logoFile="phosphophyllite.png"
 #credits="" 
 authors="RogueLogix, gizmocodes" 
 description='''
@@ -27,3 +27,6 @@ Library for the BiggerSeries mods
     versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"
+
+[[mixins]]
+    config="phosphophyllite.mixins.json"
