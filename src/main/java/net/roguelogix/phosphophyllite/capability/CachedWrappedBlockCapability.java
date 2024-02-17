@@ -4,11 +4,13 @@ import com.mojang.datafixers.util.Function3;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.ICapabilityInvalidationListener;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BooleanSupplier;
 
 // basically a copy of BlockCapabilityCache, but allows the use of a wrapper function instead
+@NonnullDefault
 public class CachedWrappedBlockCapability<T, C> {
     
     private final Function3<ServerLevel, BlockPos, C, T> fetchFunction;
