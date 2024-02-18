@@ -150,7 +150,7 @@ public class GuiSync {
     }
     
     private static void serverHandler(PhosphophylliteCompound compound, IPayloadContext ctx) {
-        currentGUI = playerGUIs.get(ctx.player().orElse(null));
+        final var currentGUI = playerGUIs.get(ctx.player().orElse(null));
         if (currentGUI != null) {
             currentGUI.executeRequest((String) compound.get("request"), compound.get("data"));
         }
