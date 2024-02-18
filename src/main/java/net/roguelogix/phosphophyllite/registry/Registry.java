@@ -177,15 +177,15 @@ public class Registry {
         handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false, ignoredPackages, ignoredTypes);
         
         
-        IEventBus ModBus = ModLoadingContext.get().getActiveContainer().getEventBus();
+        IEventBus modBus = ModLoadingContext.get().getActiveContainer().getEventBus();
         
-        ModBus.addListener(this::registerEvent);
+        modBus.addListener(this::registerEvent);
 
-        ModBus.addListener(this::commonSetupEventHandler);
-        ModBus.addListener(this::registerCapabilitiesEventHandler);
+        modBus.addListener(this::commonSetupEventHandler);
+        modBus.addListener(this::registerCapabilitiesEventHandler);
         
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            ModBus.addListener(this::clientSetupEventHandler);
+            modBus.addListener(this::clientSetupEventHandler);
         }
     }
     
