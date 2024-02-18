@@ -27,7 +27,7 @@ base {
 // use neo version from root project, may not match local project version, usually does
 neo_version = project.rootProject.property("neo_version")
 
-setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".${patchVersion}-alpha)")
+setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".0-alpha)")
 if (version.contains("alpha") || version.contains("beta")) {
     def nextIncompatibleVersion = "${majorVersion}.${minorVersion}.${patchVersion}-${postfix}"
     if (!"$postfixMajorVersion".isEmpty()) {
