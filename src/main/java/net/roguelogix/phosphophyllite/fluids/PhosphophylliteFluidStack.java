@@ -1,7 +1,6 @@
 package net.roguelogix.phosphophyllite.fluids;
 
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -12,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nonnull;
@@ -27,50 +25,38 @@ import java.util.Objects;
 public class PhosphophylliteFluidStack extends FluidStack {
     
     // forge, you dont need to be a PITA about this
-    private static final Field delegateField;
+    private static final Field fluidField;
     
     static {
         try {
-            delegateField = FluidStack.class.getDeclaredField("fluidDelegate");
-            delegateField.setAccessible(true);
+            fluidField = FluidStack.class.getDeclaredField("fluid");
+            fluidField.setAccessible(true);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
             throw new IllegalStateException(e);
         }
     }
     
-    private void setDelegate(Holder.Reference<Fluid> delegate) {
-        try {
-            delegateField.set(this, delegate);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            throw new IllegalStateException(e);
-        }
-    }
     
     public PhosphophylliteFluidStack() {
         super(Fluids.WATER, 0);
-        setDelegate(delegateWrapper);
         setFluid(Fluids.EMPTY);
     }
     
     public PhosphophylliteFluidStack(Fluid fluid, int amount) {
         super(Fluids.WATER, 0);
-        setDelegate(delegateWrapper);
         setFluid(fluid);
         setAmount(amount);
     }
     
     public PhosphophylliteFluidStack(Fluid fluid, int amount, @Nullable CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
-        setDelegate(delegateWrapper);
         setFluid(fluid);
         setAmount(amount);
     }
     
     public PhosphophylliteFluidStack(Fluid fluid, long amount, @Nullable CompoundTag nbt) {
         super(Fluids.WATER, 0, nbt);
-        setDelegate(delegateWrapper);
         setFluid(fluid);
         setAmount(amount);
     }
@@ -81,7 +67,6 @@ public class PhosphophylliteFluidStack extends FluidStack {
     
     public PhosphophylliteFluidStack(FluidStack stack, long amount) {
         super(Fluids.WATER, 0, stack.getTag());
-        setDelegate(delegateWrapper);
         setFluid(stack.getRawFluid());
         setAmount(amount);
     }
@@ -93,9 +78,6 @@ public class PhosphophylliteFluidStack extends FluidStack {
     public PhosphophylliteFluidStack(FluidStack stack) {
         this(stack, stack instanceof PhosphophylliteFluidStack ? ((PhosphophylliteFluidStack) stack).getLongAmount() : stack.getAmount());
     }
-    
-    @Nullable
-    Fluid fluid;
     
     Holder.Reference<Fluid> delegateWrapper = new Holder.Reference<Fluid>(Holder.Reference.Type.STAND_ALONE, BuiltInRegistries.FLUID.holderOwner(), null, null) {
         @Override
@@ -112,9 +94,12 @@ public class PhosphophylliteFluidStack extends FluidStack {
     private long amount = 0;
     
     public void setFluid(Fluid fluid) {
-        this.fluid = fluid;
-        delegateWrapper.bindKey(ResourceKey.create(Registries.FLUID, Objects.requireNonNull(BuiltInRegistries.FLUID.getKey(fluid))));
-        delegateWrapper.bindValue(fluid);
+        try {
+            fluidField.set(this, fluid);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            throw new IllegalStateException(e);
+        }
         updateEmpty();
     }
     
@@ -177,7 +162,7 @@ public class PhosphophylliteFluidStack extends FluidStack {
     }
     
     public boolean isEmpty() {
-        return amount <= 0 || fluid == Fluids.EMPTY;
+        return amount <= 0 || getRawFluid() == Fluids.EMPTY;
     }
     
     public int getAmount() {
