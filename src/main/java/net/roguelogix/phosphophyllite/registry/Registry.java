@@ -26,6 +26,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.RuntimeDistCleaner;
 import net.minecraftforge.forgespi.language.ModFileScanData;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
@@ -138,16 +139,36 @@ public class Registry {
                 continue;
             }
             final var className = annotation.clazz().getClassName();
-            ignoredPackages.add(className.substring(0, className.lastIndexOf('.') + 1));
+            final var packageName = className.substring(0, className.lastIndexOf('.') + 1);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Package " + packageName + " set to ignored");
+            }
+            ignoredPackages.add(packageName);
+        }
+        
+        final var ignoredTypes = new ObjectArrayList<String>();
+        
+        if (!FMLEnvironment.dist.isClient()) {
+            final var clientOnlyAnnotationClassName = ClientOnly.class.getName();
+            for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
+                // sided checks must be done before classload, as that itself may be problematic
+                if (clientOnlyAnnotationClassName.equals(annotation.annotationType().getClassName())) {
+                    final var className = annotation.clazz().getClassName();
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Type " + className + " set to ignored from @ClientOnly");
+                    }
+                    ignoredTypes.add(className);
+                }
+            }
         }
         
         // these two are special cases that need to be handled first
         // in case anything needs config options during static construction
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(RegisterConfig.class.getName(), this::registerConfigAnnotation), true, ignoredPackages);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(RegisterConfig.class.getName(), this::registerConfigAnnotation), true, ignoredPackages, ignoredTypes);
         // this is used for module registration, which need to happen before block registration
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(OnModLoad.class.getName(), this::onModLoadAnnotation), true, ignoredPackages);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, Map.of(OnModLoad.class.getName(), this::onModLoadAnnotation), true, ignoredPackages, ignoredTypes);
         
-        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false, ignoredPackages);
+        handleAnnotationTypes(modFileScanData, callerPackage, modNamespace, annotationMap, false, ignoredPackages, ignoredTypes);
         
         
         IEventBus ModBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -161,7 +182,7 @@ public class Registry {
         }
     }
     
-    private void handleAnnotationTypes(ModFileScanData modFileScanData, String callerPackage, String modNamespace, Map<String, AnnotationHandler> annotations, boolean requiredCheck, ObjectArrayList<String> ignoredPackages) {
+    private void handleAnnotationTypes(ModFileScanData modFileScanData, String callerPackage, String modNamespace, Map<String, AnnotationHandler> annotations, boolean requiredCheck, ObjectArrayList<String> ignoredPackages, ObjectArrayList<String> ignoredTypes) {
         annotations:
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
             final var annotationClassName = annotation.annotationType().getClassName();
@@ -180,20 +201,19 @@ public class Registry {
                         continue annotations;
                     }
                 }
+                for (String ignoredType : ignoredTypes) {
+                    if (className.equals(ignoredType)) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug("Ignoring " + annotationClassName + " in class " + className + " on member " + annotation.memberName() + " as type is set to ignored");
+                        }
+                        continue annotations;
+                    }
+                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Attempting to handle " + annotationClassName + " in class " + className + " on member " + annotation.memberName());
                 }
                 try {
                     Class<?> clazz = Registry.class.getClassLoader().loadClass(className);
-                    if (clazz.isAnnotationPresent(ClientOnly.class) && !FMLEnvironment.dist.isClient()) {
-                        continue;
-                    }
-                    if (clazz.isAnnotationPresent(SideOnly.class)) {
-                        var sideOnly = clazz.getAnnotation(SideOnly.class);
-                        if (sideOnly.value() != FMLEnvironment.dist) {
-                            continue;
-                        }
-                    }
                     // class loaded, so, pass it off to the handler
                     handler.run(modNamespace, clazz, annotation.memberName());
                 } catch (ClassNotFoundException | NoClassDefFoundError e) {
@@ -210,6 +230,11 @@ public class Registry {
                             throw new IllegalStateException("Failed to handle required annotation " + annotation.annotationType().getClassName() + " in class " + className);
                         }
                     }
+                } catch (RuntimeException e) {
+                    if (e.getStackTrace()[0].getClassName().equals(RuntimeDistCleaner.class.getName())) {
+                        throw new RuntimeException("RuntimeDistCleaner triggered when processing " + annotationClassName + " in " + className + ". Missing @ClientOnly or dist checks?", e);
+                    }
+                    throw e;
                 }
             }
         }
