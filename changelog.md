@@ -1,3 +1,6 @@
+# 1.20.1-0.7.0-alpha.0.1
+ - check @ClientOnly annotations before loading class
+
 # 1.20.1-0.7.0-alpha
  - remove old multiblock system
    - new system moved to multiblock package from multiblock2
