@@ -3,12 +3,12 @@ package net.roguelogix.phosphophyllite.registry;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
@@ -54,19 +54,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("StringConcatenationArgumentToLogCall")
 public class Registry {
     
-    private static final boolean IS_DEV_ENVIRONMENT;
-    
-    static {
-        boolean isInDev = false;
-        try {
-            // dev environment will be deobfuscated, so this will succeed
-            MinecraftServer.class.getDeclaredField("LOGGER");
-            isInDev = true;
-        } catch (NoSuchFieldException ignored) {
-            // this however, will not
-        }
-        IS_DEV_ENVIRONMENT = isInDev;
-    }
+    private static final boolean IS_DEV_ENVIRONMENT = SharedConstants.IS_RUNNING_IN_IDE;
     
     private final Logger LOGGER;
     
@@ -131,8 +119,15 @@ public class Registry {
         
         final var ignoredPackages = new ObjectArrayList<String>();
         
+        final var ignoreRegistrationAnnotationClassName = IgnoreRegistration.class.getName();
+        final var clientOnlyAnnotationClassName = ClientOnly.class.getName();
         for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
-            if (!IgnoreRegistration.class.getName().equals(annotation.annotationType().getClassName())) {
+            final var annotationClassName = annotation.annotationType().getClassName();
+            if (clientOnlyAnnotationClassName.equals(annotationClassName)) {
+                if (FMLEnvironment.dist.isClient()) {
+                    continue;
+                }
+            } else if (!ignoreRegistrationAnnotationClassName.equals(annotationClassName)) {
                 continue;
             }
             if (annotation.targetType() != ElementType.TYPE) {
@@ -141,7 +136,9 @@ public class Registry {
             if (!annotation.clazz().getClassName().endsWith("package-info")) {
                 continue;
             }
-            if (IS_DEV_ENVIRONMENT && !(Boolean) annotation.annotationData().get("ignoreInDev")) {
+            
+            final var ignoreInDevInfo = (Boolean) annotation.annotationData().get("ignoreInDev");
+            if (IS_DEV_ENVIRONMENT && (ignoreInDevInfo != null && !ignoreInDevInfo)) {
                 continue;
             }
             final var className = annotation.clazz().getClassName();
@@ -155,7 +152,6 @@ public class Registry {
         final var ignoredTypes = new ObjectArrayList<String>();
         
         if (!FMLEnvironment.dist.isClient()) {
-            final var clientOnlyAnnotationClassName = ClientOnly.class.getName();
             for (ModFileScanData.AnnotationData annotation : modFileScanData.getAnnotations()) {
                 // sided checks must be done before classload, as that itself may be problematic
                 if (clientOnlyAnnotationClassName.equals(annotation.annotationType().getClassName())) {
@@ -180,7 +176,7 @@ public class Registry {
         IEventBus modBus = ModLoadingContext.get().getActiveContainer().getEventBus();
         
         modBus.addListener(this::registerEvent);
-
+        
         modBus.addListener(this::commonSetupEventHandler);
         modBus.addListener(this::registerCapabilitiesEventHandler);
         
