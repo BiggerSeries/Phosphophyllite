@@ -2,6 +2,8 @@ package net.roguelogix.phosphophyllite.modular.tile;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -42,7 +44,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
     public static final Logger LOGGER = MODULE_LOGGER;
     
     boolean removed = false;
-    private final Object2ObjectOpenHashMap<Class<?>, TileModule<?>> modules = new Object2ObjectOpenHashMap<>();
+    private final Reference2ReferenceMap<Class<?>, TileModule<?>> modules = new Reference2ReferenceOpenHashMap<>();
     private final ArrayList<TileModule<?>> moduleList = new ArrayList<>();
     private final List<TileModule<?>> moduleListRO = Collections.unmodifiableList(moduleList);
     
@@ -53,6 +55,7 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
             if (clazz.isAssignableFrom(thisClazz)) {
                 TileModule<?> module = constructor.apply(this);
                 modules.put(clazz, module);
+                moduleList.ensureCapacity(16);
                 moduleList.add(module);
             }
         });
@@ -74,8 +77,8 @@ public class PhosphophylliteTile extends BlockEntity implements IModularTile, ID
         super.clearRemoved();
     }
     
-    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> clientWorldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
-    private static final Object2ObjectOpenHashMap<Level, ObjectArrayList<PhosphophylliteTile>> serverWorldUnloadEventTiles = new Object2ObjectOpenHashMap<>();
+    private static final Reference2ReferenceMap<Level, ObjectArrayList<PhosphophylliteTile>> clientWorldUnloadEventTiles = new Reference2ReferenceOpenHashMap<>();
+    private static final Reference2ReferenceMap<Level, ObjectArrayList<PhosphophylliteTile>> serverWorldUnloadEventTiles = new Reference2ReferenceOpenHashMap<>();
     private int index = 0;
     
     static {

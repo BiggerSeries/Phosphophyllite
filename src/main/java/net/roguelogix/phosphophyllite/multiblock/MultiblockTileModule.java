@@ -33,6 +33,8 @@ public final class MultiblockTileModule<
     @Nullable
     private ControllerType controller;
     
+    private final boolean alwaysConnectToSameController = iface.alwaysConnectToSameController();
+    
     boolean preExistingBlock = false;
     boolean allowAttach = false;
     
@@ -132,23 +134,26 @@ public final class MultiblockTileModule<
         if (!allowAttach) {
             return false;
         }
-        if (this.controller != null) {
-            if (!controller.canAttachTile(otherRawTile)) {
-                return false;
+        @Nullable final var otherController = otherRawTile.nullableController();
+        if (otherController != controller) {
+            if (this.controller != null) {
+                if (!controller.canAttachTile(otherRawTile)) {
+                    return false;
+                }
             }
-        }
-        if (otherRawTile.nullableController() != null) {
-            if (!otherRawTile.controller().canAttachTile(iface)) {
-                return false;
+            if (otherController != null) {
+                if (!otherController.canAttachTile(iface)) {
+                    return false;
+                }
             }
+        } else if (alwaysConnectToSameController){
+            return true;
         }
         
         // its safe to cast at this point because both (if existing) controllers agree that the they can be attached to each other
         //noinspection unchecked
         final var otherTile = (TileType) otherRawTile;
-        //noinspection unchecked
-        final var otherModule = (MultiblockTileModule<TileType, BlockType, ControllerType>) otherTile.module(IMultiblockTile.class);
-        assert otherModule != null;
+        final var otherModule = otherTile.multiblockModule();
         final var oppositeDirection = direction.getOpposite();
         
         for (int i = 0; i < coreMultiblockTileModules.size(); i++) {
@@ -174,19 +179,24 @@ public final class MultiblockTileModule<
         }
         nullNeighbors();
         var pos = iface.getBlockPos();
-        for (Direction value : DIRECTIONS) {
-            var neighbor = controller.blocks.getModule(pos.getX() + value.getStepX(), pos.getY() + value.getStepY(), pos.getZ() + value.getStepZ());
-            if (neighbor == null || !shouldConnectTo(neighbor.iface, value)) {
+        for (int i = 0; i < DIRECTIONS.length; i++) {
+            final var direction = DIRECTIONS[i];
+            var neighbor = controller.blocks.getModule(pos.getX() + direction.getStepX(), pos.getY() + direction.getStepY(), pos.getZ() + direction.getStepZ());
+            if (neighbor == null || !shouldConnectTo(neighbor.iface, direction)) {
                 continue;
             }
-            neighbors[value.get3DDataValue()] = neighbor;
-            neighborTiles[value.get3DDataValue()] = neighbor.iface;
+            neighbors[i] = neighbor;
+            neighborTiles[i] = neighbor.iface;
         }
         for (int i = 0; i < neighbors.length; i++) {
             MultiblockTileModule<TileType, BlockType, ControllerType> neighbor = neighbors[i];
             if (neighbor != null) {
-                neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = this;
-                neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = iface;
+                // bit magic to flip the last bit which is the opposite direction
+                // 0/1 is up/down
+                // 2/3 is north/south
+                // 4/5 is east/west
+                neighbor.neighbors[i ^ 1] = this;
+                neighbor.neighborTiles[i ^ 1] = iface;
             }
         }
     }
@@ -195,8 +205,8 @@ public final class MultiblockTileModule<
         for (int i = 0; i < neighbors.length; i++) {
             MultiblockTileModule<?, ?, ?> neighbor = neighbors[i];
             if (neighbor != null) {
-                neighbor.neighbors[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
-                neighbor.neighborTiles[Direction.from3DDataValue(i).getOpposite().get3DDataValue()] = null;
+                neighbor.neighbors[i ^ 1] = null;
+                neighbor.neighborTiles[i ^ 1] = null;
             }
             neighbors[i] = null;
             neighborTiles[i] = null;

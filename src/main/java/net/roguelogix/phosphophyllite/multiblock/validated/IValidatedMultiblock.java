@@ -109,6 +109,7 @@ public interface IValidatedMultiblock<
         
         protected IValidatedMultiblock.AssemblyState assemblyState = IValidatedMultiblock.AssemblyState.DISASSEMBLED;
         private long updateAssemblyAtTick = Long.MAX_VALUE;
+        private boolean setDisassembledBlocksStates = false;
         
         @Nullable
         protected ValidationException lastValidationError = null;
@@ -145,7 +146,7 @@ public interface IValidatedMultiblock<
         
         @Override
         public void merge(ControllerType other) {
-            disassembledBlockStates();
+            setDisassembledBlocksStates = true;
             updateAssemblyAtTick = Long.MIN_VALUE;
         }
         
@@ -166,6 +167,9 @@ public interface IValidatedMultiblock<
         private void updateAssemblyState() {
             if (updateAssemblyAtTick > Phosphophyllite.tickNumber()) {
                 return;
+            }
+            if (setDisassembledBlocksStates) {
+                disassembledBlockStates();
             }
             updateAssemblyAtTick = Long.MAX_VALUE;
             for (final var tileTypeControllerTypeMultiblockControllerModule : validatedMultiblockModules) {

@@ -37,4 +37,8 @@ public interface IMultiblockTile<
     default MultiblockTileModule<TileType, BlockType, ControllerType> createMultiblockModule() {
         return new MultiblockTileModule<>(as(IModularTile.class));
     }
+    
+    default boolean alwaysConnectToSameController() {
+        return false;
+    }
 }

@@ -46,6 +46,12 @@ import java.util.Map;
 public class Util {
     
     public static final Direction[] DIRECTIONS = Direction.values();
+    public static final Direction[] DIRECTIONS_OPPOSITE = Direction.values();
+    {
+        for (int i = 0; i < DIRECTIONS_OPPOSITE.length; i++) {
+            DIRECTIONS_OPPOSITE[i] = DIRECTIONS_OPPOSITE[i].getOpposite();
+        }
+    }
     
     private static final Level[] lastLevel = new Level[2];
     private static final ChunkAccess[] lastChunk = new ChunkAccess[2];
