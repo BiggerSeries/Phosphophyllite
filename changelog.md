@@ -1,3 +1,6 @@
+# 1.20.1-0.7.0-alpha.0.2
+ - performance optimizations
+
 # 1.20.1-0.7.0-alpha.0.1
  - check @ClientOnly annotations before loading class
 
